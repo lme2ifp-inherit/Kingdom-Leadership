@@ -90,12 +90,7 @@ const aiCache = {};
 async function callAI(prompt, cacheKey) {
   if (aiCache[cacheKey]) return aiCache[cacheKey];
   try {
-    // Use Netlify function when available, fall back to direct API call
-    const endpoint = window.location.hostname === "localhost"
-      ? "https://api.anthropic.com/v1/messages"
-      : "/.netlify/functions/ai";
-
-    const r = await fetch(endpoint, {
+    const r = await fetch("/.netlify/functions/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -105,41 +100,40 @@ async function callAI(prompt, cacheKey) {
       })
     });
 
-    if (!r.ok) {
-      console.error("HTTP error:", r.status, r.statusText);
-      return null;
-    }
+    const raw = await r.text();
+    showDebug("HTTP " + r.status + " | " + raw.slice(0, 300));
 
-    const d = await r.json();
+    if (!r.ok) return null;
 
-    if (d.error) {
-      console.error("API error:", d.error);
-      return null;
-    }
-
-    if (!d.content || !d.content.length) {
-      console.error("No content in response:", JSON.stringify(d).slice(0, 200));
-      return null;
-    }
+    const d = JSON.parse(raw);
+    if (d.error) { showDebug("API error: " + JSON.stringify(d.error)); return null; }
+    if (!d.content || !d.content.length) { showDebug("No content: " + JSON.stringify(d).slice(0,200)); return null; }
 
     let text = d.content.map(b => b.text || "").join("").trim();
     text = text.replace(/```json|```/g, "").trim();
-
     const first = text.indexOf("{");
     const last = text.lastIndexOf("}");
-    if (first === -1 || last === -1) {
-      console.error("No JSON found in:", text.slice(0, 200));
-      return null;
-    }
+    if (first === -1 || last === -1) { showDebug("No JSON in: " + text.slice(0,200)); return null; }
 
     const parsed = JSON.parse(text.slice(first, last + 1));
     aiCache[cacheKey] = parsed;
     return parsed;
 
   } catch(e) {
-    console.error("callAI error:", e.message);
+    showDebug("Error: " + e.message);
     return null;
   }
+}
+
+function showDebug(msg) {
+  let el = document.getElementById("debugBar");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "debugBar";
+    el.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#68d391;font-size:11px;padding:8px 12px;font-family:monospace;z-index:9999;max-height:120px;overflow-y:auto;border-top:1px solid #2d3748;white-space:pre-wrap;";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
 }
 
 function m1Prompt(s, p) {
