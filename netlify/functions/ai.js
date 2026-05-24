@@ -1,10 +1,10 @@
+const https = require("https");
+
 exports.handler = async function(event, context) {
-  // Only allow POST requests
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
 
-  // Get the API key from Netlify environment variables
   const apiKey = process.env.ANTHROPIC_KEY;
   if (!apiKey) {
     return {
@@ -15,22 +15,35 @@ exports.handler = async function(event, context) {
 
   try {
     const body = JSON.parse(event.body);
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: body.model || "claude-sonnet-4-20250514",
-        max_tokens: body.max_tokens || 1500,
-        messages: body.messages
-      })
+    const payload = JSON.stringify({
+      model: body.model || "claude-sonnet-4-20250514",
+      max_tokens: body.max_tokens || 1500,
+      messages: body.messages
     });
 
-    const data = await response.json();
+    const result = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: "api.anthropic.com",
+        path: "/v1/messages",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Length": Buffer.byteLength(payload)
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = "";
+        res.on("data", (chunk) => { data += chunk; });
+        res.on("end", () => { resolve(JSON.parse(data)); });
+      });
+
+      req.on("error", reject);
+      req.write(payload);
+      req.end();
+    });
 
     return {
       statusCode: 200,
@@ -38,7 +51,7 @@ exports.handler = async function(event, context) {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(result)
     };
 
   } catch (err) {
