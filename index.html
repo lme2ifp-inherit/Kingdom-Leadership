@@ -90,16 +90,56 @@ const aiCache = {};
 async function callAI(prompt, cacheKey) {
   if (aiCache[cacheKey]) return aiCache[cacheKey];
   try {
-    const r = await fetch("/.netlify/functions/ai", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})
+    // Use Netlify function when available, fall back to direct API call
+    const endpoint = window.location.hostname === "localhost"
+      ? "https://api.anthropic.com/v1/messages"
+      : "/.netlify/functions/ai";
+
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1500,
+        messages: [{ role: "user", content: prompt }]
+      })
     });
+
+    if (!r.ok) {
+      console.error("HTTP error:", r.status, r.statusText);
+      return null;
+    }
+
     const d = await r.json();
-    const text = d.content.map(b=>b.text||"").join("").replace(/```json|```/g,"").trim();
-    const parsed = JSON.parse(text);
+
+    if (d.error) {
+      console.error("API error:", d.error);
+      return null;
+    }
+
+    if (!d.content || !d.content.length) {
+      console.error("No content in response:", JSON.stringify(d).slice(0, 200));
+      return null;
+    }
+
+    let text = d.content.map(b => b.text || "").join("").trim();
+    text = text.replace(/```json|```/g, "").trim();
+
+    const first = text.indexOf("{");
+    const last = text.lastIndexOf("}");
+    if (first === -1 || last === -1) {
+      console.error("No JSON found in:", text.slice(0, 200));
+      return null;
+    }
+
+    const parsed = JSON.parse(text.slice(first, last + 1));
     aiCache[cacheKey] = parsed;
     return parsed;
-  } catch(e) { return null; }
+
+  } catch(e) {
+    console.error("callAI error:", e.message);
+    return null;
+  }
 }
 
 function m1Prompt(s, p) {
