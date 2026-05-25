@@ -288,21 +288,22 @@ function buildEntry() {
   return `<div style="flex:1;overflow-y:auto;position:relative;background-image:url('/bg.jpg');background-size:cover;background-position:center center;min-height:100%;">
     <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,14,24,0.6) 0%,rgba(5,10,18,0.75) 60%,rgba(5,10,18,0.92) 100%);pointer-events:none;"></div>
     <div style="position:relative;z-index:1;padding:20px;">
-    <!-- Mountain labels -->
-    <div style="display:flex;justify-content:space-between;padding:8px 8px 16px;pointer-events:none;">
-      <div>
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#B8860B;text-shadow:0 1px 8px rgba(0,0,0,0.9);">CliftonStrengths</div>
-        <div style="font-size:9px;color:#B8860B;opacity:0.7;letter-spacing:0.08em;margin-top:2px;">Core Traits</div>
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#8a72aa;text-shadow:0 1px 8px rgba(0,0,0,0.9);margin-top:10px;">16 Personalities</div>
-        <div style="font-size:9px;color:#8a72aa;opacity:0.7;letter-spacing:0.08em;margin-top:2px;">Empowered Abilities</div>
+    <!-- Matrix labels evenly spaced across top -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:16px 16px 20px;pointer-events:none;">
+      <div style="text-align:left;flex:1;">
+        <div style="font-size:15px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#B8860B;text-shadow:0 2px 12px rgba(0,0,0,0.95);">Clifton Strengths</div>
+        <div style="font-size:11px;color:#B8860B;opacity:0.75;letter-spacing:0.08em;margin-top:3px;">Core Traits</div>
       </div>
-      <div style="text-align:right;">
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#4A7C5E;text-shadow:0 1px 8px rgba(0,0,0,0.9);">Spiritual Gifts</div>
-        <div style="font-size:9px;color:#4A7C5E;opacity:0.7;letter-spacing:0.08em;margin-top:2px;">Innate Qualities</div>
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:15px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#8a72aa;text-shadow:0 2px 12px rgba(0,0,0,0.95);">16 Personalities</div>
+        <div style="font-size:11px;color:#8a72aa;opacity:0.75;letter-spacing:0.08em;margin-top:3px;">Empowered Abilities</div>
+      </div>
+      <div style="text-align:right;flex:1;">
+        <div style="font-size:15px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4A7C5E;text-shadow:0 2px 12px rgba(0,0,0,0.95);">Spiritual Gifts</div>
+        <div style="font-size:11px;color:#4A7C5E;opacity:0.75;letter-spacing:0.08em;margin-top:3px;">Innate Qualities</div>
       </div>
     </div>
     <div style="max-width:460px;margin:0 auto;">
-    <div style="font-size:12px;font-weight:500;letter-spacing:0.1em;color:#d4a520;text-align:center;margin-bottom:10px;text-shadow:0 1px 10px rgba(0,0,0,0.9);text-transform:uppercase;">✦ Lake of God's Unified Potential ✦</div>
     <div style="background:rgba(10,14,24,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(184,134,11,0.25);border-radius:14px;padding:22px 24px;">
       <div style="font-size:17px;font-weight:600;color:#f1f5f9;margin-bottom:3px">Enter Participant Results</div>
       <div style="font-size:12px;color:#64748b;margin-bottom:16px">Enter once — flows into all 4 matrices automatically.</div>
@@ -351,7 +352,8 @@ function buildEntry() {
 
       <button class="btn btn-primary" id="btnGenerate" style="width:100%;padding:9px;font-size:13px;margin-top:6px">Generate All 4 Matrices ✦</button>
     </div>
-  </div>`;
+    <div style="font-size:26px;font-weight:500;letter-spacing:0.1em;color:#d4a520;text-align:center;margin-top:18px;text-shadow:0 2px 14px rgba(0,0,0,0.95);text-transform:uppercase;">✦ Lake of God's Unified Potential ✦</div>
+  </div></div></div>`;
 }
 
 function buildProfile(p) {
