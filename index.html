@@ -117,24 +117,142 @@ const MATRICES=[
 ];
 
 // ── STATE ──────────────────────────────────────────────────────────────────
+// ── VERSION 3 ────────────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = "KingdomLeader369!";
+const REGEN_MONTHS = 6;
+const REGISTER_URL = "https://go2.lc/leadership_id";
+
 let state = {
-  view: "entry", // "entry" | "profile"
+  view: "landing",
+  userEmail: null,
+  isAdmin: false,
   participants: [],
   currentIdx: null,
   activeMatrix: "m1",
-  // Entry form
   name: "", personality: "",
   strengths: ["","","","",""],
   gifts: ["","",""],
   errors: {},
-  // AI data for current participant
-  m1Data: {}, m2Data: {}, m3Data: {}, m4Data: null, m4Cards: {}, m1Summary: null, m2Summary: null, m3Summary: null, m4Bonus: null,
+  m1Data: {}, m2Data: {}, m3Data: {}, m4Data: null, m4Cards: {},
+  m1Summary: null, m2Summary: null, m3Summary: null, m4Bonus: null,
   shareMsg: "",
+  emailInput: "",
+  loginError: "",
+  showAdminPwd: false,
+  adminPwdInput: "",
+  adminMsg: "",
+  savedProfile: null,
+  profileAge: null,
 };
 
 const aiCache = {};
 
 // ── AI ─────────────────────────────────────────────────────────────────────
+
+// ── STORAGE HELPERS ───────────────────────────────────────────────────────────
+async function storageGet(key) {
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+  catch(e) { return null; }
+}
+async function storageSet(key, value) {
+  try { await window.storage.set(key, JSON.stringify(value)); return true; }
+  catch(e) { return false; }
+}
+async function getApprovedEmails() { return await storageGet("approved_emails") || []; }
+async function isEmailApproved(email) {
+  const e = email.toLowerCase().trim();
+  const approved = await getApprovedEmails();
+  return approved.map(x=>x.toLowerCase().trim()).includes(e);
+}
+async function addApprovedEmails(text) {
+  const current = await getApprovedEmails();
+  const newOnes = text.split(/[,\n;]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.includes("@"));
+  const merged = [...new Set([...current,...newOnes])];
+  await storageSet("approved_emails", merged);
+  return {added:newOnes.length, total:merged.length};
+}
+async function removeEmail(email) {
+  const current = await getApprovedEmails();
+  const updated = current.filter(e=>e!==email.toLowerCase().trim());
+  await storageSet("approved_emails", updated);
+  return updated;
+}
+async function saveProfile(email, profileData) {
+  const key = "profile|"+email.toLowerCase().trim();
+  const record = {email:email.toLowerCase().trim(), savedAt:Date.now(), ...profileData};
+  await storageSet(key, record);
+  await storageSet("participant|"+email.toLowerCase().trim(), {
+    email:email.toLowerCase().trim(), name:profileData.name,
+    personality:profileData.personality, strengths:profileData.strengths,
+    gifts:profileData.gifts, savedAt:Date.now()
+  });
+  return record;
+}
+async function loadProfile(email) { return await storageGet("profile|"+email.toLowerCase().trim()); }
+function profileAgeMonths(savedAt) { return (Date.now()-savedAt)/(1000*60*60*24*30.44); }
+function profileNeedsRefresh(savedAt) { return profileAgeMonths(savedAt)>=REGEN_MONTHS; }
+
+async function handleAdminPwdSubmit() {
+  if (state.adminPwdInput === ADMIN_PASSWORD) {
+    state.isAdmin=true; state.userEmail="admin@kingdom"; state.view="admin";
+    state.loginError=""; state.showAdminPwd=false; state.adminPwdInput=""; render();
+  } else {
+    state.loginError="Incorrect password"; render();
+  }
+}
+
+async function handleEmailLogin() {
+  const email = state.emailInput.trim().toLowerCase();
+  if (!email) { state.loginError="Please enter your email"; render(); return; }
+
+  // Admin shortcut — show password field
+  if (email === "admin") {
+    state.showAdminPwd = true;
+    state.loginError = "";
+    render();
+    return;
+  }
+
+  if (!email.includes("@")) { state.loginError="Please enter a valid email"; render(); return; }
+  const approved = await isEmailApproved(email);
+  if (!approved) { state.view="notApproved"; state.userEmail=email; render(); return; }
+  state.userEmail=email; state.loginError="";
+  const existing = await loadProfile(email);
+  if (existing) {
+    state.savedProfile=existing;
+    state.profileAge=profileAgeMonths(existing.savedAt);
+    restoreProfileToState(existing);
+    state.view="profile";
+  } else { state.view="entry"; }
+  render();
+}
+
+async function handleAdminLogin() {
+  const pwd = state.adminPassword || "";
+  if (pwd===ADMIN_PASSWORD) {
+    state.isAdmin=true; state.userEmail="admin@kingdom"; state.view="admin";
+    state.loginError=""; render();
+  } else { state.loginError="Incorrect password"; render(); }
+}
+
+function restoreProfileToState(profile) {
+  const p = {name:profile.name, personality:profile.personality,
+    strengths:profile.strengths, gifts:profile.gifts, id:profile.savedAt||Date.now()};
+  state.participants=[p]; state.currentIdx=0;
+  if (profile.aiData) {
+    state.m1Data=profile.aiData.m1Data||{}; state.m2Data=profile.aiData.m2Data||{};
+    state.m3Data=profile.aiData.m3Data||{}; state.m4Data=profile.aiData.m4Data||null;
+    state.m4Cards=profile.aiData.m4Cards||{}; state.m1Summary=profile.aiData.m1Summary||null;
+    state.m2Summary=profile.aiData.m2Summary||null; state.m3Summary=profile.aiData.m3Summary||null;
+    state.m4Bonus=profile.aiData.m4Bonus||null;
+    // Restore AI cache so switching back doesn't re-generate
+    const p2=state.participants[0];
+    if (p2 && profile.aiData.m1Data) {
+      p2.strengths.forEach(s=>{ if(profile.aiData.m1Data[s]) aiCache["m1|"+s+"|"+p2.personality]=profile.aiData.m1Data[s]; });
+    }
+  }
+}
+
 async function callAI(prompt, cacheKey) {
   if (aiCache[cacheKey]) return aiCache[cacheKey];
   try {
@@ -247,6 +365,12 @@ function render() {
 }
 
 function buildApp() {
+  // Route to correct screen based on state.view
+  if (state.view === "landing") return buildLanding();
+  if (state.view === "login") return buildLogin();
+  if (state.view === "notApproved") return buildNotApproved();
+  if (state.view === "admin") return buildAdminWrapper();
+
   const p = state.currentIdx !== null ? state.participants[state.currentIdx] : null;
   return `
   <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #1e293b;background:#111827;flex-wrap:wrap;gap:8px">
@@ -255,8 +379,11 @@ function buildApp() {
       <div style="font-size:15px;font-weight:600;color:#f1f5f9">Unified Profile System</div>
     </div>
     <div style="display:flex;gap:5px;align-items:center">
+      ${state.userEmail && state.userEmail!=="admin@kingdom"?`<span style="font-size:11px;color:#4a5568;font-family:monospace;">${state.userEmail}</span>`:""}
       ${state.participants.length>0?`<span style="font-size:11px;color:#4a5568">${state.participants.length} participant${state.participants.length!==1?"s":""}</span>`:""}
+      ${state.isAdmin?`<button class="btn" id="btnGoAdmin" style="font-size:12px;">⚙ Admin</button>`:""}
       <button class="btn btn-primary" id="btnNew">+ New Participant</button>
+      <button class="btn" id="btnHeaderLogout" style="font-size:12px;">Sign Out</button>
     </div>
   </div>
   <div style="display:flex;flex:1;overflow:hidden">
@@ -276,6 +403,156 @@ function buildSidebar() {
         <div style="font-size:10px;color:#4a5568;font-family:monospace">${p.personality}</div>
         <div style="font-size:10px;color:#4a5568">${p.gifts.slice(0,2).join(", ")}${p.gifts.length>2?"…":""}</div>
       </div>`).join("")}
+  </div>`;
+}
+
+
+// ── LANDING SCREEN ────────────────────────────────────────────────────────────
+function buildLanding() {
+  return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background-image:url('/bg.jpg');background-size:cover;background-position:center;min-height:100vh;">
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(5,10,18,0.5) 0%,rgba(5,10,18,0.65) 50%,rgba(5,10,18,0.88) 100%);"></div>
+    <div style="position:relative;z-index:1;text-align:center;padding:40px 24px;max-width:600px;">
+      <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#d4a520;margin-bottom:16px;text-shadow:0 2px 10px rgba(0,0,0,0.9);">Welcome to</div>
+      <div style="font-size:42px;font-weight:700;color:#f5e6c0;line-height:1.15;margin-bottom:8px;text-shadow:0 3px 20px rgba(0,0,0,0.95);">Leadership ID</div>
+      <div style="font-size:16px;color:#d4a520;letter-spacing:0.08em;margin-bottom:28px;text-shadow:0 2px 10px rgba(0,0,0,0.9);">Kingdom Leadership Discovery System</div>
+      <div style="font-size:15px;color:#c8d8e8;line-height:1.8;margin-bottom:36px;text-shadow:0 2px 8px rgba(0,0,0,0.9);">
+        Discover how God uniquely wired you for kingdom purpose — through the intersection of your natural strengths, personality, and spiritual gifts.
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+        <button id="btnGoLogin" style="background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:14px 48px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:0.05em;width:280px;">Begin Your Discovery ✦</button>
+        <div style="font-size:12px;color:#8898a8;margin-top:4px;">Access by invitation only</div>
+      </div>
+      <div style="margin-top:48px;font-size:11px;color:#4a5568;letter-spacing:0.08em;">
+        A cord of three strands is not quickly broken — Ecclesiastes 4:12
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── LOGIN SCREEN ──────────────────────────────────────────────────────────────
+function buildLogin() {
+  return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background-image:url('/bg.jpg');background-size:cover;background-position:center;min-height:100vh;">
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(5,10,18,0.55) 0%,rgba(5,10,18,0.78) 100%);"></div>
+    <div style="position:relative;z-index:1;width:100%;max-width:420px;padding:24px;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:28px;font-weight:700;color:#f5e6c0;text-shadow:0 2px 16px rgba(0,0,0,0.95);">Leadership ID</div>
+        <div style="font-size:13px;color:#d4a520;margin-top:6px;letter-spacing:0.06em;">Enter your registered email to continue</div>
+      </div>
+      <div style="background:rgba(10,14,24,0.82);backdrop-filter:blur(16px);border:1px solid rgba(184,134,11,0.25);border-radius:14px;padding:28px;">
+        ${state.showAdminPwd ? `
+        <div style="font-size:13px;color:#d4a520;margin-bottom:12px;text-align:center;">Admin Access</div>
+        <label style="font-size:11px;font-weight:600;color:#94a3b8;display:block;margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;">Password</label>
+        <input id="adminPwdInput" type="password" placeholder="Enter admin password"
+          style="width:100%;padding:10px 14px;font-size:14px;background:#0f1620;border:1px solid #2d3748;border-radius:8px;color:#e2e8f0;outline:none;margin-bottom:${state.loginError?'6px':'16px'}"/>
+        ${state.loginError ? `<div style="font-size:12px;color:#fc8181;margin-bottom:12px;">${state.loginError}</div>` : ''}
+        <button id="btnAdminPwd" style="width:100%;background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Enter ✦</button>
+        <button id="btnCancelAdmin" style="width:100%;background:transparent;border:none;color:#4a5568;font-size:12px;cursor:pointer;">← Back to email</button>
+        ` : `
+        <label style="font-size:11px;font-weight:600;color:#94a3b8;display:block;margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;">Email Address</label>
+        <input id="emailInput" type="email" value="${state.emailInput}" placeholder="your@email.com"
+          style="width:100%;padding:10px 14px;font-size:14px;background:#0f1620;border:1px solid #2d3748;border-radius:8px;color:#e2e8f0;outline:none;margin-bottom:${state.loginError?'6px':'16px'}"/>
+        ${state.loginError ? `<div style="font-size:12px;color:#fc8181;margin-bottom:12px;">${state.loginError}</div>` : ''}
+        <button id="btnLogin" style="width:100%;background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">Sign In ✦</button>
+        `}
+        <div style="border-top:1px solid #1e293b;padding-top:14px;margin-top:2px;">
+          <div style="font-size:11px;color:#4a5568;text-align:center;margin-bottom:8px;">Not registered yet?</div>
+          <a href="${REGISTER_URL}" target="_blank" style="display:block;text-align:center;font-size:13px;color:#d4a520;text-decoration:none;letter-spacing:0.04em;">Register for Leadership ID →</a>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <button id="btnBackToLanding" style="background:transparent;border:none;color:#4a5568;font-size:12px;cursor:pointer;">← Back</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── NOT APPROVED SCREEN ────────────────────────────────────────────────────────
+function buildNotApproved() {
+  return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background-image:url('/bg.jpg');background-size:cover;background-position:center;min-height:100vh;">
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(5,10,18,0.6) 0%,rgba(5,10,18,0.85) 100%);"></div>
+    <div style="position:relative;z-index:1;width:100%;max-width:440px;padding:24px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:16px;">✦</div>
+      <div style="font-size:22px;font-weight:600;color:#f5e6c0;margin-bottom:10px;text-shadow:0 2px 14px rgba(0,0,0,0.95);">Not on the list yet</div>
+      <div style="font-size:14px;color:#94a3b8;line-height:1.7;margin-bottom:8px;">
+        <span style="color:#d4a520;">${state.userEmail}</span> is not registered for Leadership ID.
+      </div>
+      <div style="font-size:14px;color:#94a3b8;line-height:1.7;margin-bottom:28px;">
+        Register to receive your invitation and unlock your Kingdom Leadership profile.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
+        <a href="${REGISTER_URL}" target="_blank" style="display:block;background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:13px 40px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;width:280px;">Register Now →</a>
+        <button id="btnBackToLogin" style="background:transparent;border:1px solid #2d3748;color:#94a3b8;border-radius:8px;padding:10px 32px;font-size:13px;cursor:pointer;width:280px;">Try a different email</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── ADMIN SCREEN ───────────────────────────────────────────────────────────────
+
+function buildAdminWrapper() {
+  return `<div style="display:flex;flex-direction:column;height:100vh;">
+    <div style="padding:10px 16px;border-bottom:1px solid #1e293b;background:#111827;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:9px;color:#4a5568;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1px">Kingdom Leadership Discovery</div>
+        <div style="font-size:15px;font-weight:600;color:#f1f5f9;">Admin Panel</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="btnAdminToEntry" class="btn" style="font-size:12px;">+ Enter Participant</button>
+        <button id="btnAdminLogout" class="btn" style="font-size:12px;">Sign Out</button>
+      </div>
+    </div>
+    ${buildAdmin()}
+  </div>`;
+}
+
+function buildAdmin() {
+  return `<div style="flex:1;overflow-y:auto;background:#0f1117;padding:24px;">
+    <div style="max-width:700px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+          <div style="font-size:11px;color:#4a5568;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;">Admin Panel</div>
+          <div style="font-size:22px;font-weight:600;color:#f1f5f9;">Kingdom Leadership Discovery</div>
+        </div>
+        <button id="btnAdminLogout" style="background:transparent;border:1px solid #2d3748;color:#94a3b8;border-radius:6px;padding:7px 16px;font-size:12px;cursor:pointer;">Sign Out</button>
+      </div>
+
+      <!-- Add Emails -->
+      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:#d4a520;margin-bottom:4px;">✦ Approved Participants</div>
+        <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Paste email addresses below — one per line, or comma separated</div>
+        <textarea id="adminEmailInput" rows="5" placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"
+          style="width:100%;padding:10px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px;">${state.adminEmailInput||''}</textarea>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button id="btnAddEmails" style="background:#d4a520;color:#0a0f1a;border:none;border-radius:6px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;">Add to Approved List</button>
+          <button id="btnLoadEmails" style="background:transparent;border:1px solid #2d3748;color:#94a3b8;border-radius:6px;padding:9px 16px;font-size:12px;cursor:pointer;">View Current List</button>
+          ${state.adminMsg ? `<span style="font-size:12px;color:#68d391;">${state.adminMsg}</span>` : ''}
+        </div>
+      </div>
+
+      <!-- Approved email list display -->
+      <div id="emailListContainer"></div>
+
+      <!-- Enter profile for participant -->
+      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:#B8860B;margin-bottom:4px;">✦ Enter Profile for Participant</div>
+        <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Enter a participant's email to create or update their profile</div>
+        <div style="display:flex;gap:10px;">
+          <input id="adminParticipantEmail" type="email" placeholder="participant@email.com"
+            style="flex:1;padding:9px 12px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;outline:none;"/>
+          <button id="btnEnterForParticipant" style="background:#B8860B;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">Enter Data</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;">
+        <div style="font-size:13px;font-weight:600;color:#6B5B8A;margin-bottom:12px;">✦ System Info</div>
+        <div style="font-size:12px;color:#4a5568;line-height:2;">
+          Admin access active · Profiles save automatically after generation · 
+          ${REGEN_MONTHS}-month regeneration limit per participant · 
+          All data stored in Netlify persistent storage
+        </div>
+      </div>
+    </div>
   </div>`;
 }
 
@@ -364,6 +641,7 @@ function buildProfile(p) {
       <div>${m.label}</div><div style="font-size:9px;opacity:0.8">${m.sub}</div>
     </button>`).join("")}
   </div>
+  ${state.savedProfile && state.profileAge >= REGEN_MONTHS ? `<div style="background:#7f1d1d22;border-bottom:1px solid #7f1d1d55;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span style="font-size:12px;color:#fca5a5;">Your profile is over ${REGEN_MONTHS} months old — consider a refresh.</span><button id="btnRefreshProfile" style="background:#7f1d1d;border:1px solid #fca5a5;color:#fca5a5;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Generate Fresh Profile</button></div>` : ''}
   <div style="background:#111827;border-bottom:1px solid #1e293b;padding:12px 16px">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <div>
@@ -549,6 +827,88 @@ function buildMatrixContent(p) {
 
 // ── HANDLERS ───────────────────────────────────────────────────────────────
 function attachHandlers() {
+  // ── V3 SCREEN NAVIGATION ──────────────────────────────────────────────────
+  document.getElementById("btnGoLogin")?.addEventListener("click", () => { state.view="login"; render(); });
+  document.getElementById("btnBackToLanding")?.addEventListener("click", () => { state.view="landing"; state.loginError=""; render(); });
+  document.getElementById("btnBackToLogin")?.addEventListener("click", () => { state.view="login"; state.loginError=""; render(); });
+
+  // Email login
+  const emailInp = document.getElementById("emailInput");
+  if (emailInp) {
+    emailInp.addEventListener("input", e => { state.emailInput = e.target.value; });
+    emailInp.addEventListener("keydown", e => { if (e.key==="Enter") handleEmailLogin(); });
+  }
+  document.getElementById("btnLogin")?.addEventListener("click", handleEmailLogin);
+
+  const adminPwdInp = document.getElementById("adminPwdInput");
+  if (adminPwdInp) {
+    adminPwdInp.addEventListener("input", e => { state.adminPwdInput = e.target.value; });
+    adminPwdInp.addEventListener("keydown", e => { if (e.key==="Enter") handleAdminPwdSubmit(); });
+    adminPwdInp.focus();
+  }
+  document.getElementById("btnAdminPwd")?.addEventListener("click", handleAdminPwdSubmit);
+  document.getElementById("btnCancelAdmin")?.addEventListener("click", () => {
+    state.showAdminPwd=false; state.adminPwdInput=""; state.loginError=""; render();
+  });
+
+  // Admin panel
+  document.getElementById("btnAdminLogout")?.addEventListener("click", () => {
+    state.isAdmin=false; state.userEmail=null; state.view="landing"; render();
+  });
+  document.getElementById("btnGoAdmin")?.addEventListener("click", () => { state.view="admin"; render(); });
+  document.getElementById("btnAdminToEntry")?.addEventListener("click", () => {
+    state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; render();
+  });
+  document.getElementById("btnAddEmails")?.addEventListener("click", async () => {
+    const ta = document.getElementById("adminEmailInput");
+    if (!ta || !ta.value.trim()) return;
+    state.adminMsg="Saving…"; render();
+    const result = await addApprovedEmails(ta.value);
+    state.adminMsg = "✓ Added "+result.added+" emails ("+result.total+" total)";
+    state.adminEmailInput = "";
+    render();
+    setTimeout(() => { state.adminMsg=""; render(); }, 4000);
+  });
+  document.getElementById("btnLoadEmails")?.addEventListener("click", async () => {
+    const emails = await getApprovedEmails();
+    const container = document.getElementById("emailListContainer");
+    if (container) {
+      container.innerHTML = "<div style='background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;'>"
+        + "<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:12px;'>Approved List ("+emails.length+")</div>"
+        + (emails.length===0 ? "<div style='font-size:12px;color:#4a5568;'>No emails added yet.</div>"
+          : emails.map(e=>"<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #0f1117;'>"
+            +"<span style='font-size:12px;color:#94a3b8;font-family:monospace;'>"+e+"</span>"
+            +"<button class='btnRemoveEmail' data-email='"+e+"' style='background:transparent;border:none;color:#fc8181;font-size:11px;cursor:pointer;'>Remove</button>"
+            +"</div>").join(""))
+        + "</div>";
+      container.querySelectorAll(".btnRemoveEmail").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await removeEmail(btn.dataset.email);
+          btn.closest("div").remove();
+        });
+      });
+    }
+  });
+  document.getElementById("btnEnterForParticipant")?.addEventListener("click", () => {
+    const el = document.getElementById("adminParticipantEmail");
+    if (el && el.value.includes("@")) {
+      state.userEmail = el.value.trim().toLowerCase();
+      state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; render();
+    }
+  });
+  document.getElementById("btnRefreshProfile")?.addEventListener("click", () => {
+    state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.savedProfile=null; state.profileAge=null; render();
+  });
+  document.getElementById("btnHeaderLogout")?.addEventListener("click", () => {
+    state.userEmail=null; state.isAdmin=false; state.view="landing";
+    state.participants=[]; state.currentIdx=null; state.savedProfile=null; state.profileAge=null;
+    state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null;
+    state.m4Cards={}; state.m1Summary=null; state.m2Summary=null; state.m3Summary=null; state.m4Bonus=null;
+    render();
+  });
+  document.getElementById("btnNotApprovedBack")?.addEventListener("click", () => { state.view="login"; state.loginError=""; render(); });
+
+  // ── ORIGINAL HANDLERS ─────────────────────────────────────────────────────
   document.getElementById("btnNew")?.addEventListener("click", () => {
     state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.shareMsg=""; render();
   });
@@ -704,6 +1064,29 @@ async function generate() {
     const res = await callAI(m4StrCard(p.name,s,p.personality,p.gifts), `m4c|${s}|${p.personality}|${p.gifts.join(",")}`);
     state.m4Cards[s] = res || {cardTheme:`${s} in Kingdom Purpose`,description:`The ${s} strength, expressed through the ${p.personality} personality and empowered by the ${p.gifts[0]} gift, creates a distinctive kingdom-powerful expression that belongs to ${p.name} alone.`,scripture:`Romans 12:6 — "We have different gifts, according to the grace given to each of us."`,prayer:`Lord, let ${p.name}'s ${s} strength be fully surrendered to You and activated by Your Spirit for kingdom purposes.`};
     render();
+  }
+
+  // ── AUTO-SAVE PROFILE TO STORAGE ──────────────────────────────────────────
+  if (state.userEmail && state.userEmail !== "admin@kingdom") {
+    await saveProfile(state.userEmail, {
+      name: p.name,
+      personality: p.personality,
+      strengths: p.strengths,
+      gifts: p.gifts,
+      aiData: {
+        m1Data: state.m1Data,
+        m2Data: state.m2Data,
+        m3Data: state.m3Data,
+        m4Data: state.m4Data,
+        m4Cards: state.m4Cards,
+        m1Summary: state.m1Summary,
+        m2Summary: state.m2Summary,
+        m3Summary: state.m3Summary,
+        m4Bonus: state.m4Bonus
+      }
+    });
+    state.savedProfile = { savedAt: Date.now() };
+    state.profileAge = 0;
   }
 }
 
