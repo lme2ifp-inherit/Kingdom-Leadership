@@ -80,7 +80,7 @@ let state = {
   gifts: ["","",""],
   errors: {},
   // AI data for current participant
-  m1Data: {}, m2Data: {}, m3Data: {}, m4Data: null, m4Cards: {},
+  m1Data: {}, m2Data: {}, m3Data: {}, m4Data: null, m4Cards: {}, m1Summary: null, m2Summary: null, m3Summary: null, m4Bonus: null,
   shareMsg: "",
 };
 
@@ -101,56 +101,46 @@ async function callAI(prompt, cacheKey) {
     });
 
     const raw = await r.text();
-    showDebug("HTTP " + r.status + " | " + raw.slice(0, 300));
+    
 
     if (!r.ok) return null;
 
     const d = JSON.parse(raw);
-    if (d.error) { showDebug("API error: " + JSON.stringify(d.error)); return null; }
-    if (!d.content || !d.content.length) { showDebug("No content: " + JSON.stringify(d).slice(0,200)); return null; }
+    if (d.error) { return null; }
+    if (!d.content || !d.content.length) { return null; }
 
     let text = d.content.map(b => b.text || "").join("").trim();
     text = text.replace(/```json|```/g, "").trim();
     const first = text.indexOf("{");
     const last = text.lastIndexOf("}");
-    if (first === -1 || last === -1) { showDebug("No JSON in: " + text.slice(0,200)); return null; }
+    if (first === -1 || last === -1) { return null; }
 
     const parsed = JSON.parse(text.slice(first, last + 1));
     aiCache[cacheKey] = parsed;
     return parsed;
 
   } catch(e) {
-    showDebug("Error: " + e.message);
+    
     return null;
   }
 }
 
-function showDebug(msg) {
-  let el = document.getElementById("debugBar");
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "debugBar";
-    el.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#68d391;font-size:11px;padding:8px 12px;font-family:monospace;z-index:9999;max-height:120px;overflow-y:auto;border-top:1px solid #2d3748;white-space:pre-wrap;";
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-}
 
 function m1Prompt(s, p) {
   const pBase = p.split("-")[0];
   const v = p.includes("-A") ? "Assertive" : "Turbulent";
-  const schema = '{"theme":"3-5 word poetic leadership title","description":"3-4 vivid sentences on how this strength and personality interact and what this person does differently because of this exact combination","gift":"One sentence on the unique gift this combination brings to a team","prayer":"3 sentence faith reflection in second person specific to this strength and personality"}';
+  const schema = '{"theme":"3-5 word poetic leadership title","description":"3-4 vivid sentences on how this strength and personality interact and what this person does differently because of this exact combination","gift":"One sentence on the unique gift this combination brings to a team","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 1 Core Traits combining CliftonStrengths and 16 Personalities. This combination is " + s + " strength with " + p + " personality (" + pBase + " " + v + " variant). Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m2Prompt(s, g) {
-  const schema = '{"theme":"3-5 word poetic title for this talent and gift combination","description":"3-4 vivid sentences on how this natural talent and spiritual gift work together in kingdom ministry","gift":"One sentence on the unique contribution this combination makes to the body of Christ","prayer":"3 sentence faith reflection in second person honoring both the natural strength and the spiritual gift"}';
+  const schema = '{"theme":"3-5 word poetic title for this talent and gift combination","description":"3-4 vivid sentences on how this natural talent and spiritual gift work together in kingdom ministry","gift":"One sentence on the unique contribution this combination makes to the body of Christ","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 2 Innate Qualities combining CliftonStrengths and Spiritual Gifts. This combination is " + s + " CliftonStrength with " + g + " Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m3Prompt(p, g) {
   const pBase = p.split("-")[0];
-  const schema = '{"theme":"3-5 word poetic title for how the Spirit expresses this gift through this personality","description":"3-4 vivid sentences on how the Holy Spirit empowers this spiritual gift uniquely through this personality type","gift":"One sentence on how the Spirit uniquely moves through this personality to exercise this gift","prayer":"3 sentence faith reflection inviting the Spirit to move through their personality in this specific gift"}';
+  const schema = '{"theme":"3-5 word poetic title for how the Spirit expresses this gift through this personality","description":"3-4 vivid sentences on how the Holy Spirit empowers this spiritual gift uniquely through this personality type","gift":"One sentence on how the Spirit uniquely moves through this personality to exercise this gift","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 3 Empowered Abilities combining 16 Personalities and Spiritual Gifts. This combination is " + p + " personality (" + pBase + ") with " + g + " Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
@@ -158,14 +148,14 @@ function m4Prompt(name, strengths, p, gifts) {
   const sAll = strengths.join(", ");
   const gAll = gifts.join(", ");
   const pBase = p.split("-")[0];
-  const schema = '{"unifiedTheme":"3-6 word poetic title capturing this persons complete God-given leadership identity","description":"4-5 vivid sentences on how all three frameworks work together as one unified expression of Gods design that should feel like a revelation","kingdomRole":"2-3 sentences on the specific irreplaceable role this person is designed to play in Gods kingdom","teamContribution":"2-3 sentences on what this person uniquely brings to any team that no one else can replicate","shadowSide":"2-3 sentences on where this combination can go wrong and the honest growth edge","scripture":"One Bible verse reference and brief quote then one sentence on why it speaks to this combination","prayer":"4-5 sentence prayer of commissioning in second person honoring all three dimensions"}';
+  const schema = '{"unifiedTheme":"3-6 word poetic title capturing this persons complete God-given leadership identity","description":"4-5 vivid sentences on how all three frameworks work together as one unified expression of Gods design that should feel like a revelation","kingdomRole":"2-3 sentences on the specific irreplaceable role this person is designed to play in Gods kingdom","teamContribution":"2-3 sentences on what this person uniquely brings to any team that no one else can replicate","shadowSide":"2-3 sentences on where this combination can go wrong and the honest growth edge","scripture":"One Bible verse reference and brief quote then one sentence on why it speaks to this combination","prayer":"4-5 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 4 Unified Potential master synthesis for " + name + ". Top strengths: " + sAll + ". Personality: " + p + " (" + pBase + "). Spiritual gifts: " + gAll + ". Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m4StrCard(name, s, p, gifts) {
   const gAll = gifts.join(", ");
   const pBase = p.split("-")[0];
-  const schema = '{"cardTheme":"3-5 word poetic title for how this strength integrates with this personality and gifts","description":"3-4 vivid sentences on how this specific strength filtered through this personality and activated by these spiritual gifts creates something unique and kingdom-powerful","scripture":"One Bible verse reference and brief quote anchoring this strength with these gifts","prayer":"2-3 sentence prayer for stewarding this strength in alignment with personality and spiritual gifts"}';
+  const schema = '{"cardTheme":"3-5 word poetic title for how this strength integrates with this personality and gifts","description":"3-4 vivid sentences on how this specific strength filtered through this personality and activated by these spiritual gifts creates something unique and kingdom-powerful","scripture":"One Bible verse reference and brief quote anchoring this strength with these gifts","prayer":"2-3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 4 individual strength card for " + name + ". Strength: " + s + ". Personality: " + p + " (" + pBase + "). Spiritual gifts: " + gAll + ". Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
@@ -372,7 +362,7 @@ function renderM4StrCard(s, p, card) {
   return `<div class="card" style="border-left:3px solid ${col};margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="background:${col}22;color:${col};border:1px solid ${col}44;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:500">${s}</span>
-      <span style="font-size:10px;color:#4a5568">× ${p.personality} × ${p.gifts[0]}</span>
+      <span style="font-size:10px;color:#4a5568">× ${p.personality} × ${p.gifts.join(", ")}</span>
     </div>
     ${loading ? `<div style="color:#4a5568;font-size:13px"><span class="spinner">◌</span> Generating ${s} synthesis…</div>` : `
     <div style="font-size:17px;font-weight:500;color:#f1f5f9;margin-bottom:10px;font-family:Georgia,serif">${theme}</div>
@@ -389,9 +379,31 @@ function renderM4StrCard(s, p, card) {
   </div>`;
 }
 
+function summaryCard(data, color, label) {
+  if (!data) return "";
+  if (data === "loading") return '<div class="card" style="border-left:3px solid '+color+';margin-bottom:16px"><div style="color:#4a5568;font-size:13px"><span class="spinner">◌</span> Generating '+label+' summary…</div></div>';
+  const theme = data.theme || data.bonusTheme || "";
+  const main = data.summary || data.synthesis || "";
+  const keys = Object.keys(data).filter(k=>!["theme","bonusTheme","summary","synthesis"].includes(k)&&typeof data[k]==="string");
+  let h = '<div class="card" style="border-left:4px solid '+color+';margin-bottom:18px">';
+  h += '<div style="font-size:9px;color:'+color+';letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;font-weight:700">✦ '+label+' Summary</div>';
+  h += '<div style="font-size:21px;font-weight:600;color:#f1f5f9;margin-bottom:10px;font-family:Georgia,serif">'+theme+'</div>';
+  h += '<p style="font-size:14px;line-height:1.85;color:#94a3b8;margin-bottom:12px">'+main+'</p>';
+  keys.forEach((k,i)=>{
+    const lbl = k.replace(/([A-Z])/g," $1").trim();
+    const bg = i===keys.length-1 ? color+"11" : "#0f1117";
+    const bdr = i===keys.length-1 ? color+"33" : "#1e293b";
+    const lc = i===keys.length-1 ? color : "#4a5568";
+    h += '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:6px;padding:10px 14px;margin-bottom:8px"><div style="font-size:9px;color:'+lc+';letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;font-weight:600">✦ '+lbl+'</div><p style="font-size:13px;color:#94a3b8;font-style:italic;line-height:1.7;margin:0">'+data[k]+'</p></div>';
+  });
+  h += '</div>';
+  return h;
+}
+
 function buildMatrixContent(p) {
   if (state.activeMatrix==="m1") {
     return `<div style="font-size:9px;color:#B8860B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 1 · Core Traits · CliftonStrengths × 16 Personalities</div>
+    ${summaryCard(state.m1Summary,"#B8860B","Core Traits")}
     ${p.strengths.map(s=>{
       const str=strByName(s);const col=str?dc(str.d):"#B8860B";
       const theme=M1[`${s}|${p.personality}`]||`${s} × ${p.personality}`;
@@ -401,6 +413,7 @@ function buildMatrixContent(p) {
   }
   if (state.activeMatrix==="m2") {
     return `<div style="font-size:9px;color:#4A7C5E;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 2 · Innate Qualities · CliftonStrengths × Spiritual Gifts</div>
+    ${summaryCard(state.m2Summary,"#4A7C5E","Innate Qualities")}
     ${p.strengths.map(s=>`
       <div style="margin-bottom:14px">
         <div style="font-size:12px;font-weight:500;color:#e2e8f0;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #1e293b">${s}</div>
@@ -413,6 +426,7 @@ function buildMatrixContent(p) {
   }
   if (state.activeMatrix==="m3") {
     return `<div style="font-size:9px;color:#6B5B8A;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 3 · Empowered Abilities · 16 Personalities × Spiritual Gifts</div>
+    ${summaryCard(state.m3Summary,"#6B5B8A","Empowered Abilities")}
     ${p.gifts.map(g=>{
       const theme=M3[`${p.personality}|${g}`]||`${p.personality} × ${g}`;
       const combo=state.m3Data[g];
@@ -447,6 +461,19 @@ function buildMatrixContent(p) {
       p.strengths.forEach(s => {
         html += renderM4StrCard(s, p, cards[s] || null);
       });
+    }
+    // M4 Bonus streamlined summary
+    if (state.m4Bonus === "loading") {
+      html += summaryCard("loading", "#A0522D", "Streamlined Synthesis");
+    } else if (state.m4Bonus) {
+      html += '<div class="card" style="border-left:4px solid #A0522D;margin-top:6px">';
+      html += '<div style="font-size:9px;color:#A0522D;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;font-weight:700">✦ Streamlined Synthesis</div>';
+      html += '<div style="font-size:9px;color:#64748b;margin-bottom:12px">Top 3 Strengths · Personality · Top 3 Gifts</div>';
+      html += '<div style="font-size:21px;font-weight:600;color:#f1f5f9;margin-bottom:10px;font-family:Georgia,serif">'+(state.m4Bonus.bonusTheme||"")+"</div>";
+      html += '<p style="font-size:14px;line-height:1.85;color:#94a3b8;margin-bottom:12px">'+(state.m4Bonus.synthesis||"")+"</p>";
+      if (state.m4Bonus.coreCall) html += '<div style="background:#A0522D22;border:1px solid #A0522D55;border-radius:6px;padding:10px 14px;margin-bottom:8px"><div style="font-size:9px;color:#A0522D;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;font-weight:600">✦ Core Call</div><p style="font-size:14px;color:#f1f5f9;font-weight:500;line-height:1.6;margin:0">'+(state.m4Bonus.coreCall)+"</p></div>";
+      if (state.m4Bonus.blessing) html += '<div style="background:#A0522D11;border:1px solid #A0522D33;border-radius:6px;padding:12px 14px"><div style="font-size:9px;color:#A0522D;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px;font-weight:600">✦ Spoken Blessing</div><p style="font-size:14px;color:#cbd5e1;font-style:italic;line-height:1.9;margin:0">&quot;'+(state.m4Bonus.blessing)+"&quot;</p></div>";
+      html += "</div>";
     }
     return html;
   }
@@ -516,12 +543,42 @@ function validate() {
   return Object.keys(e).length===0;
 }
 
+
+function promptM1Summary(strengths, p) {
+  const sAll = strengths.join(", ");
+  const pBase = p.split("-")[0];
+  const schema = '{"theme":"3-5 word poetic title for how this personality unifies these strengths","summary":"4-5 sentences on how the ' + pBase + ' personality creates a unified leadership style across all these strengths together — the combined effect not each one separately","teamRole":"2 sentences on the unified team role this combination creates"}';
+  return "Faith-based leadership conference. Matrix 1 Summary for " + p + " personality (" + pBase + ") with these 5 strengths: " + sAll + ". Describe how this personality type shapes and unifies all these strengths together as one leadership style. Return pure JSON only no markdown: " + schema;
+}
+
+function promptM2Summary(strengths, gifts) {
+  const sAll = strengths.join(", ");
+  const gAll = gifts.join(", ");
+  const schema = '{"theme":"3-5 word poetic title for how these gifts flow through these strengths","summary":"4-5 sentences on how these spiritual gifts activate and work through these natural strengths as a unified kingdom expression — the overall pattern not each pair","kingdomExpression":"2 sentences on the unique kingdom expression that emerges from this gifts and strengths combination"}';
+  return "Faith-based leadership conference. Matrix 2 Summary: spiritual gifts (" + gAll + ") flowing through strengths (" + sAll + ") as a unified expression. Describe the overall pattern. Return pure JSON only no markdown: " + schema;
+}
+
+function promptM3Summary(p, gifts) {
+  const pBase = p.split("-")[0];
+  const gAll = gifts.join(", ");
+  const schema = '{"theme":"3-5 word poetic title for how this personality channels these gifts","summary":"4-5 sentences on how the ' + pBase + ' personality uniquely channels these spiritual gifts together — the overall Spirit-empowered profile","empoweredIdentity":"2 sentences on who this person is when fully empowered by the Spirit through their personality"}';
+  return "Faith-based leadership conference. Matrix 3 Summary: how does " + p + " personality (" + pBase + ") channel these spiritual gifts together: " + gAll + ". Return pure JSON only no markdown: " + schema;
+}
+
+function promptM4Bonus(name, strengths, p, gifts) {
+  const top3S = strengths.slice(0, 3).join(", ");
+  const top3G = gifts.slice(0, 3).join(", ");
+  const pBase = p.split("-")[0];
+  const schema = '{"bonusTheme":"3-5 word poetic title for this streamlined synthesis","synthesis":"3-4 tight focused sentences distilling the essence of ' + name + ' at the intersection of top 3 strengths and top 3 gifts through their personality — revelatory not general","coreCall":"One powerful sentence: the single most important thing ' + name + ' is called to do","blessing":"2-3 sentence spoken blessing over ' + name + ' specific to this streamlined profile"}';
+  return "Faith-based leadership conference. Matrix 4 Bonus Streamlined Summary for " + name + ". Top 3 strengths: " + top3S + ". Personality: " + p + " (" + pBase + "). Top 3 gifts: " + top3G + ". Create a tight distilled synthesis. Return pure JSON only no markdown: " + schema;
+}
+
 async function generate() {
   if (!validate()) { render(); return; }
   const p = {name:state.name.trim(), personality:state.personality, strengths:[...state.strengths], gifts:state.gifts.filter(Boolean), id:Date.now()};
   state.participants.push(p);
   state.currentIdx = state.participants.length-1;
-  state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null;
+  state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null; state.m4Cards={}; state.m4Bonus=null;
   state.view="profile"; state.activeMatrix="m1";
 
   p.strengths.forEach(s=>{ state.m1Data[s]="loading"; });
@@ -553,11 +610,28 @@ async function generate() {
     render();
   }
 
+  // Matrix summaries
+  state.m1Summary = "loading";
+  state.m2Summary = "loading";
+  state.m3Summary = "loading";
+  render();
+  const r1s = await callAI(promptM1Summary(p.strengths,p.personality),"m1sum|"+p.strengths.join(",")+"|"+p.personality);
+  state.m1Summary = r1s||null; render();
+  const r2s = await callAI(promptM2Summary(p.strengths,p.gifts),"m2sum|"+p.strengths.join(",")+"|"+p.gifts.join(","));
+  state.m2Summary = r2s||null; render();
+  const r3s = await callAI(promptM3Summary(p.personality,p.gifts),"m3sum|"+p.personality+"|"+p.gifts.join(","));
+  state.m3Summary = r3s||null; render();
+
   // M4 master synthesis
   state.m4Cards = {};
   const m4res = await callAI(m4Prompt(p.name,p.strengths,p.personality,p.gifts), `m4|${p.strengths.join(",")}|${p.personality}|${p.gifts.join(",")}`);
   state.m4Data = m4res || {unifiedTheme:"Kingdom Servant Leader",description:`${p.name} carries a rare synthesis of natural talent, personality, and spiritual gift that positions them uniquely in God's kingdom design.`,kingdomRole:`A servant leader uniquely designed to advance God's kingdom.`,teamContribution:`Brings a combination of natural ability and Spirit-empowered gifting that elevates every team they serve.`,shadowSide:`The very strengths that make this combination powerful can become blind spots when not submitted to God's wisdom.`,scripture:`Ephesians 2:10 — "We are God's handiwork, created in Christ Jesus to do good works." Every dimension of how God wired ${p.name} is intentional.`,prayer:`${p.name}, you are God's masterpiece — wired with precision for purposes only you can fulfill. May your strengths serve His wisdom, your personality carry His grace, and your gifts flow with His power. Walk boldly in the fullness of who He made you to be.`};
   render();
+  // M4 Bonus streamlined summary
+  state.m4Bonus = "loading"; render();
+  const rbns = await callAI(promptM4Bonus(p.name,p.strengths,p.personality,p.gifts), "m4bonus|"+p.strengths.slice(0,3).join(",")+"|"+p.personality+"|"+p.gifts.slice(0,3).join(","));
+  state.m4Bonus = rbns || null; render();
+
   // M4 individual strength cards
   for (const s of p.strengths) {
     const res = await callAI(m4StrCard(p.name,s,p.personality,p.gifts), `m4c|${s}|${p.personality}|${p.gifts.join(",")}`);
@@ -575,9 +649,26 @@ function selectParticipant(idx) {
   p.strengths.forEach(s=>{ p.gifts.forEach(g=>{ state.m2Data[`${s}|${g}`]=aiCache[`m2|${s}|${g}`]||null; }); });
   p.gifts.forEach(g=>{ state.m3Data[g]=aiCache[`m3|${p.personality}|${g}`]||null; });
   state.m4Data=aiCache[`m4|${p.strengths.join(",")}|${p.personality}|${p.gifts.join(",")}`]||null;
+  state.m1Summary=aiCache["m1sum|"+p.strengths.join(",")+"|"+p.personality]||null;
+  state.m2Summary=aiCache["m2sum|"+p.strengths.join(",")+"|"+p.gifts.join(",")]||null;
+  state.m3Summary=aiCache["m3sum|"+p.personality+"|"+p.gifts.join(",")]||null;
+  state.m4Bonus=aiCache["m4bonus|"+p.strengths.slice(0,3).join(",")+"|"+p.personality+"|"+p.gifts.slice(0,3).join(",")]||null;
   state.m4Cards={};
   p.strengths.forEach(s=>{ state.m4Cards[s]=aiCache[`m4c|${s}|${p.personality}|${p.gifts.join(",")}`]||null; });
   render();
+}
+
+function showDebug(msg) {
+  let el = document.getElementById("debugBar");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "debugBar";
+    el.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:#7f1d1d;color:#fca5a5;font-size:11px;padding:8px 12px;font-family:monospace;z-index:9999;max-height:120px;overflow-y:auto;border-top:1px solid #991b1b;white-space:pre-wrap;cursor:pointer;";
+    el.title = "Click to dismiss";
+    el.onclick = function(){ this.remove(); };
+    document.body.appendChild(el);
+  }
+  el.textContent = "⚠ " + msg + " (click to dismiss)";
 }
 </script>
 
