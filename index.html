@@ -150,32 +150,98 @@ const aiCache = {};
 // ── AI ─────────────────────────────────────────────────────────────────────
 
 // ── STORAGE HELPERS ───────────────────────────────────────────────────────────
+// ── STORAGE — routes to Netlify function on live site, localStorage in dev ────
+async function fnCall(body) {
+  try {
+    const r = await fetch("/.netlify/functions/ai", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return await r.json();
+  } catch(e) { return null; }
+}
+
 async function storageGet(key) {
-  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
-  catch(e) { return null; }
+  // Use localStorage for Claude artifact environment
+  try {
+    if (!window.location.hostname.includes("netlify.app") && !window.location.hostname.includes("inheritance.vision")) {
+      const v = localStorage.getItem("kld_"+key);
+      return v ? JSON.parse(v) : null;
+    }
+  } catch(e) {}
+  return null; // handled by specific functions below on live site
 }
+
 async function storageSet(key, value) {
-  try { await window.storage.set(key, JSON.stringify(value)); return true; }
-  catch(e) { return false; }
+  try {
+    if (!window.location.hostname.includes("netlify.app") && !window.location.hostname.includes("inheritance.vision")) {
+      localStorage.setItem("kld_"+key, JSON.stringify(value));
+      return true;
+    }
+  } catch(e) {}
+  return true; // handled by specific functions below on live site
 }
-async function getApprovedEmails() { return await storageGet("approved_emails") || []; }
+// ── EMAIL MANAGEMENT — via Netlify function on live site ─────────────────────
+const IS_LIVE = window.location.hostname.includes("netlify.app") || window.location.hostname.includes("inheritance.vision");
+
+async function getApprovedEmails() {
+  if (IS_LIVE) {
+    const r = await fnCall({ action: "getEmails" });
+    return r ? r.emails : [];
+  }
+  try { return JSON.parse(localStorage.getItem("kld_approved_emails") || "[]"); } catch(e) { return []; }
+}
+
 async function isEmailApproved(email) {
   const e = email.toLowerCase().trim();
-  const approved = await getApprovedEmails();
-  return approved.map(x=>x.toLowerCase().trim()).includes(e);
+  if (IS_LIVE) {
+    const r = await fnCall({ action: "checkEmail", email: e });
+    return r ? r.approved : false;
+  }
+  const list = await getApprovedEmails();
+  return list.map(x=>x.toLowerCase().trim()).includes(e);
 }
+
 async function addApprovedEmails(text) {
+  const newOnes = text.split(",").flatMap(e=>e.split(";")).flatMap(e=>e.split("\n")).map(e=>e.trim().toLowerCase()).filter(e=>e.includes("@"));
+  if (IS_LIVE) {
+    const r = await fnCall({ action: "addEmails", emails: newOnes });
+    return r ? { added: r.added, total: r.total } : { added: 0, total: 0 };
+  }
   const current = await getApprovedEmails();
-  const newOnes = text.split(/[,\n;]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.includes("@"));
-  const merged = [...new Set([...current,...newOnes])];
-  await storageSet("approved_emails", merged);
-  return {added:newOnes.length, total:merged.length};
+  const merged = [...new Set([...current, ...newOnes])];
+  localStorage.setItem("kld_approved_emails", JSON.stringify(merged));
+  return { added: newOnes.length, total: merged.length };
 }
+
 async function removeEmail(email) {
+  const e = email.toLowerCase().trim();
+  if (IS_LIVE) {
+    const r = await fnCall({ action: "removeEmail", email: e });
+    return r ? r.emails : [];
+  }
   const current = await getApprovedEmails();
-  const updated = current.filter(e=>e!==email.toLowerCase().trim());
-  await storageSet("approved_emails", updated);
+  const updated = current.filter(x=>x!==e);
+  localStorage.setItem("kld_approved_emails", JSON.stringify(updated));
   return updated;
+}
+
+async function saveProfile(email, profileData) {
+  const record = { email: email.toLowerCase().trim(), savedAt: Date.now(), ...profileData };
+  if (IS_LIVE) {
+    await fnCall({ action: "saveProfile", email, profile: record });
+  } else {
+    localStorage.setItem("kld_profile_"+email.toLowerCase().trim(), JSON.stringify(record));
+  }
+  return record;
+}
+
+async function loadProfile(email) {
+  if (IS_LIVE) {
+    const r = await fnCall({ action: "loadProfile", email });
+    return r ? r.profile : null;
+  }
+  try { return JSON.parse(localStorage.getItem("kld_profile_"+email.toLowerCase().trim())); } catch(e) { return null; }
 }
 async function saveProfile(email, profileData) {
   const key = "profile|"+email.toLowerCase().trim();
@@ -422,7 +488,7 @@ function buildLanding() {
         <button id="btnGoLogin" style="background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:14px 48px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:0.05em;width:280px;">Begin Your Discovery ✦</button>
         <div style="font-size:12px;color:#8898a8;margin-top:4px;">Access by invitation only</div>
       </div>
-      <div style="margin-top:48px;font-size:11px;color:#4a5568;letter-spacing:0.08em;">
+      <div style="margin-top:48px;font-size:11px;color:#8898a8;letter-spacing:0.08em;">
         A cord of three strands is not quickly broken — Ecclesiastes 4:12
       </div>
     </div>
@@ -521,8 +587,8 @@ function buildAdmin() {
         <div style="font-size:13px;font-weight:600;color:#d4a520;margin-bottom:4px;">✦ Approved Participants</div>
         <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Paste email addresses below — one per line, or comma separated</div>
         <textarea id="adminEmailInput" rows="5" placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"
-          style="width:100%;padding:10px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px;">${state.adminEmailInput||''}</textarea>
-        <div style="display:flex;gap:10px;align-items:center;">
+          style="width:100%;padding:10px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px;"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <button id="btnAddEmails" style="background:#d4a520;color:#0a0f1a;border:none;border-radius:6px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;">Add to Approved List</button>
           <button id="btnLoadEmails" style="background:transparent;border:1px solid #2d3748;color:#94a3b8;border-radius:6px;padding:9px 16px;font-size:12px;cursor:pointer;">View Current List</button>
           ${state.adminMsg ? `<span style="font-size:12px;color:#68d391;">${state.adminMsg}</span>` : ''}
