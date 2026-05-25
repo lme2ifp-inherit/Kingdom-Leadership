@@ -28,6 +28,54 @@ option{color:#e2e8f0;background:#1a2035}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 .spinner{display:inline-block;animation:spin 1s linear infinite}
 .err{font-size:11px;color:#fc8181;margin-top:2px}
+.entry-bg{
+  position:relative;
+  min-height:100vh;
+  background:url('./bg.jpg') center center / cover no-repeat;
+  display:flex;
+  flex-direction:column;
+}
+.entry-bg::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(8,14,24,0.55) 0%,
+    rgba(8,14,24,0.45) 40%,
+    rgba(5,10,18,0.72) 75%,
+    rgba(5,10,18,0.88) 100%
+  );
+  pointer-events:none;
+  z-index:0;
+}
+.entry-bg > * { position:relative; z-index:1; }
+.entry-card{
+  background:rgba(15,17,23,0.72);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(184,134,11,0.2);
+  border-radius:14px;
+  padding:24px 28px;
+}
+.mountain-label{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  opacity:0.85;
+  text-shadow:0 1px 8px rgba(0,0,0,0.8);
+}
+.lake-label{
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.08em;
+  color:#d4a520;
+  opacity:0.9;
+  text-shadow:0 1px 12px rgba(0,0,0,0.9);
+  text-align:center;
+  margin-bottom:6px;
+}
 </style>
 </head>
 <body>
