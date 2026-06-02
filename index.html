@@ -110,8 +110,8 @@ const DOMAIN_COLORS={Strategic:"#B8860B",Influencing:"#4A7C5E",Relationship:"#6B
 const DOMAIN_LABELS={Strategic:"Strategic Thinking",Influencing:"Influencing",Relationship:"Relationship Building",Executing:"Executing"};
 
 const MATRICES=[
-  {id:"m1",label:"Matrix 1",sub:"Core Traits",color:"#B8860B",desc:"CliftonStrengths × 16 Personalities"},
-  {id:"m2",label:"Matrix 2",sub:"Innate Qualities",color:"#4A7C5E",desc:"CliftonStrengths × Spiritual Gifts"},
+  {id:"m1",label:"Matrix 1",sub:"Core Traits",color:"#B8860B",desc:"Clifton Strengths × 16 Personalities"},
+  {id:"m2",label:"Matrix 2",sub:"Innate Qualities",color:"#4A7C5E",desc:"Clifton Strengths × Spiritual Gifts"},
   {id:"m3",label:"Matrix 3",sub:"Empowered Abilities",color:"#6B5B8A",desc:"16 Personalities × Spiritual Gifts"},
   {id:"m4",label:"Matrix 4",sub:"Unified Potential",color:"#A0522D",desc:"All Three Combined"},
 ];
@@ -243,18 +243,6 @@ async function loadProfile(email) {
   }
   try { return JSON.parse(localStorage.getItem("kld_profile_"+email.toLowerCase().trim())); } catch(e) { return null; }
 }
-async function saveProfile(email, profileData) {
-  const key = "profile|"+email.toLowerCase().trim();
-  const record = {email:email.toLowerCase().trim(), savedAt:Date.now(), ...profileData};
-  await storageSet(key, record);
-  await storageSet("participant|"+email.toLowerCase().trim(), {
-    email:email.toLowerCase().trim(), name:profileData.name,
-    personality:profileData.personality, strengths:profileData.strengths,
-    gifts:profileData.gifts, savedAt:Date.now()
-  });
-  return record;
-}
-async function loadProfile(email) { return await storageGet("profile|"+email.toLowerCase().trim()); }
 function profileAgeMonths(savedAt) { return (Date.now()-savedAt)/(1000*60*60*24*30.44); }
 function profileNeedsRefresh(savedAt) { return profileAgeMonths(savedAt)>=REGEN_MONTHS; }
 
@@ -362,12 +350,12 @@ function m1Prompt(s, p) {
   const pBase = p.split("-")[0];
   const v = p.includes("-A") ? "Assertive" : "Turbulent";
   const schema = '{"theme":"3-5 word poetic leadership title","description":"3-4 vivid sentences on how this strength and personality interact and what this person does differently because of this exact combination","gift":"One sentence on the unique gift this combination brings to a team","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
-  return "Faith-based leadership conference. Matrix 1 Core Traits combining CliftonStrengths and 16 Personalities. This combination is " + s + " strength with " + p + " personality (" + pBase + " " + v + " variant). Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
+  return "Faith-based leadership conference. Matrix 1 Core Traits combining Clifton Strengths and 16 Personalities. This combination is " + s + " strength with " + p + " personality (" + pBase + " " + v + " variant). Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m2Prompt(s, g) {
   const schema = '{"theme":"3-5 word poetic title for this talent and gift combination","description":"3-4 vivid sentences on how this natural talent and spiritual gift work together in kingdom ministry","gift":"One sentence on the unique contribution this combination makes to the body of Christ","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
-  return "Faith-based leadership conference. Matrix 2 Innate Qualities combining CliftonStrengths and Spiritual Gifts. This combination is " + s + " CliftonStrength with " + g + " Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
+  return "Faith-based leadership conference. Matrix 2 Innate Qualities combining Clifton Strengths and Spiritual Gifts. This combination is " + s + " CliftonStrength with " + g + " Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m3Prompt(p, g) {
@@ -400,27 +388,90 @@ function shareText() {
   const {name,personality,strengths,gifts} = p;
   const pBase = personality.split("-")[0];
   let t = `✦ Kingdom Leadership Profile — ${name}\n${personality} (${PTITLES[pBase]||""}) | Gifts: ${gifts.join(", ")}\n\n`;
-  t += `═══ MATRIX 1: CORE TRAITS ═══\nCliftonStrengths × 16 Personalities\n\n`;
+
+  t += `═══ MATRIX 1: CORE TRAITS ═══\nClifton Strengths × 16 Personalities\n\n`;
+  if (state.m1Summary && state.m1Summary !== "loading") {
+    if (state.m1Summary.theme) t += `${state.m1Summary.theme}\n`;
+    if (state.m1Summary.summary) t += `${state.m1Summary.summary}\n`;
+    if (state.m1Summary.teamRole) t += `Team Role: ${state.m1Summary.teamRole}\n`;
+    t += "\n";
+  }
   strengths.forEach((s,i) => {
     const theme = M1[`${s}|${personality}`]||s;
     const d = state.m1Data[s];
     t += `${i+1}. ${s} · ${theme}\n`;
-    if (d&&d.description) t += `   ${d.description}\n`;
+    if (d && d !== "loading") {
+      if (d.description) t += `${d.description}\n`;
+      if (d.gift) t += `Gift to Team: ${d.gift}\n`;
+      if (d.prayer) t += `Prayer: ${d.prayer}\n`;
+    }
     t += "\n";
   });
-  t += `═══ MATRIX 2: INNATE QUALITIES ═══\nCliftonStrengths × Spiritual Gifts\n\n`;
-  strengths.forEach(s => gifts.forEach(g => {
-    t += `${s} × ${g}: ${M2[`${s}|${g}`]||s+" × "+g}\n`;
-  }));
-  t += `\n═══ MATRIX 3: EMPOWERED ABILITIES ═══\n16 Personalities × Spiritual Gifts\n\n`;
-  gifts.forEach(g => { t += `${personality} × ${g}: ${M3[`${personality}|${g}`]||personality+" × "+g}\n`; });
-  if (state.m4Data) {
-    t += `\n═══ MATRIX 4: UNIFIED POTENTIAL ═══\n${state.m4Data.unifiedTheme||""}\n`;
-    if (state.m4Data.description) t += `${state.m4Data.description}\n`;
-    if (state.m4Data.kingdomRole) t += `\nKingdom Role: ${state.m4Data.kingdomRole}\n`;
-    if (state.m4Data.prayer) t += `\nPrayer: ${state.m4Data.prayer}\n`;
+
+  t += `═══ MATRIX 2: INNATE QUALITIES ═══\nClifton Strengths × Spiritual Gifts\n\n`;
+  if (state.m2Summary && state.m2Summary !== "loading") {
+    if (state.m2Summary.theme) t += `${state.m2Summary.theme}\n`;
+    if (state.m2Summary.summary) t += `${state.m2Summary.summary}\n`;
+    if (state.m2Summary.kingdomExpression) t += `Kingdom Expression: ${state.m2Summary.kingdomExpression}\n`;
+    t += "\n";
   }
-  t += `\n— Kingdom Leadership Conference`;
+  strengths.forEach(s => gifts.forEach(g => {
+    const theme = M2[`${s}|${g}`]||s+" × "+g;
+    const d = state.m2Data[`${s}|${g}`];
+    t += `${s} × ${g}: ${theme}\n`;
+    if (d && d !== "loading") {
+      if (d.description) t += `${d.description}\n`;
+      if (d.gift) t += `Gift to Team: ${d.gift}\n`;
+      if (d.prayer) t += `Prayer: ${d.prayer}\n`;
+    }
+    t += "\n";
+  }));
+
+  t += `═══ MATRIX 3: EMPOWERED ABILITIES ═══\n16 Personalities × Spiritual Gifts\n\n`;
+  if (state.m3Summary && state.m3Summary !== "loading") {
+    if (state.m3Summary.theme) t += `${state.m3Summary.theme}\n`;
+    if (state.m3Summary.summary) t += `${state.m3Summary.summary}\n`;
+    if (state.m3Summary.empoweredIdentity) t += `Empowered Identity: ${state.m3Summary.empoweredIdentity}\n`;
+    t += "\n";
+  }
+  gifts.forEach(g => {
+    const theme = M3[`${personality}|${g}`]||personality+" × "+g;
+    const d = state.m3Data[g];
+    t += `${personality} × ${g}: ${theme}\n`;
+    if (d && d !== "loading") {
+      if (d.description) t += `${d.description}\n`;
+      if (d.gift) t += `Gift to Team: ${d.gift}\n`;
+      if (d.prayer) t += `Prayer: ${d.prayer}\n`;
+    }
+    t += "\n";
+  });
+
+  if (state.m4Data) {
+    t += `═══ MATRIX 4: UNIFIED POTENTIAL ═══\n${state.m4Data.unifiedTheme||""}\n\n`;
+    if (state.m4Data.description) t += `${state.m4Data.description}\n\n`;
+    if (state.m4Data.kingdomRole) t += `Kingdom Role: ${state.m4Data.kingdomRole}\n\n`;
+    if (state.m4Data.teamContribution) t += `Team Contribution: ${state.m4Data.teamContribution}\n\n`;
+    if (state.m4Data.shadowSide) t += `Shadow Side & Growth Edge: ${state.m4Data.shadowSide}\n\n`;
+    if (state.m4Data.scripture) t += `Scripture: ${state.m4Data.scripture}\n\n`;
+    if (state.m4Data.prayer) t += `Prayer of Commissioning: ${state.m4Data.prayer}\n\n`;
+    strengths.forEach(s => {
+      const card = state.m4Cards[s];
+      if (card && card !== "loading") {
+        t += `— ${s}: ${card.cardTheme||s}\n`;
+        if (card.description) t += `${card.description}\n`;
+        if (card.scripture) t += `Scripture: ${card.scripture}\n`;
+        if (card.prayer) t += `Prayer: ${card.prayer}\n`;
+        t += "\n";
+      }
+    });
+  }
+  if (state.m4Bonus && state.m4Bonus !== "loading") {
+    t += `═══ STREAMLINED SYNTHESIS ═══\n${state.m4Bonus.bonusTheme||""}\n\n`;
+    if (state.m4Bonus.synthesis) t += `${state.m4Bonus.synthesis}\n\n`;
+    if (state.m4Bonus.coreCall) t += `Core Call: ${state.m4Bonus.coreCall}\n\n`;
+    if (state.m4Bonus.blessing) t += `Spoken Blessing: "${state.m4Bonus.blessing}"\n\n`;
+  }
+  t += `— Kingdom Leadership Conference`;
   return t;
 }
 
@@ -662,7 +713,7 @@ function buildEntry() {
       </select>
       ${e.personality?`<div class="err" style="margin-bottom:8px">${e.personality}</div>`:""}
 
-      <label style="font-size:11px;font-weight:500;color:#94a3b8;display:block;margin-bottom:4px">Top 5 CliftonStrengths <span style="font-weight:400;color:#4a5568">(in order)</span></label>
+      <label style="font-size:11px;font-weight:500;color:#94a3b8;display:block;margin-bottom:4px">Top 5 Clifton Strengths <span style="font-weight:400;color:#4a5568">(in order)</span></label>
       ${e.sdup?`<div class="err" style="margin-bottom:4px">${e.sdup}</div>`:""}
       ${state.strengths.map((s,i)=>{
         const used = state.strengths.filter((_,j)=>j!==i&&state.strengths[j]);
@@ -695,7 +746,9 @@ function buildEntry() {
 
       <button class="btn btn-primary" id="btnGenerate" style="width:100%;padding:9px;font-size:13px;margin-top:6px">Generate All 4 Matrices ✦</button>
     </div>
-    <div style="font-size:26px;font-weight:500;letter-spacing:0.1em;color:#d4a520;text-align:center;margin-top:18px;text-shadow:0 2px 14px rgba(0,0,0,0.95);text-transform:uppercase;">✦ Lake of God's Unified Potential ✦</div>
+  </div>
+  <div style="width:100%;text-align:center;position:absolute;bottom:5%;left:0;right:0;pointer-events:none;">
+    <div style="font-size:clamp(16px,3vw,26px);font-weight:500;letter-spacing:0.1em;color:#d4a520;text-shadow:0 2px 14px rgba(0,0,0,0.95);text-transform:uppercase;">✦ Lake of God's Unified Potential ✦</div>
   </div></div></div>`;
 }
 
@@ -724,6 +777,7 @@ function buildProfile(p) {
       <button class="btn" id="btnEmail" style="font-size:11px;padding:3px 9px">✉ Email</button>
       <button class="btn" id="btnSMS" style="font-size:11px;padding:3px 9px">💬 Text</button>
       <button class="btn" id="btnCopy" style="font-size:11px;padding:3px 9px">⎘ Copy</button>
+      <button class="btn" id="btnPDF" style="font-size:11px;padding:3px 9px">⬇ PDF</button>
       ${state.shareMsg?`<span style="font-size:11px;color:#68d391;font-weight:500">${state.shareMsg}</span>`:""}
     </div>
   </div>
@@ -813,7 +867,7 @@ function summaryCard(data, color, label) {
 
 function buildMatrixContent(p) {
   if (state.activeMatrix==="m1") {
-    return `<div style="font-size:9px;color:#B8860B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 1 · Core Traits · CliftonStrengths × 16 Personalities</div>
+    return `<div style="font-size:9px;color:#B8860B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 1 · Core Traits · Clifton Strengths × 16 Personalities</div>
     ${summaryCard(state.m1Summary,"#B8860B","Core Traits")}
     ${p.strengths.map(s=>{
       const str=strByName(s);const col=str?dc(str.d):"#B8860B";
@@ -823,7 +877,7 @@ function buildMatrixContent(p) {
     }).join("")}`;
   }
   if (state.activeMatrix==="m2") {
-    return `<div style="font-size:9px;color:#4A7C5E;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 2 · Innate Qualities · CliftonStrengths × Spiritual Gifts</div>
+    return `<div style="font-size:9px;color:#4A7C5E;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:600">Matrix 2 · Innate Qualities · Clifton Strengths × Spiritual Gifts</div>
     ${summaryCard(state.m2Summary,"#4A7C5E","Innate Qualities")}
     ${p.strengths.map(s=>`
       <div style="margin-bottom:14px">
@@ -1010,7 +1064,10 @@ function attachHandlers() {
   });
 
   document.getElementById("btnEmail")?.addEventListener("click", () => {
-    const t=shareText(); window.open(`mailto:?subject=${encodeURIComponent("Kingdom Leadership Profile — "+state.participants[state.currentIdx].name)}&body=${encodeURIComponent(t)}`);
+    const t=shareText().slice(0,1800);
+    const subject=encodeURIComponent("Kingdom Leadership Profile — "+state.participants[state.currentIdx].name);
+    const body=encodeURIComponent(t);
+    window.location.href=`mailto:?subject=${subject}&body=${body}`;
     state.shareMsg="Email opened!"; render(); setTimeout(()=>{state.shareMsg="";render();},3000);
   });
   document.getElementById("btnSMS")?.addEventListener("click", () => {
@@ -1021,7 +1078,170 @@ function attachHandlers() {
     navigator.clipboard.writeText(shareText());
     state.shareMsg="Copied!"; render(); setTimeout(()=>{state.shareMsg="";render();},3000);
   });
+  document.getElementById("btnPDF")?.addEventListener("click", () => { generatePDF(); });
 }
+
+
+function generatePDF() {
+  const p = state.participants[state.currentIdx];
+  if (!p) return;
+  const pBase = p.personality.split("-")[0];
+  const C = { m1:"#B8860B", m2:"#4A7C5E", m3:"#6B5B8A", m4:"#A0522D" };
+
+  function section(label, text, color) {
+    if (!text) return "";
+    return `<div style="background:#f8f6f0;border-left:4px solid ${color};border-radius:6px;padding:12px 16px;margin-bottom:10px;page-break-inside:avoid;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${color};margin-bottom:6px;">${label}</div>
+      <p style="font-size:12px;line-height:1.75;color:#2d3748;margin:0;font-style:italic;">${text}</p>
+    </div>`;
+  }
+
+  function matrixCard(label, theme, desc, gift, prayer, color) {
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-left:3px solid ${color};border-radius:8px;padding:14px 16px;margin-bottom:10px;page-break-inside:avoid;">
+      <div style="font-size:9px;color:#718096;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;">${label}</div>
+      <div style="font-size:16px;font-weight:600;color:#1a202c;margin-bottom:8px;font-family:Georgia,serif;">${theme}</div>
+      ${desc ? `<p style="font-size:12px;line-height:1.75;color:#4a5568;margin-bottom:8px;">${desc}</p>` : ""}
+      ${gift ? `<div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:8px 12px;margin-bottom:8px;"><div style="font-size:9px;color:#718096;text-transform:uppercase;margin-bottom:3px;">Gift to the Team</div><p style="font-size:12px;color:#4a5568;font-style:italic;margin:0;">${gift}</p></div>` : ""}
+      ${prayer ? `<div style="background:${color}11;border:1px solid ${color}33;border-radius:4px;padding:8px 12px;"><div style="font-size:9px;color:${color};text-transform:uppercase;margin-bottom:3px;">Prayer</div><p style="font-size:12px;color:#4a5568;font-style:italic;margin:0;">"${prayer}"</p></div>` : ""}
+    </div>`;
+  }
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Kingdom Leadership Profile — ${p.name}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,sans-serif;background:#fff;color:#1a202c;padding:32px;max-width:760px;margin:0 auto;}
+    @media print{body{padding:16px;}@page{margin:16mm 14mm;}}
+    h1{font-size:28px;font-weight:700;color:#1a202c;margin-bottom:4px;}
+    h2{font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#B8860B;margin:28px 0 12px;border-bottom:2px solid #B8860B;padding-bottom:6px;}
+    h2.m2{color:#4A7C5E;border-color:#4A7C5E;}
+    h2.m3{color:#6B5B8A;border-color:#6B5B8A;}
+    h2.m4{color:#A0522D;border-color:#A0522D;}
+    .badge{display:inline-block;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:500;margin:2px;}
+  </style></head><body>
+
+  <!-- Header -->
+  <div style="border-bottom:3px solid #B8860B;padding-bottom:20px;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B8860B;margin-bottom:8px;">Kingdom Leadership Discovery · Leadership ID</div>
+    <h1>${p.name}</h1>
+    <div style="font-size:13px;color:#718096;margin-top:4px;font-family:monospace;">${p.personality} — ${PTITLES[pBase]||""}</div>
+    <div style="margin-top:10px;">
+      ${p.strengths.map(s=>{const str=strByName(s);const col=str?dc(str.d):"#B8860B";return`<span class="badge" style="background:${col}22;color:${col};border:1px solid ${col}44;">${s}</span>`;}).join("")}
+      ${p.gifts.map(g=>`<span class="badge" style="background:#6B5B8A22;color:#6B5B8A;border:1px solid #6B5B8A44;">✦ ${g}</span>`).join("")}
+    </div>
+  </div>`;
+
+  // M1
+  html += `<h2>Matrix 1 — Core Traits · Clifton Strengths × 16 Personalities</h2>`;
+  if (state.m1Summary && state.m1Summary !== "loading") {
+    html += `<div style="background:#fffbf0;border:1px solid #B8860B44;border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:18px;font-weight:600;color:#1a202c;font-family:Georgia,serif;margin-bottom:6px;">${state.m1Summary.theme||""}</div>
+      <p style="font-size:13px;line-height:1.8;color:#4a5568;">${state.m1Summary.summary||""}</p>
+      ${state.m1Summary.teamRole ? `<p style="font-size:12px;color:#718096;font-style:italic;margin-top:8px;">Team Role: ${state.m1Summary.teamRole}</p>` : ""}
+    </div>`;
+  }
+  p.strengths.forEach(s => {
+    const theme = M1[`${s}|${p.personality}`]||s;
+    const d = state.m1Data[s];
+    const str = strByName(s);
+    const col = str ? dc(str.d) : C.m1;
+    html += matrixCard(`${s} × ${p.personality}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.prayer:"", col);
+  });
+
+  // M2
+  html += `<h2 class="m2">Matrix 2 — Innate Qualities · Clifton Strengths × Spiritual Gifts</h2>`;
+  if (state.m2Summary && state.m2Summary !== "loading") {
+    html += `<div style="background:#f0fff8;border:1px solid #4A7C5E44;border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:18px;font-weight:600;color:#1a202c;font-family:Georgia,serif;margin-bottom:6px;">${state.m2Summary.theme||""}</div>
+      <p style="font-size:13px;line-height:1.8;color:#4a5568;">${state.m2Summary.summary||""}</p>
+      ${state.m2Summary.kingdomExpression ? `<p style="font-size:12px;color:#718096;font-style:italic;margin-top:8px;">Kingdom Expression: ${state.m2Summary.kingdomExpression}</p>` : ""}
+    </div>`;
+  }
+  p.strengths.forEach(s => {
+    p.gifts.forEach(g => {
+      const theme = M2[`${s}|${g}`]||s+" × "+g;
+      const d = state.m2Data[`${s}|${g}`];
+      html += matrixCard(`${s} × ${g}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.prayer:"", C.m2);
+    });
+  });
+
+  // M3
+  html += `<h2 class="m3">Matrix 3 — Empowered Abilities · 16 Personalities × Spiritual Gifts</h2>`;
+  if (state.m3Summary && state.m3Summary !== "loading") {
+    html += `<div style="background:#f5f0ff;border:1px solid #6B5B8A44;border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:18px;font-weight:600;color:#1a202c;font-family:Georgia,serif;margin-bottom:6px;">${state.m3Summary.theme||""}</div>
+      <p style="font-size:13px;line-height:1.8;color:#4a5568;">${state.m3Summary.summary||""}</p>
+      ${state.m3Summary.empoweredIdentity ? `<p style="font-size:12px;color:#718096;font-style:italic;margin-top:8px;">Empowered Identity: ${state.m3Summary.empoweredIdentity}</p>` : ""}
+    </div>`;
+  }
+  p.gifts.forEach(g => {
+    const theme = M3[`${p.personality}|${g}`]||p.personality+" × "+g;
+    const d = state.m3Data[g];
+    html += matrixCard(`${p.personality} × ${g}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.prayer:"", C.m3);
+  });
+
+  // M4
+  if (state.m4Data) {
+    const d = state.m4Data;
+    html += `<h2 class="m4">Matrix 4 — Unified Potential · All Three Combined</h2>`;
+    html += `<div style="background:#fff8f5;border:2px solid #A0522D44;border-radius:10px;padding:18px 20px;margin-bottom:14px;page-break-inside:avoid;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#A0522D;margin-bottom:6px;">✦ Master Synthesis</div>
+      <div style="font-size:22px;font-weight:600;color:#1a202c;font-family:Georgia,serif;margin-bottom:4px;">${d.unifiedTheme||""}</div>
+      <div style="font-size:10px;color:#a0aec0;margin-bottom:12px;">${p.strengths.join(" · ")} · ${p.personality} · ${p.gifts.join(" · ")}</div>
+      <p style="font-size:13px;line-height:1.85;color:#4a5568;margin-bottom:12px;">${d.description||""}</p>
+      ${section("Kingdom Role", d.kingdomRole, "#A0522D")}
+      ${section("Team Contribution", d.teamContribution, "#A0522D")}
+      ${section("Shadow Side & Growth Edge", d.shadowSide, "#7f1d1d")}
+      <div style="background:#f0fff8;border:1px solid #2d5a4544;border-radius:6px;padding:12px 14px;margin-bottom:10px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#2d5a45;margin-bottom:5px;">✦ Scripture Anchor</div>
+        <p style="font-size:12px;color:#2d6a4f;font-style:italic;line-height:1.7;margin:0;">${d.scripture||""}</p>
+      </div>
+      <div style="background:#A0522D11;border:1px solid #A0522D44;border-radius:6px;padding:12px 14px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#A0522D;margin-bottom:5px;">✦ Prayer of Commissioning</div>
+        <p style="font-size:13px;color:#4a5568;font-style:italic;line-height:1.9;margin:0;">"${d.prayer||""}"</p>
+      </div>
+    </div>`;
+
+    // M4 strength cards
+    if (Object.keys(state.m4Cards).length > 0) {
+      html += `<div style="font-size:9px;color:#718096;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;font-weight:600;">Individual Strength Synthesis</div>`;
+      p.strengths.forEach(s => {
+        const card = state.m4Cards[s];
+        if (card && card !== "loading") {
+          const str = strByName(s);
+          const col = str ? dc(str.d) : C.m4;
+          html += matrixCard(`${s} × ${p.personality} × ${p.gifts.join(", ")}`, card.cardTheme||s, card.description, "", card.prayer, col);
+          if (card.scripture) html += `<div style="background:#f0fff8;border:1px solid #2d5a4544;border-radius:4px;padding:8px 12px;margin-top:-6px;margin-bottom:10px;"><div style="font-size:9px;color:#2d5a45;text-transform:uppercase;margin-bottom:3px;">Scripture</div><p style="font-size:12px;color:#2d6a4f;font-style:italic;margin:0;">${card.scripture}</p></div>`;
+        }
+      });
+    }
+
+    // Streamlined Synthesis
+    if (state.m4Bonus && state.m4Bonus !== "loading") {
+      const b = state.m4Bonus;
+      html += `<div style="background:#fff8f5;border:2px solid #A0522D;border-radius:10px;padding:18px 20px;margin-top:16px;page-break-inside:avoid;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#A0522D;margin-bottom:6px;">✦ Streamlined Synthesis · Pastor's Lens</div>
+        <div style="font-size:9px;color:#a0aec0;margin-bottom:10px;">Top 3 Strengths · Personality · Top 3 Gifts</div>
+        <div style="font-size:20px;font-weight:600;color:#1a202c;font-family:Georgia,serif;margin-bottom:10px;">${b.bonusTheme||""}</div>
+        <p style="font-size:13px;line-height:1.85;color:#4a5568;margin-bottom:12px;">${b.synthesis||""}</p>
+        ${b.coreCall ? `<div style="background:#A0522D22;border:1px solid #A0522D55;border-radius:6px;padding:10px 14px;margin-bottom:10px;"><div style="font-size:9px;font-weight:700;color:#A0522D;text-transform:uppercase;margin-bottom:4px;">✦ Core Call</div><p style="font-size:14px;color:#1a202c;font-weight:600;line-height:1.6;margin:0;">${b.coreCall}</p></div>` : ""}
+        ${b.blessing ? `<div style="background:#A0522D11;border:1px solid #A0522D33;border-radius:6px;padding:12px 14px;"><div style="font-size:9px;font-weight:700;color:#A0522D;text-transform:uppercase;margin-bottom:5px;">✦ Spoken Blessing</div><p style="font-size:14px;color:#4a5568;font-style:italic;line-height:1.9;margin:0;">"${b.blessing}"</p></div>` : ""}
+      </div>`;
+    }
+  }
+
+  html += `<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#a0aec0;letter-spacing:0.08em;">Kingdom Leadership Discovery · Leadership ID · A cord of three strands is not quickly broken — Ecclesiastes 4:12</div>`;
+  html += `</body></html>`;
+
+  const w = window.open("", "_blank");
+  if (!w) { state.shareMsg="Allow popups to export PDF"; render(); setTimeout(()=>{state.shareMsg="";render();},4000); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 500);
+  state.shareMsg="PDF ready — use Print → Save as PDF"; render();
+  setTimeout(()=>{state.shareMsg="";render();},5000);
+}
+
 
 function validate() {
   const e={};

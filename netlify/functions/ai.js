@@ -1,63 +1,23 @@
 const https = require("https");
+const { getStore } = require("@netlify/blobs");
 
-// ── NETLIFY BLOBS HELPER ──────────────────────────────────────────────────────
+// ── NETLIFY BLOBS HELPER (native SDK — auto-authenticates, no token needed) ──
+function getBlobs() {
+  return getStore({ name: "kingdom-leadership", consistency: "strong" });
+}
+
 async function blobGet(key) {
   try {
-    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
-    const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.TOKEN;
-    if (!siteId || !token) return null;
-    
-    const result = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: "api.netlify.com",
-        path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        }
-      };
-      const req = https.request(options, (res) => {
-        let data = "";
-        res.on("data", chunk => { data += chunk; });
-        res.on("end", () => {
-          if (res.statusCode === 200) resolve(JSON.parse(data));
-          else resolve(null);
-        });
-      });
-      req.on("error", () => resolve(null));
-      req.end();
-    });
-    return result;
+    const store = getBlobs();
+    const result = await store.get(key, { type: "json" });
+    return result || null;
   } catch(e) { return null; }
 }
 
 async function blobSet(key, value) {
   try {
-    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
-    const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.TOKEN;
-    if (!siteId || !token) return false;
-    
-    const payload = JSON.stringify(value);
-    await new Promise((resolve, reject) => {
-      const options = {
-        hostname: "api.netlify.com",
-        path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(payload)
-        }
-      };
-      const req = https.request(options, (res) => {
-        let data = "";
-        res.on("data", chunk => { data += chunk; });
-        res.on("end", () => resolve(res.statusCode));
-      });
-      req.on("error", () => resolve(null));
-      req.write(payload);
-      req.end();
-    });
+    const store = getBlobs();
+    await store.setJSON(key, value);
     return true;
   } catch(e) { return false; }
 }
@@ -147,6 +107,7 @@ exports.handler = async function(event, context) {
     const payload = JSON.stringify({
       model: body.model || "claude-sonnet-4-5",
       max_tokens: body.max_tokens || 1500,
+      system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
       messages: body.messages
     });
 
