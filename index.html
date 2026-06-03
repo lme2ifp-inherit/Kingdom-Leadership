@@ -747,8 +747,8 @@ function buildEntry() {
       <button class="btn btn-primary" id="btnGenerate" style="width:100%;padding:9px;font-size:13px;margin-top:6px">Generate All 4 Matrices ✦</button>
     </div>
   </div>
-  <div style="width:100%;text-align:center;position:absolute;bottom:5%;left:0;right:0;pointer-events:none;">
-    <div style="font-size:clamp(16px,3vw,26px);font-weight:500;letter-spacing:0.1em;color:#d4a520;text-shadow:0 2px 14px rgba(0,0,0,0.95);text-transform:uppercase;">✦ Lake of God's Unified Potential ✦</div>
+  <div style="width:100%;text-align:center;position:fixed;bottom:4%;left:0;right:0;pointer-events:none;z-index:10;">
+    <div style="font-size:clamp(14px,2.5vw,22px);font-weight:500;letter-spacing:0.1em;color:#d4a520;text-shadow:0 2px 14px rgba(0,0,0,0.95);text-transform:uppercase;">✦ Lake of God's Unified Potential ✦</div>
   </div></div></div>`;
 }
 
@@ -1359,6 +1359,7 @@ async function generate() {
       personality: p.personality,
       strengths: p.strengths,
       gifts: p.gifts,
+      savedAt: Date.now(),
       aiData: {
         m1Data: state.m1Data,
         m2Data: state.m2Data,
