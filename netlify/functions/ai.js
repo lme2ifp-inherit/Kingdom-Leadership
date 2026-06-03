@@ -1,29 +1,69 @@
 const https = require("https");
 
+// ── NETLIFY BLOBS HELPER (token-based — proven reliable) ─────────────────────
+async function blobGet(key) {
+  try {
+    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const token = process.env.NETLIFY_BLOBS_TOKEN;
+    if (!siteId || !token) return null;
+
+    const result = await new Promise((resolve) => {
+      const options = {
+        hostname: "api.netlify.com",
+        path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` }
+      };
+      const req = https.request(options, (res) => {
+        let data = "";
+        res.on("data", chunk => { data += chunk; });
+        res.on("end", () => {
+          if (res.statusCode === 200) resolve(JSON.parse(data));
+          else resolve(null);
+        });
+      });
+      req.on("error", () => resolve(null));
+      req.end();
+    });
+    return result;
+  } catch(e) { return null; }
+}
+
+async function blobSet(key, value) {
+  try {
+    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const token = process.env.NETLIFY_BLOBS_TOKEN;
+    if (!siteId || !token) return false;
+
+    const payload = JSON.stringify(value);
+    await new Promise((resolve) => {
+      const options = {
+        hostname: "api.netlify.com",
+        path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload)
+        }
+      };
+      const req = https.request(options, (res) => {
+        let data = "";
+        res.on("data", chunk => { data += chunk; });
+        res.on("end", () => resolve(res.statusCode));
+      });
+      req.on("error", () => resolve(null));
+      req.write(payload);
+      req.end();
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 exports.handler = async function(event, context) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
-  }
-
-  // ── BLOBS: initialised inside handler so Netlify context is available ────────
-  const { getStore } = require("@netlify/blobs");
-
-  async function blobGet(key) {
-    try {
-      const store = getStore({ siteID: "8b2f683b-313c-4c7d-9972-5c3a1aec465d", consistency: "strong" });
-      const raw = await store.get(key);
-      if (raw === null || raw === undefined) return null;
-      return JSON.parse(raw);
-    } catch(e) { return null; }
-  }
-
-  async function blobSet(key, value) {
-    try {
-      const store = getStore({ siteID: "8b2f683b-313c-4c7d-9972-5c3a1aec465d", consistency: "strong" });
-      await store.setJSON(key, value);
-      return true;
-    } catch(e) { return false; }
   }
 
   const apiKey = process.env.ANTHROPIC_KEY;
