@@ -11,7 +11,7 @@ exports.handler = async function(event, context) {
 
   async function blobGet(key) {
     try {
-      const store = getStore({ name: "kingdom-leadership", siteID: "8b2f683b-313c-4c7d-9972-5c3a1aec465d", consistency: "strong" });
+      const store = getStore({ siteID: "8b2f683b-313c-4c7d-9972-5c3a1aec465d", consistency: "strong" });
       const raw = await store.get(key);
       if (raw === null || raw === undefined) return null;
       return JSON.parse(raw);
@@ -20,7 +20,7 @@ exports.handler = async function(event, context) {
 
   async function blobSet(key, value) {
     try {
-      const store = getStore({ name: "kingdom-leadership", siteID: "8b2f683b-313c-4c7d-9972-5c3a1aec465d", consistency: "strong" });
+      const store = getStore({ siteID: "8b2f683b-313c-4c7d-9972-5c3a1aec465d", consistency: "strong" });
       await store.setJSON(key, value);
       return true;
     } catch(e) { return false; }
