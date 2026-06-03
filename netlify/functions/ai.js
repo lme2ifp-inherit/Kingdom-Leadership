@@ -12,8 +12,9 @@ exports.handler = async function(event, context) {
   async function blobGet(key) {
     try {
       const store = getStore({ name: "kingdom-leadership", consistency: "strong" });
-      const result = await store.get(key, { type: "json" });
-      return result !== null ? result : null;
+      const raw = await store.get(key);
+      if (raw === null || raw === undefined) return null;
+      return JSON.parse(raw);
     } catch(e) { return null; }
   }
 
