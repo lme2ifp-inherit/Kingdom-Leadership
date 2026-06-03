@@ -1,0 +1,8 @@
+{
+  "name": "kingdom-leadership",
+  "version": "1.0.0",
+  "description": "Kingdom Leadership Discovery — AI-powered leadership profiling for Life Church",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
