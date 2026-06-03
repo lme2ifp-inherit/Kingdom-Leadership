@@ -1,31 +1,28 @@
 const https = require("https");
-const { getStore } = require("@netlify/blobs");
-
-// ── NETLIFY BLOBS HELPER (native SDK — auto-authenticates, no token needed) ──
-function getBlobs() {
-  return getStore({ name: "kingdom-leadership", consistency: "strong" });
-}
-
-async function blobGet(key) {
-  try {
-    const store = getBlobs();
-    const result = await store.get(key, { type: "json" });
-    return result || null;
-  } catch(e) { return null; }
-}
-
-async function blobSet(key, value) {
-  try {
-    const store = getBlobs();
-    await store.setJSON(key, value);
-    return true;
-  } catch(e) { return false; }
-}
 
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 exports.handler = async function(event, context) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
+  }
+
+  // ── BLOBS: initialised inside handler so Netlify context is available ────────
+  const { getStore } = require("@netlify/blobs");
+
+  async function blobGet(key) {
+    try {
+      const store = getStore({ name: "kingdom-leadership", consistency: "strong" });
+      const result = await store.get(key, { type: "json" });
+      return result !== null ? result : null;
+    } catch(e) { return null; }
+  }
+
+  async function blobSet(key, value) {
+    try {
+      const store = getStore({ name: "kingdom-leadership", consistency: "strong" });
+      await store.setJSON(key, value);
+      return true;
+    } catch(e) { return false; }
   }
 
   const apiKey = process.env.ANTHROPIC_KEY;
