@@ -1,18 +1,20 @@
 const https = require("https");
 
-// ── NETLIFY BLOBS HELPER (token-based — proven reliable) ─────────────────────
+// ── NETLIFY BLOBS HELPER ──────────────────────────────────────────────────────
 async function blobGet(key) {
   try {
-    const siteId = "8b2f683b-313c-4c7d-9972-5c3a1aec465d";
-    const token = process.env.NETLIFY_BLOBS_TOKEN;
-    if (!token) return null;
-
-    const result = await new Promise((resolve) => {
+    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.TOKEN;
+    if (!siteId || !token) return null;
+    
+    const result = await new Promise((resolve, reject) => {
       const options = {
         hostname: "api.netlify.com",
         path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
         method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        }
       };
       const req = https.request(options, (res) => {
         let data = "";
@@ -31,12 +33,12 @@ async function blobGet(key) {
 
 async function blobSet(key, value) {
   try {
-    const siteId = "8b2f683b-313c-4c7d-9972-5c3a1aec465d";
-    const token = process.env.NETLIFY_BLOBS_TOKEN;
-    if (!token) return false;
-
+    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.TOKEN;
+    if (!siteId || !token) return false;
+    
     const payload = JSON.stringify(value);
-    await new Promise((resolve) => {
+    await new Promise((resolve, reject) => {
       const options = {
         hostname: "api.netlify.com",
         path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
