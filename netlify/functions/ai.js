@@ -3,9 +3,9 @@ const https = require("https");
 // ── NETLIFY BLOBS HELPER (token-based — proven reliable) ─────────────────────
 async function blobGet(key) {
   try {
-    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const siteId = "8b2f683b-313c-4c7d-9972-5c3a1aec465d";
     const token = process.env.NETLIFY_BLOBS_TOKEN;
-    if (!siteId || !token) return null;
+    if (!token) return null;
 
     const result = await new Promise((resolve) => {
       const options = {
@@ -31,9 +31,9 @@ async function blobGet(key) {
 
 async function blobSet(key, value) {
   try {
-    const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const siteId = "8b2f683b-313c-4c7d-9972-5c3a1aec465d";
     const token = process.env.NETLIFY_BLOBS_TOKEN;
-    if (!siteId || !token) return false;
+    if (!token) return false;
 
     const payload = JSON.stringify(value);
     await new Promise((resolve) => {
