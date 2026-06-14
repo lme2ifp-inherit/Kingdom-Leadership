@@ -307,8 +307,33 @@ function restoreProfileToState(profile) {
   }
 }
 
+async function getBlobCachedCard(cacheKey) {
+  try {
+    const r = await fnCall({ action: "getCachedCard", cacheKey });
+    return r && r.card ? r.card : null;
+  } catch(e) { return null; }
+}
+
+async function setBlobCachedCard(cacheKey, card) {
+  try {
+    await fnCall({ action: "setCachedCard", cacheKey, card });
+  } catch(e) {}
+}
+
 async function callAI(prompt, cacheKey) {
   if (aiCache[cacheKey]) return aiCache[cacheKey];
+
+  // Check persistent blob cache for M1/M2/M3 only
+  const isCacheable = cacheKey.startsWith("m1|") || cacheKey.startsWith("m2|") || cacheKey.startsWith("m3|");
+  if (isCacheable) {
+    const blobKey = "cache_" + cacheKey.replace(/\|/g, "|");
+    const cached = await getBlobCachedCard(blobKey);
+    if (cached) {
+      aiCache[cacheKey] = cached;
+      return cached;
+    }
+  }
+
   try {
     const r = await fetch("/.netlify/functions/ai", {
       method: "POST",
@@ -337,6 +362,13 @@ async function callAI(prompt, cacheKey) {
 
     const parsed = JSON.parse(text.slice(first, last + 1));
     aiCache[cacheKey] = parsed;
+
+    // Save to persistent blob cache for M1/M2/M3 only
+    if (isCacheable) {
+      const blobKey = "cache_" + cacheKey;
+      setBlobCachedCard(blobKey, parsed); // fire and forget
+    }
+
     return parsed;
 
   } catch(e) {
@@ -658,6 +690,30 @@ function buildAdmin() {
             style="flex:1;padding:9px 12px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;outline:none;"/>
           <button id="btnEnterForParticipant" style="background:#B8860B;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">Enter Data</button>
         </div>
+      </div>
+
+      <!-- Cache Management -->
+      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:#4A7C5E;margin-bottom:12px;">✦ Card Cache</div>
+        <div style="font-size:12px;color:#4a5568;margin-bottom:12px;">Persistent cache for M1/M2/M3 combination cards. Cached cards load instantly with no API call.</div>
+        <div id="cacheStats" style="font-size:12px;color:#68d391;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button id="btnLoadCacheStats" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">📊 View Stats</button>
+        </div>
+        <div style="font-size:11px;color:#4a5568;margin-bottom:8px;">Delete a cached card (forces regeneration next time that combination is generated):</div>
+        <div style="display:flex;gap:8px;">
+          <select id="cacheMatrixSelect" style="background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:7px 10px;font-size:12px;">
+            <option value="cache_m1|">M1 — Clifton Strengths × 16 Personalities</option>
+            <option value="cache_m2|">M2 — Clifton Strengths × Spiritual Gifts</option>
+            <option value="cache_m3|">M3 — 16 Personalities × Spiritual Gifts</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="cacheKeyInput" type="text" placeholder="e.g. Achiever|ENTJ-A"
+            style="flex:1;padding:7px 10px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:12px;outline:none;"/>
+          <button id="btnDeleteCacheEntry" style="background:#7f1d1d;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">Delete Entry</button>
+        </div>
+        <div id="cacheMsg" style="font-size:12px;margin-top:8px;"></div>
       </div>
 
       <!-- Stats -->
@@ -1041,6 +1097,45 @@ function attachHandlers() {
     render();
   });
   document.getElementById("btnNotApprovedBack")?.addEventListener("click", () => { state.view="login"; state.loginError=""; render(); });
+
+  // ── CACHE MANAGEMENT HANDLERS ──────────────────────────────────────────────
+  document.getElementById("btnLoadCacheStats")?.addEventListener("click", async () => {
+    const statsEl = document.getElementById("cacheStats");
+    const msgEl = document.getElementById("cacheMsg");
+    if (statsEl) statsEl.textContent = "Loading...";
+    try {
+      const r = await fnCall({ action: "listCachedCards" });
+      if (r && r.counts) {
+        if (statsEl) statsEl.textContent = `✓ Cached: ${r.counts.m1} M1 cards · ${r.counts.m2} M2 cards · ${r.counts.m3} M3 cards · ${r.counts.total} total`;
+      } else {
+        if (statsEl) statsEl.textContent = "No cached cards yet.";
+      }
+    } catch(e) {
+      if (statsEl) statsEl.textContent = "Error loading stats.";
+    }
+  });
+
+  document.getElementById("btnDeleteCacheEntry")?.addEventListener("click", async () => {
+    const prefix = document.getElementById("cacheMatrixSelect")?.value || "";
+    const key = document.getElementById("cacheKeyInput")?.value.trim() || "";
+    const msgEl = document.getElementById("cacheMsg");
+    if (!key) { if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Enter a key to delete (e.g. Achiever|ENTJ-A)"; } return; }
+    const fullKey = prefix + key;
+    if (msgEl) { msgEl.style.color="#a0aec0"; msgEl.textContent = "Deleting..."; }
+    try {
+      const r = await fnCall({ action: "deleteCachedCard", cacheKey: fullKey });
+      if (r && r.success) {
+        if (msgEl) { msgEl.style.color="#68d391"; msgEl.textContent = `✓ Deleted: ${fullKey}`; }
+        // Also clear from session cache
+        const sessionKey = fullKey.replace("cache_", "");
+        delete aiCache[sessionKey];
+      } else {
+        if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Delete failed — check key format"; }
+      }
+    } catch(e) {
+      if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Error deleting entry"; }
+    }
+  });
 
   // ── ORIGINAL HANDLERS ─────────────────────────────────────────────────────
   document.getElementById("btnNew")?.addEventListener("click", () => {
