@@ -1009,11 +1009,25 @@ function attachHandlers() {
       });
     }
   });
-  document.getElementById("btnEnterForParticipant")?.addEventListener("click", () => {
+  document.getElementById("btnEnterForParticipant")?.addEventListener("click", async () => {
     const el = document.getElementById("adminParticipantEmail");
     if (el && el.value.includes("@")) {
-      state.userEmail = el.value.trim().toLowerCase();
-      state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; render();
+      const email = el.value.trim().toLowerCase();
+      state.userEmail = email;
+      state.errors = {};
+      // Try to load existing profile to pre-populate fields for editing
+      const existing = await loadProfile(email);
+      if (existing && existing.name) {
+        state.name = existing.name || "";
+        state.personality = existing.personality || "";
+        state.strengths = existing.strengths ? [...existing.strengths] : ["","","","",""];
+        state.gifts = existing.gifts ? [...existing.gifts] : ["","",""];
+        state.savedProfile = existing;
+        state.profileAge = profileAgeMonths(existing.savedAt);
+      } else {
+        state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.savedProfile=null; state.profileAge=null;
+      }
+      state.view="entry"; render();
     }
   });
   document.getElementById("btnRefreshProfile")?.addEventListener("click", () => {
