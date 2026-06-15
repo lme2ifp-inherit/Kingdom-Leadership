@@ -1139,7 +1139,11 @@ function attachHandlers() {
 
   // ── ORIGINAL HANDLERS ─────────────────────────────────────────────────────
   document.getElementById("btnNew")?.addEventListener("click", () => {
-    state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.shareMsg=""; render();
+    state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.shareMsg="";
+    state.userEmail=""; state.participants=[]; state.currentIdx=null; state.savedProfile=null; state.profileAge=null;
+    state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null; state.m4Cards={};
+    state.m1Summary=null; state.m2Summary=null; state.m3Summary=null; state.m4Bonus=null;
+    render();
   });
 
   document.querySelectorAll(".pcard").forEach(el => {
