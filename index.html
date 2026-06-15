@@ -381,18 +381,18 @@ async function callAI(prompt, cacheKey) {
 function m1Prompt(s, p) {
   const pBase = p.split("-")[0];
   const v = p.includes("-A") ? "Assertive" : "Turbulent";
-  const schema = '{"theme":"3-5 word poetic leadership title","description":"3-4 vivid sentences on how this strength and personality interact and what this person does differently because of this exact combination","gift":"One sentence on the unique gift this combination brings to a team","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"theme":"3-5 word poetic leadership title","description":"3-4 vivid sentences on how this strength and personality interact and what this person does differently because of this exact combination","gift":"One sentence on the unique gift this combination brings to a team","shadowSide":"2 sentences — first describes the dark side or blind spot of this exact combination when unchecked, second gives a specific growth edge to counteract it. Scoped only to this combination, no personal names","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 1 Core Traits combining Clifton Strengths and 16 Personalities. This combination is " + s + " strength with " + p + " personality (" + pBase + " " + v + " variant). Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m2Prompt(s, g) {
-  const schema = '{"theme":"3-5 word poetic title for this talent and gift combination","description":"3-4 vivid sentences on how this natural talent and spiritual gift work together in kingdom ministry","gift":"One sentence on the unique contribution this combination makes to the body of Christ","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"theme":"3-5 word poetic title for this talent and gift combination","description":"3-4 vivid sentences on how this natural talent and spiritual gift work together in kingdom ministry","gift":"One sentence on the unique contribution this combination makes to the body of Christ","shadowSide":"2 sentences — first describes the dark side or blind spot of this exact strength-gift combination when unchecked, second gives a specific growth edge to counteract it. Scoped only to this combination, no personal names","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 2 Empowered Abilities combining Clifton Strengths and Spiritual Gifts. This combination is " + s + " CliftonStrength with " + g + " Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
 function m3Prompt(p, g) {
   const pBase = p.split("-")[0];
-  const schema = '{"theme":"3-5 word poetic title for how the Spirit expresses this gift through this personality","description":"3-4 vivid sentences on how the Holy Spirit empowers this spiritual gift uniquely through this personality type","gift":"One sentence on how the Spirit uniquely moves through this personality to exercise this gift","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"theme":"3-5 word poetic title for how the Spirit expresses this gift through this personality","description":"3-4 vivid sentences on how the Holy Spirit empowers this spiritual gift uniquely through this personality type","gift":"One sentence on how the Spirit uniquely moves through this personality to exercise this gift","shadowSide":"2 sentences — first describes the dark side or blind spot of this exact personality-gift combination when unchecked, second gives a specific growth edge to counteract it. Scoped only to this combination, no personal names","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
   return "Faith-based leadership conference. Matrix 3 Innate Qualities combining 16 Personalities and Spiritual Gifts. This combination is " + p + " personality (" + pBase + ") with " + g + " Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: " + schema;
 }
 
@@ -435,6 +435,7 @@ function shareText() {
     if (d && d !== "loading") {
       if (d.description) t += `${d.description}\n`;
       if (d.gift) t += `Gift to Team: ${d.gift}\n`;
+      if (d.shadowSide) t += `Shadow Side & Growth Edge: ${d.shadowSide}\n`;
       if (d.prayer) t += `Prayer: ${d.prayer}\n`;
     }
     t += "\n";
@@ -454,6 +455,7 @@ function shareText() {
     if (d && d !== "loading") {
       if (d.description) t += `${d.description}\n`;
       if (d.gift) t += `Gift to Team: ${d.gift}\n`;
+      if (d.shadowSide) t += `Shadow Side & Growth Edge: ${d.shadowSide}\n`;
       if (d.prayer) t += `Prayer: ${d.prayer}\n`;
     }
     t += "\n";
@@ -473,6 +475,7 @@ function shareText() {
     if (d && d !== "loading") {
       if (d.description) t += `${d.description}\n`;
       if (d.gift) t += `Gift to Team: ${d.gift}\n`;
+      if (d.shadowSide) t += `Shadow Side & Growth Edge: ${d.shadowSide}\n`;
       if (d.prayer) t += `Prayer: ${d.prayer}\n`;
     }
     t += "\n";
@@ -854,6 +857,10 @@ function comboCard(label, theme, color, combo, loading) {
         <div style="font-size:9px;color:#4a5568;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Gift to the team</div>
         <p style="font-size:12px;color:#94a3b8;font-style:italic;line-height:1.6;margin:0">${combo.gift||""}</p>
       </div>
+      ${combo.shadowSide?`<div style="background:#7f1d1d22;border-left:3px solid ${color};border-radius:0;padding:9px 12px;margin-bottom:8px">
+        <div style="font-size:9px;color:${color};letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Shadow Side &amp; Growth Edge</div>
+        <p style="font-size:12px;color:#94a3b8;font-style:italic;line-height:1.75;margin:0">${combo.shadowSide}</p>
+      </div>`:""}
       <div style="background:${color}11;border:1px solid ${color}33;border-radius:6px;padding:9px 12px">
         <div style="font-size:9px;color:${color};letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Reflection & Prayer</div>
         <p style="font-size:12px;color:#94a3b8;font-style:italic;line-height:1.75;margin:0">"${combo.prayer||""}"</p>
@@ -1209,12 +1216,13 @@ function generatePDF() {
     </div>`;
   }
 
-  function matrixCard(label, theme, desc, gift, prayer, color) {
+  function matrixCard(label, theme, desc, gift, shadowSide, prayer, color) {
     return `<div style="background:#fff;border:1px solid #e2e8f0;border-left:3px solid ${color};border-radius:8px;padding:14px 16px;margin-bottom:10px;page-break-inside:avoid;">
       <div style="font-size:9px;color:#718096;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;">${label}</div>
       <div style="font-size:16px;font-weight:600;color:#1a202c;margin-bottom:8px;font-family:Georgia,serif;">${theme}</div>
       ${desc ? `<p style="font-size:12px;line-height:1.75;color:#4a5568;margin-bottom:8px;">${desc}</p>` : ""}
       ${gift ? `<div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:8px 12px;margin-bottom:8px;"><div style="font-size:9px;color:#718096;text-transform:uppercase;margin-bottom:3px;">Gift to the Team</div><p style="font-size:12px;color:#4a5568;font-style:italic;margin:0;">${gift}</p></div>` : ""}
+      ${shadowSide ? `<div style="background:#f7fafc;border-left:3px solid ${color};border-radius:0;padding:8px 12px;margin-bottom:8px;"><div style="font-size:9px;color:${color};text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Shadow Side &amp; Growth Edge</div><p style="font-size:12px;color:#4a5568;font-style:italic;margin:0;">${shadowSide}</p></div>` : ""}
       ${prayer ? `<div style="background:${color}11;border:1px solid ${color}33;border-radius:4px;padding:8px 12px;"><div style="font-size:9px;color:${color};text-transform:uppercase;margin-bottom:3px;">Prayer</div><p style="font-size:12px;color:#4a5568;font-style:italic;margin:0;">"${prayer}"</p></div>` : ""}
     </div>`;
   }
@@ -1258,7 +1266,7 @@ function generatePDF() {
     const d = state.m1Data[s];
     const str = strByName(s);
     const col = str ? dc(str.d) : C.m1;
-    html += matrixCard(`${s} × ${p.personality}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.prayer:"", col);
+    html += matrixCard(`${s} × ${p.personality}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.shadowSide:"", d&&d!=="loading"?d.prayer:"", col);
   });
 
   // M2
@@ -1274,7 +1282,7 @@ function generatePDF() {
     p.gifts.forEach(g => {
       const theme = M2[`${s}|${g}`]||s+" × "+g;
       const d = state.m2Data[`${s}|${g}`];
-      html += matrixCard(`${s} × ${g}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.prayer:"", C.m2);
+      html += matrixCard(`${s} × ${g}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.shadowSide:"", d&&d!=="loading"?d.prayer:"", C.m2);
     });
   });
 
@@ -1290,7 +1298,7 @@ function generatePDF() {
   p.gifts.forEach(g => {
     const theme = M3[`${p.personality}|${g}`]||p.personality+" × "+g;
     const d = state.m3Data[g];
-    html += matrixCard(`${p.personality} × ${g}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.prayer:"", C.m3);
+    html += matrixCard(`${p.personality} × ${g}`, theme, d&&d!=="loading"?d.description:"", d&&d!=="loading"?d.gift:"", d&&d!=="loading"?d.shadowSide:"", d&&d!=="loading"?d.prayer:"", C.m3);
   });
 
   // M4
@@ -1323,7 +1331,7 @@ function generatePDF() {
         if (card && card !== "loading") {
           const str = strByName(s);
           const col = str ? dc(str.d) : C.m4;
-          html += matrixCard(`${s} × ${p.personality} × ${p.gifts.join(", ")}`, card.cardTheme||s, card.description, "", card.prayer, col);
+          html += matrixCard(`${s} × ${p.personality} × ${p.gifts.join(", ")}`, card.cardTheme||s, card.description, "", "", card.prayer, col);
           if (card.scripture) html += `<div style="background:#f0fff8;border:1px solid #2d5a4544;border-radius:4px;padding:8px 12px;margin-top:-6px;margin-bottom:10px;"><div style="font-size:9px;color:#2d5a45;text-transform:uppercase;margin-bottom:3px;">Scripture</div><p style="font-size:12px;color:#2d6a4f;font-style:italic;margin:0;">${card.scripture}</p></div>`;
         }
       });
@@ -1415,7 +1423,7 @@ async function generate() {
   // M1
   for (const s of p.strengths) {
     const res = await callAI(m1Prompt(s,p.personality), `m1|${s}|${p.personality}`);
-    state.m1Data[s] = res || {description:`The ${s} strength expressed through the ${p.personality} personality creates a distinctive leadership presence.`, gift:`A unique contribution only this combination makes.`, prayer:`Lord, let this combination serve Your kingdom purposes.`};
+    state.m1Data[s] = res || {description:`The ${s} strength expressed through the ${p.personality} personality creates a distinctive leadership presence.`, gift:`A unique contribution only this combination makes.`, shadowSide:"", prayer:`Lord, let this combination serve Your kingdom purposes.`};
     render();
   }
 
@@ -1423,7 +1431,7 @@ async function generate() {
   for (const s of p.strengths) {
     for (const g of p.gifts) {
       const res = await callAI(m2Prompt(s,g), `m2|${s}|${g}`);
-      state.m2Data[`${s}|${g}`] = res || {description:`${s} and ${g} working together as a unified kingdom gift.`, gift:`A unique contribution to the body of Christ.`, prayer:`Lord, let my natural talent and spiritual gift work as one.`};
+      state.m2Data[`${s}|${g}`] = res || {description:`${s} and ${g} working together as a unified kingdom gift.`, gift:`A unique contribution to the body of Christ.`, shadowSide:"", prayer:`Lord, let my natural talent and spiritual gift work as one.`};
       // Don't re-render mid-generation here to avoid flicker — only render at end of each outer loop
     }
     render();
@@ -1432,7 +1440,7 @@ async function generate() {
   // M3
   for (const g of p.gifts) {
     const res = await callAI(m3Prompt(p.personality,g), `m3|${p.personality}|${g}`);
-    state.m3Data[g] = res || {description:`The ${g} gift expressed through the ${p.personality} personality.`, gift:`A unique way the Spirit moves through this personality type.`, prayer:`Spirit, flow through how I'm made to express this gift.`};
+    state.m3Data[g] = res || {description:`The ${g} gift expressed through the ${p.personality} personality.`, gift:`A unique way the Spirit moves through this personality type.`, shadowSide:"", prayer:`Spirit, flow through how I'm made to express this gift.`};
     render();
   }
 
