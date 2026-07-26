@@ -244,7 +244,30 @@ async function loadProfile(email) {
   try { return JSON.parse(localStorage.getItem("kld_profile_"+email.toLowerCase().trim())); } catch(e) { return null; }
 }
 function profileAgeMonths(savedAt) { return (Date.now()-savedAt)/(1000*60*60*24*30.44); }
-function profileNeedsRefresh(savedAt) { return profileAgeMonths(savedAt)>=REGEN_MONTHS; }
+function profileNeedsRefresh(savedAt) { return profileAgeMonths(savedAt)>=REGEN_MONTHS || regenWindowOpen(); }
+
+// ── ONE-TIME REGENERATION WINDOW ──────────────────────────────────────────────
+// Temporarily suspends the 6-month gate so returning participants can rerun
+// their profile on the upgraded model. Participants still land on their saved
+// results first and choose to regenerate — nothing is overwritten automatically.
+// To close the window early: set REGEN_WINDOW.active = false.
+// To move the window: change start/end below. Dates are inclusive and use the
+// visitor's local time. "end" is the LAST day the window is open.
+const REGEN_WINDOW = {
+  active: true,
+  start: { year: 2026, month: 7, day: 1 },   // July 1, 2026
+  end:   { year: 2026, month: 8, day: 31 },  // August 31, 2026 (inclusive)
+  reason: "Upgraded profile generation is now available."
+};
+function regenWindowOpen() {
+  if (!REGEN_WINDOW.active) return false;
+  const s = REGEN_WINDOW.start, e = REGEN_WINDOW.end;
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const from  = new Date(s.year, s.month - 1, s.day);
+  const to    = new Date(e.year, e.month - 1, e.day, 23, 59, 59, 999);
+  return today >= from && today <= to;
+}
 
 async function handleAdminPwdSubmit() {
   const pwd = state.adminPwdInput || "";
@@ -328,7 +351,7 @@ async function callAILegacy(prompt, cacheKey) {
     if (!r.ok) return null;
     const d = await r.json();
     if (d.error || !d.content || !d.content.length) return null;
-    let text = d.content.map(b => b.text || "").join("").trim();
+    let text = d.content.filter(b => b.type === "text").map(b => b.text || "").join("").trim();
     text = text.replace(/```json|```/g, "").trim();
     const first = text.indexOf("{"); const last = text.lastIndexOf("}");
     if (first === -1 || last === -1) return null;
@@ -377,7 +400,7 @@ async function callAI(matrixParams, cacheKey) {
     if (d.error) return null;
     if (!d.content || !d.content.length) return null;
 
-    let text = d.content.map(b => b.text || "").join("").trim();
+    let text = d.content.filter(b => b.type === "text").map(b => b.text || "").join("").trim();
     text = text.replace(/```json|```/g, "").trim();
     const first = text.indexOf("{");
     const last = text.lastIndexOf("}");
@@ -694,6 +717,7 @@ function buildAdmin() {
         <div id="cacheStats" style="font-size:12px;color:#68d391;margin-bottom:12px;"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <button id="btnLoadCacheStats" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">📊 View Stats</button>
+          <button id="btnClearAllCache" style="background:#7f1d1d;color:#fff;border:1px solid #fca5a5;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">🗑 Clear All Cache</button>
         </div>
         <div style="font-size:11px;color:#4a5568;margin-bottom:8px;">Delete a cached card (forces regeneration next time that combination is generated):</div>
         <div style="display:flex;gap:8px;">
@@ -811,7 +835,7 @@ function buildProfile(p) {
       <div>${m.label}</div><div style="font-size:9px;opacity:0.8">${m.sub}</div>
     </button>`).join("")}
   </div>
-  ${state.savedProfile && state.profileAge >= REGEN_MONTHS ? `<div style="background:#7f1d1d22;border-bottom:1px solid #7f1d1d55;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span style="font-size:12px;color:#fca5a5;">Your profile is over ${REGEN_MONTHS} months old — consider a refresh.</span><button id="btnRefreshProfile" style="background:#7f1d1d;border:1px solid #fca5a5;color:#fca5a5;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Generate Fresh Profile</button></div>` : ''}
+  ${state.savedProfile && (state.profileAge >= REGEN_MONTHS || regenWindowOpen()) ? `<div style="background:#7f1d1d22;border-bottom:1px solid #7f1d1d55;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span style="font-size:12px;color:#fca5a5;">${state.profileAge >= REGEN_MONTHS ? `Your profile is over ${REGEN_MONTHS} months old — consider a refresh.` : REGEN_WINDOW.reason}</span><button id="btnRefreshProfile" style="background:#7f1d1d;border:1px solid #fca5a5;color:#fca5a5;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Generate Fresh Profile</button></div>` : ''}
   <div style="background:#111827;border-bottom:1px solid #1e293b;padding:12px 16px">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <div>
@@ -1115,6 +1139,28 @@ function attachHandlers() {
       }
     } catch(e) {
       if (statsEl) statsEl.textContent = "Error loading stats.";
+    }
+  });
+
+  document.getElementById("btnClearAllCache")?.addEventListener("click", async () => {
+    const msgEl = document.getElementById("cacheMsg");
+    const statsEl = document.getElementById("cacheStats");
+    if (!confirm("Delete EVERY cached M1/M2/M3 card?\n\nParticipant profiles are NOT affected. Cards will regenerate on next use at current model quality.\n\nThis cannot be undone.")) return;
+    if (msgEl) { msgEl.style.color="#a0aec0"; msgEl.textContent = "Clearing all cached cards — this may take a moment..."; }
+    try {
+      const r = await fnCall({ action: "clearAllCache" });
+      if (r && typeof r.deleted === "number") {
+        if (msgEl) {
+          msgEl.style.color = r.failed ? "#f6ad55" : "#68d391";
+          msgEl.textContent = `✓ Cleared ${r.deleted} of ${r.found} cached cards` + (r.failed ? ` · ${r.failed} failed` : "");
+        }
+        if (statsEl) statsEl.textContent = "Cache cleared — click View Stats to confirm.";
+        for (const k in aiCache) delete aiCache[k];
+      } else {
+        if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Clear failed — no response from server"; }
+      }
+    } catch(e) {
+      if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Error clearing cache"; }
     }
   });
 
@@ -1455,7 +1501,7 @@ async function generate() {
 
   // M4 master synthesis
   state.m4Cards = {};
-  const m4res = await callAI({ matrix: "m4", name: p.name, strengths: p.strengths, personality: p.personality, gifts: p.gifts, maxTokens: 2000 }, `m4|${p.strengths.join(",")}|${p.personality}|${p.gifts.join(",")}`);
+  const m4res = await callAI({ matrix: "m4", name: p.name, strengths: p.strengths, personality: p.personality, gifts: p.gifts, maxTokens: 15000 }, `m4|${p.strengths.join(",")}|${p.personality}|${p.gifts.join(",")}`);
   state.m4Data = m4res || {unifiedTheme:"Kingdom Servant Leader",description:`${p.name} carries a rare synthesis of natural talent, personality, and spiritual gift that positions them uniquely in God's kingdom design.`,kingdomRole:`A servant leader uniquely designed to advance God's kingdom.`,teamContribution:`Brings a combination of natural ability and Spirit-empowered gifting that elevates every team they serve.`,shadowSide:`The very strengths that make this combination powerful can become blind spots when not submitted to God's wisdom.`,scripture:`Ephesians 2:10 — "We are God's handiwork, created in Christ Jesus to do good works." Every dimension of how God wired ${p.name} is intentional.`,prayer:`${p.name}, you are God's masterpiece — wired with precision for purposes only you can fulfill. May your strengths serve His wisdom, your personality carry His grace, and your gifts flow with His power. Walk boldly in the fullness of who He made you to be.`};
   render();
   // M4 Bonus streamlined summary

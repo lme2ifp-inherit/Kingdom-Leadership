@@ -117,8 +117,9 @@ async function callClaude(prompt, maxTokens) {
   const apiKey = process.env.ANTHROPIC_KEY;
   if (!apiKey) throw new Error("API key not configured");
   const payload = JSON.stringify({
-    model: "claude-sonnet-4-5",
-    max_tokens: maxTokens || 1500,
+    model: "claude-opus-5",
+    max_tokens: maxTokens || 15000,
+    output_config: { effort: "high" },
     system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
     messages: [{ role: "user", content: prompt }]
   });
@@ -343,6 +344,25 @@ exports.handler = async function(event, context) {
       };
     }
 
+    // ── MASTER CACHE RESET — wipes every cached M1/M2/M3 card ─────────────────
+    // Used after a model upgrade so all cards regenerate at the new quality.
+    // Deletes only keys prefixed "cache_" — participant profiles are untouched.
+    if (action === "clearAllCache") {
+      const keys = await blobList("cache_");
+      let deleted = 0, failed = 0;
+      for (const k of keys) {
+        try {
+          const ok = await blobDelete(k);
+          if (ok === false) { failed++; } else { deleted++; }
+        } catch (e) { failed++; }
+      }
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ found: keys.length, deleted, failed })
+      };
+    }
+
     // ── SERVER-SIDE CARD GENERATION (prompts never exposed to client) ──────────
     if (action === "generateCard") {
       const { matrix, strength, personality, gift, name, strengths, gifts, maxTokens } = body;
@@ -362,7 +382,7 @@ exports.handler = async function(event, context) {
         };
       }
 
-      const result = await callClaude(prompt, maxTokens || 1500);
+      const result = await callClaude(prompt, maxTokens || 15000);
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
@@ -380,8 +400,9 @@ exports.handler = async function(event, context) {
         };
       }
       const payload = JSON.stringify({
-        model: body.model || "claude-sonnet-4-5",
-        max_tokens: body.max_tokens || 1500,
+        model: body.model || "claude-opus-5",
+        max_tokens: body.max_tokens || 15000,
+        output_config: { effort: "high" },
         system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
         messages: body.messages
       });
