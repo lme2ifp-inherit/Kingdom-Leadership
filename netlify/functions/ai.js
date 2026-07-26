@@ -142,7 +142,20 @@ async function callClaude(prompt, maxTokens) {
     system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
     messages: [{ role: "user", content: prompt }]
   });
-  return await new Promise((resolve, reject) => {
+  return await postToAnthropic(payload, apiKey);
+}
+
+// Netlify kills synchronous functions at 10 seconds (26s requires Pro + a
+// support request). When that happens the caller receives an HTML error page,
+// not JSON, so the browser's r.json() throws and the real cause is invisible.
+// We self-abort at 8.5s instead and return a structured error the UI can show.
+const UPSTREAM_TIMEOUT_MS = 8500;
+
+function postToAnthropic(payload, apiKey) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => { if (!settled) { settled = true; resolve(value); } };
+
     const options = {
       hostname: "api.anthropic.com",
       path: "/v1/messages",
@@ -154,12 +167,29 @@ async function callClaude(prompt, maxTokens) {
         "Content-Length": Buffer.byteLength(payload)
       }
     };
+
     const req = https.request(options, (res) => {
       let data = "";
       res.on("data", chunk => { data += chunk; });
-      res.on("end", () => { resolve(JSON.parse(data)); });
+      res.on("end", () => {
+        try {
+          finish(JSON.parse(data));
+        } catch (e) {
+          finish({ error: { message: `Upstream returned unparseable body (HTTP ${res.statusCode})`, _diag: "BAD_JSON" } });
+        }
+      });
     });
-    req.on("error", reject);
+
+    const timer = setTimeout(() => {
+      req.destroy();
+      finish({ error: { message: `Generation exceeded ${UPSTREAM_TIMEOUT_MS / 1000}s and was aborted before the Netlify 10s limit`, _diag: "TIMEOUT" } });
+    }, UPSTREAM_TIMEOUT_MS);
+
+    req.on("close", () => clearTimeout(timer));
+    req.on("error", (err) => {
+      finish({ error: { message: `Network error contacting Anthropic: ${err.message}`, _diag: "NETWORK" } });
+    });
+
     req.write(payload);
     req.end();
   });
@@ -418,37 +448,27 @@ exports.handler = async function(event, context) {
           body: JSON.stringify({ error: { message: "API key not configured" } })
         };
       }
-      const payload = JSON.stringify({
-        model: body.model || "claude-opus-5",
+      // BUG FIX: this path is used by the three matrix summaries, which request
+      // claude-sonnet-4-5. That model does NOT support output_config.effort —
+      // sending it returns a 400 on every call, so all three summaries were
+      // failing silently on every single run. Only attach effort/thinking to
+      // models that actually support them.
+      const requestedModel = body.model || "claude-opus-5";
+      const supportsEffort = /^claude-(opus-5|opus-4-[5-8]|sonnet-5|sonnet-4-6|fable-5|mythos-5)/.test(requestedModel);
+
+      const payloadObj = {
+        model: requestedModel,
         max_tokens: body.max_tokens || 15000,
-        output_config: { effort: "high" },
-        // See callClaude() above for rationale. Must be removed if effort is
-        // ever raised above "high" — disabling thinking 400s at xhigh/max.
-        thinking: { type: "disabled" },
         system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
         messages: body.messages
-      });
-      const result = await new Promise((resolve, reject) => {
-        const options = {
-          hostname: "api.anthropic.com",
-          path: "/v1/messages",
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-            "Content-Length": Buffer.byteLength(payload)
-          }
-        };
-        const req = https.request(options, (res) => {
-          let data = "";
-          res.on("data", chunk => { data += chunk; });
-          res.on("end", () => { resolve(JSON.parse(data)); });
-        });
-        req.on("error", reject);
-        req.write(payload);
-        req.end();
-      });
+      };
+      if (supportsEffort) {
+        payloadObj.output_config = { effort: "high" };
+        // See callClaude() above. Must be removed if effort goes above "high".
+        payloadObj.thinking = { type: "disabled" };
+      }
+      const payload = JSON.stringify(payloadObj);
+      const result = await postToAnthropic(payload, apiKey);
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },

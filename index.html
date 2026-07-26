@@ -143,9 +143,31 @@ let state = {
   adminMsg: "",
   savedProfile: null,
   profileAge: null,
+  diagVisible: false,
 };
 
 const aiCache = {};
+
+// ── RUN DIAGNOSTICS ───────────────────────────────────────────────────────────
+// Safari has no accessible console on iOS, so generation failures are recorded
+// here and surfaced on screen instead. Reset at the start of every run.
+const runDiag = {
+  startedAt: null,
+  attempted: 0,
+  fromCache: 0,
+  generated: 0,
+  failures: []   // { key, reason, detail }
+};
+function diagReset() {
+  runDiag.startedAt = Date.now();
+  runDiag.attempted = 0;
+  runDiag.fromCache = 0;
+  runDiag.generated = 0;
+  runDiag.failures = [];
+}
+function diagFail(key, reason, detail) {
+  runDiag.failures.push({ key, reason, detail: String(detail || "").slice(0, 200) });
+}
 
 // ── AI ─────────────────────────────────────────────────────────────────────
 
@@ -348,17 +370,18 @@ async function callAILegacy(prompt, cacheKey) {
         messages: [{ role: "user", content: prompt }]
       })
     });
-    if (!r.ok) return null;
+    if (!r.ok) { diagFail(cacheKey, "HTTP_" + r.status, "summary request"); return null; }
     const d = await r.json();
-    if (d.error || !d.content || !d.content.length) return null;
+    if (d.error) { diagFail(cacheKey, d.error._diag || "API_ERROR", d.error.message); return null; }
+    if (!d.content || !d.content.length) { diagFail(cacheKey, "EMPTY_CONTENT", "stop_reason=" + d.stop_reason); return null; }
     let text = d.content.filter(b => b.type === "text").map(b => b.text || "").join("").trim();
     text = text.replace(/```json|```/g, "").trim();
     const first = text.indexOf("{"); const last = text.lastIndexOf("}");
-    if (first === -1 || last === -1) return null;
+    if (first === -1 || last === -1) { diagFail(cacheKey, "NO_JSON", text.slice(0, 120)); return null; }
     const parsed = JSON.parse(text.slice(first, last + 1));
     aiCache[cacheKey] = parsed;
     return parsed;
-  } catch(e) { return null; }
+  } catch(e) { diagFail(cacheKey, "EXCEPTION", e.message); return null; }
 }
 
 async function getBlobCachedCard(cacheKey) {
@@ -384,9 +407,13 @@ async function callAI(matrixParams, cacheKey) {
     const cached = await getBlobCachedCard(blobKey);
     if (cached) {
       aiCache[cacheKey] = cached;
+      runDiag.fromCache++;
       return cached;
     }
   }
+
+  runDiag.attempted++;
+  let lastReason = ["UNKNOWN", ""];
 
   // Two attempts. A single transient failure (timeout, truncated JSON, blip)
   // used to fall straight through to the hardcoded filler text in generate(),
@@ -395,20 +422,46 @@ async function callAI(matrixParams, cacheKey) {
   // with no shadow side and no scripture. Retrying once recovers most of those.
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const r = await fetch("/.netlify/functions/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "generateCard", ...matrixParams })
-      });
+      // Hard client-side ceiling. The server self-aborts at 8.5s and Netlify
+      // kills at 10s; this catches the case where neither responds at all.
+      const ctrl = new AbortController();
+      const abortTimer = setTimeout(() => ctrl.abort(), 12000);
+      let r;
+      try {
+        r = await fetch("/.netlify/functions/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "generateCard", ...matrixParams }),
+          signal: ctrl.signal
+        });
+      } finally {
+        clearTimeout(abortTimer);
+      }
 
-      if (!r.ok) { console.warn(`callAI ${cacheKey}: HTTP ${r.status} (attempt ${attempt}/2)`); continue; }
+      if (!r.ok) {
+        // A Netlify function killed at the 10s wall returns an HTML error page,
+        // not JSON — so read as text and record it rather than throwing blind.
+        const raw = await r.text().catch(() => "");
+        lastReason = ["HTTP_" + r.status, raw.slice(0, 120)];
+        console.warn(`callAI ${cacheKey}: HTTP ${r.status} (attempt ${attempt}/2)`);
+        continue;
+      }
       const d = await r.json();
-      if (d.error) { console.warn(`callAI ${cacheKey}: API error (attempt ${attempt}/2)`, d.error); continue; }
-      if (!d.content || !d.content.length) { console.warn(`callAI ${cacheKey}: empty content (attempt ${attempt}/2)`); continue; }
+      if (d.error) {
+        lastReason = [d.error._diag || "API_ERROR", d.error.message];
+        console.warn(`callAI ${cacheKey}: API error (attempt ${attempt}/2)`, d.error);
+        continue;
+      }
+      if (!d.content || !d.content.length) {
+        lastReason = ["EMPTY_CONTENT", "stop_reason=" + d.stop_reason];
+        console.warn(`callAI ${cacheKey}: empty content (attempt ${attempt}/2)`);
+        continue;
+      }
 
       // stop_reason "max_tokens" means the JSON was cut off mid-generation.
       // Worth surfacing explicitly — it is the signal to raise max_tokens.
       if (d.stop_reason === "max_tokens") {
+        lastReason = ["TRUNCATED", "hit max_tokens ceiling"];
         console.warn(`callAI ${cacheKey}: TRUNCATED — hit max_tokens ceiling (attempt ${attempt}/2)`);
       }
 
@@ -416,10 +469,15 @@ async function callAI(matrixParams, cacheKey) {
       text = text.replace(/```json|```/g, "").trim();
       const first = text.indexOf("{");
       const last = text.lastIndexOf("}");
-      if (first === -1 || last === -1) { console.warn(`callAI ${cacheKey}: no JSON object found (attempt ${attempt}/2)`); continue; }
+      if (first === -1 || last === -1) {
+        lastReason = ["NO_JSON", text.slice(0, 120)];
+        console.warn(`callAI ${cacheKey}: no JSON object found (attempt ${attempt}/2)`);
+        continue;
+      }
 
       const parsed = JSON.parse(text.slice(first, last + 1));
       aiCache[cacheKey] = parsed;
+      runDiag.generated++;
 
       // Save to persistent blob cache for M1/M2/M3 only
       if (isCacheable) {
@@ -430,11 +488,13 @@ async function callAI(matrixParams, cacheKey) {
       return parsed;
 
     } catch(e) {
+      lastReason = [e.name === "AbortError" ? "CLIENT_TIMEOUT" : "EXCEPTION", e.message];
       console.warn(`callAI ${cacheKey}: exception (attempt ${attempt}/2)`, e);
     }
   }
 
-  console.error(`callAI ${cacheKey}: FAILED after 2 attempts — falling back to placeholder text`);
+  diagFail(cacheKey, lastReason[0], lastReason[1]);
+  console.error(`callAI ${cacheKey}: FAILED after 2 attempts (${lastReason[0]})`);
   return null;
 }
 
@@ -547,6 +607,57 @@ function shareText() {
 function render() {
   document.getElementById("app").innerHTML = buildApp();
   attachHandlers();
+}
+
+// ── ON-SCREEN DIAGNOSTICS ─────────────────────────────────────────────────────
+// iOS Safari offers no usable console, so failures are reported in the UI.
+const DIAG_MEANING = {
+  TIMEOUT:        "Generation took longer than 8.5s — the Netlify function had to abort before its 10s limit.",
+  CLIENT_TIMEOUT: "No response at all within 12s — the request never came back.",
+  TRUNCATED:      "Response was cut off at the max_tokens ceiling, so the JSON was incomplete.",
+  NO_JSON:        "Response came back but contained no JSON object.",
+  BAD_JSON:       "Upstream returned something that wasn't JSON (usually a platform error page).",
+  API_ERROR:      "Anthropic rejected the request — see the detail text.",
+  EMPTY_CONTENT:  "Response contained no content blocks.",
+  NETWORK:        "Network error reaching Anthropic.",
+  EXCEPTION:      "Unexpected client-side error."
+};
+
+function buildDiagBanner() {
+  const fails = runDiag.failures;
+  if (!fails.length) return "";
+  const counts = {};
+  fails.forEach(f => { counts[f.reason] = (counts[f.reason] || 0) + 1; });
+  const summary = Object.keys(counts).map(k => `${k} x${counts[k]}`).join(" · ");
+
+  const detail = state.diagVisible ? `
+    <div style="padding:10px 16px;background:#0b1220;border-top:1px solid #7f1d1d55;max-height:260px;overflow:auto">
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">
+        Generated ${runDiag.generated} · from cache ${runDiag.fromCache} · failed ${fails.length}
+      </div>
+      ${Object.keys(counts).map(k => `
+        <div style="margin-bottom:8px">
+          <div style="font-size:11px;color:#fca5a5;font-family:monospace">${k} (${counts[k]})</div>
+          <div style="font-size:11px;color:#94a3b8">${DIAG_MEANING[k] || "Unrecognized failure code."}</div>
+        </div>`).join("")}
+      <div style="font-size:10px;color:#64748b;font-family:monospace;margin-top:8px;white-space:pre-wrap">${
+        fails.map(f => `${f.key}\n   ${f.reason}: ${f.detail}`).join("\n")
+          .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      }</div>
+    </div>` : "";
+
+  return `<div style="background:#7f1d1d22;border-bottom:1px solid #7f1d1d55">
+    <div style="padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span style="font-size:12px;color:#fca5a5">
+        ⚠ ${fails.length} card${fails.length === 1 ? "" : "s"} failed to generate — showing placeholder text. Profile not saved.
+        <span style="color:#94a3b8;font-family:monospace;font-size:11px"> ${summary}</span>
+      </span>
+      <button id="btnToggleDiag" style="background:#7f1d1d;border:1px solid #fca5a5;color:#fca5a5;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">
+        ${state.diagVisible ? "Hide details" : "Show details"}
+      </button>
+    </div>
+    ${detail}
+  </div>`;
 }
 
 function buildApp() {
@@ -853,6 +964,7 @@ function buildProfile(p) {
       <div>${m.label}</div><div style="font-size:9px;opacity:0.8">${m.sub}</div>
     </button>`).join("")}
   </div>
+  ${buildDiagBanner()}
   ${state.savedProfile && (state.profileAge >= REGEN_MONTHS || regenWindowOpen()) ? `<div style="background:#7f1d1d22;border-bottom:1px solid #7f1d1d55;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span style="font-size:12px;color:#fca5a5;">${state.profileAge >= REGEN_MONTHS ? `Your profile is over ${REGEN_MONTHS} months old — consider a refresh.` : REGEN_WINDOW.reason}</span><button id="btnRefreshProfile" style="background:#7f1d1d;border:1px solid #fca5a5;color:#fca5a5;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Generate Fresh Profile</button></div>` : ''}
   <div style="background:#111827;border-bottom:1px solid #1e293b;padding:12px 16px">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
@@ -1235,6 +1347,10 @@ function attachHandlers() {
   });
 
   document.getElementById("btnGenerate")?.addEventListener("click", generate);
+
+  document.getElementById("btnToggleDiag")?.addEventListener("click", () => {
+    state.diagVisible = !state.diagVisible; render();
+  });
   document.getElementById("btnNextParticipant")?.addEventListener("click", () => {
     state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.shareMsg=""; render();
   });
@@ -1470,6 +1586,7 @@ function promptM4Bonus(name, strengths, p, gifts) {
 
 async function generate() {
   if (!validate()) { render(); return; }
+  diagReset();
   const p = {name:state.name.trim(), personality:state.personality, strengths:[...state.strengths], gifts:state.gifts.filter(Boolean), id:Date.now()};
   state.participants.push(p);
   state.currentIdx = state.participants.length-1;
@@ -1484,7 +1601,7 @@ async function generate() {
   // M1
   for (const s of p.strengths) {
     const res = await callAI({ matrix: "m1", strength: s, personality: p.personality }, `m1|${s}|${p.personality}`);
-    state.m1Data[s] = res || {description:`The ${s} strength expressed through the ${p.personality} personality creates a distinctive leadership presence.`, gift:`A unique contribution only this combination makes.`, shadowSide:"", scripture:"", prayer:`Lord, let this combination serve Your kingdom purposes.`};
+    state.m1Data[s] = res || {_failed:true, description:`The ${s} strength expressed through the ${p.personality} personality creates a distinctive leadership presence.`, gift:`A unique contribution only this combination makes.`, shadowSide:"", scripture:"", prayer:`Lord, let this combination serve Your kingdom purposes.`};
     render();
   }
 
@@ -1492,7 +1609,7 @@ async function generate() {
   for (const s of p.strengths) {
     for (const g of p.gifts) {
       const res = await callAI({ matrix: "m2", strength: s, gift: g }, `m2|${s}|${g}`);
-      state.m2Data[`${s}|${g}`] = res || {description:`${s} and ${g} working together as a unified kingdom gift.`, gift:`A unique contribution to the body of Christ.`, shadowSide:"", scripture:"", prayer:`Lord, let my natural talent and spiritual gift work as one.`};
+      state.m2Data[`${s}|${g}`] = res || {_failed:true, description:`${s} and ${g} working together as a unified kingdom gift.`, gift:`A unique contribution to the body of Christ.`, shadowSide:"", scripture:"", prayer:`Lord, let my natural talent and spiritual gift work as one.`};
       // Don't re-render mid-generation here to avoid flicker — only render at end of each outer loop
     }
     render();
@@ -1501,7 +1618,7 @@ async function generate() {
   // M3
   for (const g of p.gifts) {
     const res = await callAI({ matrix: "m3", personality: p.personality, gift: g }, `m3|${p.personality}|${g}`);
-    state.m3Data[g] = res || {description:`The ${g} gift expressed through the ${p.personality} personality.`, gift:`A unique way the Spirit moves through this personality type.`, shadowSide:"", scripture:"", prayer:`Spirit, flow through how I'm made to express this gift.`};
+    state.m3Data[g] = res || {_failed:true, description:`The ${g} gift expressed through the ${p.personality} personality.`, gift:`A unique way the Spirit moves through this personality type.`, shadowSide:"", scripture:"", prayer:`Spirit, flow through how I'm made to express this gift.`};
     render();
   }
 
@@ -1520,7 +1637,7 @@ async function generate() {
   // M4 master synthesis
   state.m4Cards = {};
   const m4res = await callAI({ matrix: "m4", name: p.name, strengths: p.strengths, personality: p.personality, gifts: p.gifts, maxTokens: 15000 }, `m4|${p.strengths.join(",")}|${p.personality}|${p.gifts.join(",")}`);
-  state.m4Data = m4res || {unifiedTheme:"Kingdom Servant Leader",description:`${p.name} carries a rare synthesis of natural talent, personality, and spiritual gift that positions them uniquely in God's kingdom design.`,kingdomRole:`A servant leader uniquely designed to advance God's kingdom.`,teamContribution:`Brings a combination of natural ability and Spirit-empowered gifting that elevates every team they serve.`,shadowSide:`The very strengths that make this combination powerful can become blind spots when not submitted to God's wisdom.`,scripture:`Ephesians 2:10 — "We are God's handiwork, created in Christ Jesus to do good works." Every dimension of how God wired ${p.name} is intentional.`,prayer:`${p.name}, you are God's masterpiece — wired with precision for purposes only you can fulfill. May your strengths serve His wisdom, your personality carry His grace, and your gifts flow with His power. Walk boldly in the fullness of who He made you to be.`};
+  state.m4Data = m4res || {_failed:true, unifiedTheme:"Kingdom Servant Leader",description:`${p.name} carries a rare synthesis of natural talent, personality, and spiritual gift that positions them uniquely in God's kingdom design.`,kingdomRole:`A servant leader uniquely designed to advance God's kingdom.`,teamContribution:`Brings a combination of natural ability and Spirit-empowered gifting that elevates every team they serve.`,shadowSide:`The very strengths that make this combination powerful can become blind spots when not submitted to God's wisdom.`,scripture:`Ephesians 2:10 — "We are God's handiwork, created in Christ Jesus to do good works." Every dimension of how God wired ${p.name} is intentional.`,prayer:`${p.name}, you are God's masterpiece — wired with precision for purposes only you can fulfill. May your strengths serve His wisdom, your personality carry His grace, and your gifts flow with His power. Walk boldly in the fullness of who He made you to be.`};
   render();
   // M4 Bonus streamlined summary
   state.m4Bonus = "loading"; render();
@@ -1530,11 +1647,23 @@ async function generate() {
   // M4 individual strength cards
   for (const s of p.strengths) {
     const res = await callAI({ matrix: "m4str", name: p.name, strength: s, personality: p.personality, gifts: p.gifts }, `m4c|${s}|${p.personality}|${p.gifts.join(",")}`);
-    state.m4Cards[s] = res || {cardTheme:`${s} in Kingdom Purpose`,description:`The ${s} strength, expressed through the ${p.personality} personality and empowered by the ${p.gifts[0]} gift, creates a distinctive kingdom-powerful expression that belongs to ${p.name} alone.`,scripture:`Romans 12:6 — "We have different gifts, according to the grace given to each of us."`,prayer:`Lord, let ${p.name}'s ${s} strength be fully surrendered to You and activated by Your Spirit for kingdom purposes.`};
+    state.m4Cards[s] = res || {_failed:true, cardTheme:`${s} in Kingdom Purpose`,description:`The ${s} strength, expressed through the ${p.personality} personality and empowered by the ${p.gifts[0]} gift, creates a distinctive kingdom-powerful expression that belongs to ${p.name} alone.`,scripture:`Romans 12:6 — "We have different gifts, according to the grace given to each of us."`,prayer:`Lord, let ${p.name}'s ${s} strength be fully surrendered to You and activated by Your Spirit for kingdom purposes.`};
     render();
   }
 
   // ── AUTO-SAVE PROFILE TO STORAGE ──────────────────────────────────────────
+  // IMPORTANT: a run with failures produces hardcoded placeholder text ("A unique
+  // contribution to the body of Christ."). Saving that would bake the filler into
+  // the participant's permanent profile, and restoreProfileToState() would then
+  // reload it — and even re-seed aiCache with it — so the bad cards would follow
+  // them forever and look identical to real output. Only save a clean run.
+  if (runDiag.failures.length > 0) {
+    console.warn(`Profile NOT saved — ${runDiag.failures.length} card(s) failed. Placeholder text will not be persisted.`);
+    state.diagVisible = true;
+    render();
+    return;
+  }
+
   if (state.userEmail && state.userEmail !== "admin@kingdom") {
     await saveProfile(state.userEmail, {
       name: p.name,
