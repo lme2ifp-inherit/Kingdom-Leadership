@@ -388,36 +388,54 @@ async function callAI(matrixParams, cacheKey) {
     }
   }
 
-  try {
-    const r = await fetch("/.netlify/functions/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "generateCard", ...matrixParams })
-    });
+  // Two attempts. A single transient failure (timeout, truncated JSON, blip)
+  // used to fall straight through to the hardcoded filler text in generate(),
+  // which is indistinguishable from a real card to the participant — that is
+  // what produced cards reading "A unique contribution to the body of Christ."
+  // with no shadow side and no scripture. Retrying once recovers most of those.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const r = await fetch("/.netlify/functions/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generateCard", ...matrixParams })
+      });
 
-    if (!r.ok) return null;
-    const d = await r.json();
-    if (d.error) return null;
-    if (!d.content || !d.content.length) return null;
+      if (!r.ok) { console.warn(`callAI ${cacheKey}: HTTP ${r.status} (attempt ${attempt}/2)`); continue; }
+      const d = await r.json();
+      if (d.error) { console.warn(`callAI ${cacheKey}: API error (attempt ${attempt}/2)`, d.error); continue; }
+      if (!d.content || !d.content.length) { console.warn(`callAI ${cacheKey}: empty content (attempt ${attempt}/2)`); continue; }
 
-    let text = d.content.filter(b => b.type === "text").map(b => b.text || "").join("").trim();
-    text = text.replace(/```json|```/g, "").trim();
-    const first = text.indexOf("{");
-    const last = text.lastIndexOf("}");
-    if (first === -1 || last === -1) return null;
+      // stop_reason "max_tokens" means the JSON was cut off mid-generation.
+      // Worth surfacing explicitly — it is the signal to raise max_tokens.
+      if (d.stop_reason === "max_tokens") {
+        console.warn(`callAI ${cacheKey}: TRUNCATED — hit max_tokens ceiling (attempt ${attempt}/2)`);
+      }
 
-    const parsed = JSON.parse(text.slice(first, last + 1));
-    aiCache[cacheKey] = parsed;
+      let text = d.content.filter(b => b.type === "text").map(b => b.text || "").join("").trim();
+      text = text.replace(/```json|```/g, "").trim();
+      const first = text.indexOf("{");
+      const last = text.lastIndexOf("}");
+      if (first === -1 || last === -1) { console.warn(`callAI ${cacheKey}: no JSON object found (attempt ${attempt}/2)`); continue; }
 
-    // Save to persistent blob cache for M1/M2/M3 only
-    if (isCacheable) {
-      const blobKey = "cache_" + cacheKey;
-      setBlobCachedCard(blobKey, parsed);
+      const parsed = JSON.parse(text.slice(first, last + 1));
+      aiCache[cacheKey] = parsed;
+
+      // Save to persistent blob cache for M1/M2/M3 only
+      if (isCacheable) {
+        const blobKey = "cache_" + cacheKey;
+        setBlobCachedCard(blobKey, parsed);
+      }
+
+      return parsed;
+
+    } catch(e) {
+      console.warn(`callAI ${cacheKey}: exception (attempt ${attempt}/2)`, e);
     }
+  }
 
-    return parsed;
-
-  } catch(e) { return null; }
+  console.error(`callAI ${cacheKey}: FAILED after 2 attempts — falling back to placeholder text`);
+  return null;
 }
 
 

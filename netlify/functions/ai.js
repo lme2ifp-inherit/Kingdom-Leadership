@@ -34,7 +34,10 @@ async function blobSet(key, value) {
     const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.TOKEN;
     if (!token) return false;
     const payload = JSON.stringify(value);
-    await new Promise((resolve) => {
+    // Same fix as blobDelete: this used to return true even when the write
+    // failed. A silently failed cache write is expensive — that combination
+    // would regenerate (and bill) on every single future request.
+    const status = await new Promise((resolve) => {
       const options = {
         hostname: "api.netlify.com",
         path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
@@ -54,7 +57,8 @@ async function blobSet(key, value) {
       req.write(payload);
       req.end();
     });
-    return true;
+    if (status === null) return false;
+    return status >= 200 && status < 300;
   } catch(e) { return false; }
 }
 
@@ -63,7 +67,11 @@ async function blobDelete(key) {
     const siteId = "8b2f683b-313c-4c7d-9972-5c3a1aec465d";
     const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.TOKEN;
     if (!token) return false;
-    await new Promise((resolve) => {
+    // Previously this returned true unconditionally, so a failed delete still
+    // reported success and "Clear All Cache" could claim it wiped everything
+    // while Netlify had actually rejected every request. Now the real status
+    // code decides. 404 counts as success — the key is gone either way.
+    const status = await new Promise((resolve) => {
       const options = {
         hostname: "api.netlify.com",
         path: `/api/v1/blobs/${siteId}/production/${encodeURIComponent(key)}`,
@@ -78,7 +86,8 @@ async function blobDelete(key) {
       req.on("error", () => resolve(null));
       req.end();
     });
-    return true;
+    if (status === null) return false;
+    return (status >= 200 && status < 300) || status === 404;
   } catch(e) { return false; }
 }
 
@@ -120,6 +129,16 @@ async function callClaude(prompt, maxTokens) {
     model: "claude-opus-5",
     max_tokens: maxTokens || 15000,
     output_config: { effort: "high" },
+    // Opus 5 runs adaptive thinking ON by default when this field is omitted.
+    // Thinking tokens bill at the output rate but are never shown to participants,
+    // and they consume the same max_tokens ceiling as the card JSON — which was
+    // starving some cards into truncated/unparseable output (the blank fallback bug).
+    // Devotional card writing does not benefit from step-by-step reasoning the way
+    // math or code does, so it is disabled here.
+    // NOTE: disabling thinking is only permitted at effort "high" or below.
+    // If effort is ever raised to "xhigh" or "max", this line MUST be removed or
+    // the API returns a 400 error.
+    thinking: { type: "disabled" },
     system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
     messages: [{ role: "user", content: prompt }]
   });
@@ -307,11 +326,11 @@ exports.handler = async function(event, context) {
       }
       // Preserve all fields including shadowSide and scripture
       const card = { ...body.card, generatedAt: Date.now() };
-      await blobSet(key, card);
+      const saved = await blobSet(key, card);
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ success: true })
+        body: JSON.stringify({ success: saved })
       };
     }
 
@@ -324,11 +343,11 @@ exports.handler = async function(event, context) {
           body: JSON.stringify({ error: "Invalid cache key" })
         };
       }
-      await blobDelete(key);
+      const removed = await blobDelete(key);
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ success: true })
+        body: JSON.stringify({ success: removed })
       };
     }
 
@@ -353,7 +372,7 @@ exports.handler = async function(event, context) {
       for (const k of keys) {
         try {
           const ok = await blobDelete(k);
-          if (ok === false) { failed++; } else { deleted++; }
+          if (ok) { deleted++; } else { failed++; }
         } catch (e) { failed++; }
       }
       return {
@@ -403,6 +422,9 @@ exports.handler = async function(event, context) {
         model: body.model || "claude-opus-5",
         max_tokens: body.max_tokens || 15000,
         output_config: { effort: "high" },
+        // See callClaude() above for rationale. Must be removed if effort is
+        // ever raised above "high" — disabling thinking 400s at xhigh/max.
+        thinking: { type: "disabled" },
         system: "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.",
         messages: body.messages
       });
