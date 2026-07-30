@@ -172,10 +172,71 @@ function diagFail(key, reason, detail) {
 // ── AI ─────────────────────────────────────────────────────────────────────
 
 // ── STORAGE HELPERS ───────────────────────────────────────────────────────────
-// ── STORAGE — routes to Netlify function on live site, localStorage in dev ────
+// ── FUNCTION ENDPOINT RESOLUTION ──────────────────────────────────────────────
+// During the Vercel migration the SAME repo is deployed to BOTH platforms:
+// Netlify (current production, serving existing participants) and Vercel (the
+// migration target). Netlify serves the function at /.netlify/functions/ai;
+// Vercel serves it at /api/ai. Hardcoding either one breaks the other.
+//
+// Hostname cannot be used to tell them apart — leadership.inheritance.vision
+// points at Netlify today and will point at Vercel after cutover, so the same
+// hostname means different things before and after DNS moves.
+//
+// So the endpoint is discovered once per session and reused. After Netlify is
+// decommissioned (Phase 7), ENDPOINT_CANDIDATES can be reduced to ["/api/ai"].
+const ENDPOINT_CANDIDATES = ["/api/ai", "/.netlify/functions/ai"];
+let RESOLVED_ENDPOINT = null;
+
+async function resolveEndpoint() {
+  if (RESOLVED_ENDPOINT) return RESOLVED_ENDPOINT;
+
+  for (const candidate of ENDPOINT_CANDIDATES) {
+    try {
+      const r = await fetch(candidate, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "__ping" })
+      });
+
+      // A 404 means this platform does not host that path.
+      if (r.status === 404) continue;
+
+      // Content-type matters as much as the status code: a static host with an
+      // SPA catch-all can answer an unknown path with 200 and an HTML page,
+      // which would otherwise look like a working function. Only a JSON reply
+      // proves a real function answered. The expected reply to "__ping" is the
+      // function's own 400 "Unknown action" — an error, but a JSON one, which
+      // is exactly the proof we need.
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("application/json")) continue;
+
+      RESOLVED_ENDPOINT = candidate;
+      return candidate;
+    } catch(e) { /* unreachable — try the next candidate */ }
+  }
+
+  // Nothing answered. Fall back to the last candidate so calls still produce a
+  // real network error the diagnostics banner can report, rather than silence.
+  RESOLVED_ENDPOINT = ENDPOINT_CANDIDATES[ENDPOINT_CANDIDATES.length - 1];
+  return RESOLVED_ENDPOINT;
+}
+
+// Hard client-side ceiling for a single AI request.
+// The server self-aborts at 270s and Vercel terminates the function at 300s.
+// This sits at 285s — deliberately ABOVE the server's 270s self-abort so the
+// server's structured JSON error wins the race and the real failure code is
+// visible, and BELOW Vercel's 300s hard kill.
+//
+// This was 12000 (12 seconds) under Netlify. Leaving it at 12s would have made
+// the entire migration pointless: the browser would give up long before the
+// 270s server budget mattered, and every generation would still "fail".
+const CLIENT_TIMEOUT_MS = 285000;
+
+// ── STORAGE — routes to the serverless function on live site, localStorage in dev ────
 async function fnCall(body) {
   try {
-    const r = await fetch("/.netlify/functions/ai", {
+    const endpoint = await resolveEndpoint();
+    const r = await fetch(endpoint, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
@@ -183,10 +244,14 @@ async function fnCall(body) {
   } catch(e) { return null; }
 }
 
+// NOTE: storageGet/storageSet are currently UNUSED (left over from the June
+// removal of the duplicate saveProfile/loadProfile pair). They now defer to
+// IS_LIVE rather than carrying their own copy of the hostname check, so there
+// is a single definition of "live" that cannot drift out of sync.
 async function storageGet(key) {
   // Use localStorage for Claude artifact environment
   try {
-    if (!window.location.hostname.includes("netlify.app") && !window.location.hostname.includes("inheritance.vision")) {
+    if (!IS_LIVE) {
       const v = localStorage.getItem("kld_"+key);
       return v ? JSON.parse(v) : null;
     }
@@ -196,7 +261,7 @@ async function storageGet(key) {
 
 async function storageSet(key, value) {
   try {
-    if (!window.location.hostname.includes("netlify.app") && !window.location.hostname.includes("inheritance.vision")) {
+    if (!IS_LIVE) {
       localStorage.setItem("kld_"+key, JSON.stringify(value));
       return true;
     }
@@ -204,7 +269,11 @@ async function storageSet(key, value) {
   return true; // handled by specific functions below on live site
 }
 // ── EMAIL MANAGEMENT — via Netlify function on live site ─────────────────────
-const IS_LIVE = window.location.hostname.includes("netlify.app") || window.location.hostname.includes("inheritance.vision");
+// IS_LIVE decides whether storage goes to the serverless function or to
+// localStorage. vercel.app was added for the migration: without it, every
+// Vercel PREVIEW deployment would silently fall back to localStorage, so
+// Phase 5 testing would appear to pass while never touching Supabase at all.
+const IS_LIVE = window.location.hostname.includes("netlify.app") || window.location.hostname.includes("vercel.app") || window.location.hostname.includes("inheritance.vision");
 
 async function getApprovedEmails() {
   if (IS_LIVE) {
@@ -277,8 +346,8 @@ function profileNeedsRefresh(savedAt) { return profileAgeMonths(savedAt)>=REGEN_
 // visitor's local time. "end" is the LAST day the window is open.
 const REGEN_WINDOW = {
   active: true,
-  start: { year: 2026, month: 7, day: 1 },   // July 1, 2026
-  end:   { year: 2026, month: 8, day: 31 },  // August 31, 2026 (inclusive)
+  start: { year: 2026, month: 7, day: 30 },  // July 30, 2026
+  end:   { year: 2026, month: 8, day: 1 },   // August 1, 2026 (inclusive)
   reason: "Upgraded profile generation is now available."
 };
 function regenWindowOpen() {
@@ -361,7 +430,8 @@ function restoreProfileToState(profile) {
 async function callAILegacy(prompt, cacheKey) {
   if (aiCache[cacheKey]) return aiCache[cacheKey];
   try {
-    const r = await fetch("/.netlify/functions/ai", {
+    const endpoint = await resolveEndpoint();
+    const r = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -422,13 +492,15 @@ async function callAI(matrixParams, cacheKey) {
   // with no shadow side and no scripture. Retrying once recovers most of those.
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      // Hard client-side ceiling. The server self-aborts at 8.5s and Netlify
-      // kills at 10s; this catches the case where neither responds at all.
+      // Hard client-side ceiling — see CLIENT_TIMEOUT_MS above. On Vercel the
+      // server self-aborts at 270s and the platform kills at 300s; this sits
+      // between them so the server's structured JSON error is what surfaces.
       const ctrl = new AbortController();
-      const abortTimer = setTimeout(() => ctrl.abort(), 12000);
+      const abortTimer = setTimeout(() => ctrl.abort(), CLIENT_TIMEOUT_MS);
       let r;
       try {
-        r = await fetch("/.netlify/functions/ai", {
+        const endpoint = await resolveEndpoint();
+        r = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "generateCard", ...matrixParams }),
@@ -439,7 +511,7 @@ async function callAI(matrixParams, cacheKey) {
       }
 
       if (!r.ok) {
-        // A Netlify function killed at the 10s wall returns an HTML error page,
+        // A function killed at the platform wall returns an HTML error page,
         // not JSON — so read as text and record it rather than throwing blind.
         const raw = await r.text().catch(() => "");
         lastReason = ["HTTP_" + r.status, raw.slice(0, 120)];
