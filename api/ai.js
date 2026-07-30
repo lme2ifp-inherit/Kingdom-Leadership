@@ -116,11 +116,27 @@ function supabaseRequest(method, path, opts) {
   });
 }
 
-// PostgREST filter values are quoted so that values containing commas, spaces or
-// reserved characters cannot break out of the filter expression.
+// PostgREST equality filter.
+//
+// ⚠ HARD-WON: an earlier version wrapped values in double quotes as an
+// injection guard. That was WRONG and silently broke every filtered query —
+// PostgREST compared against a value that literally included the quote marks,
+// so checkEmail said nobody was approved and NO cache lookup could ever hit
+// (which would have meant regenerating, and paying for, every card forever
+// while merely looking like an empty cache).
+//
+// Per the PostgREST URL-grammar docs, quoting is only needed when a value
+// contains a RESERVED character ( , . : ( ) ). For a plain `col=eq.value`
+// match, percent-encoding alone is correct — this is exactly what the official
+// supabase-js client emits.
+//
+// Constraint this relies on: no value passed here contains a comma or
+// parenthesis. True for every caller — emails, Clifton Strengths, 16
+// Personalities codes, Spiritual Gifts, and the m1/m2/m3 matrix tag. Dots in
+// email addresses are fine: only the FIRST dot after the operator is
+// structural, everything after it is the value.
 function eqFilter(value) {
-  const quoted = '"' + String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
-  return "eq." + encodeURIComponent(quoted);
+  return "eq." + encodeURIComponent(String(value));
 }
 
 function normalizeEmail(e) {

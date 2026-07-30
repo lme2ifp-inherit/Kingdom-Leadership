@@ -50,15 +50,34 @@ for (const r of rows) {
   t(`round-trip ${key}`, parseCacheKey(key), { matrix: r.matrix, keyA: r.key_a, keyB: r.key_b });
 }
 
-console.log("\n── eqFilter (injection safety) ──");
-t("simple value quoted", eqFilter("Achiever"), "eq." + encodeURIComponent('"Achiever"'));
-t("value with space", eqFilter("Strategic Thinking"), "eq." + encodeURIComponent('"Strategic Thinking"'));
-// A comma would otherwise terminate a PostgREST filter expression.
-t("comma is contained", eqFilter("a,b"), "eq." + encodeURIComponent('"a,b"'));
-t("embedded quote escaped", eqFilter('say"hi'), "eq." + encodeURIComponent('"say\\"hi"'));
-t("backslash escaped", eqFilter("a\\b"), "eq." + encodeURIComponent('"a\\\\b"'));
-t("no raw comma survives encoding", eqFilter("a,b").includes(","), false);
-t("no raw ampersand survives", eqFilter("a&b").includes("&"), false);
+console.log("\n── eqFilter (PostgREST semantics) ──");
+// REGRESSION GUARD: quoting values broke every filtered query in production on
+// July 30, 2026 — PostgREST matched against the quote marks themselves, so
+// checkEmail found nobody and no cache lookup could ever hit.
+t("plain value, no quotes", eqFilter("Achiever"), "eq.Achiever");
+t("email encodes @ but is NOT quoted", eqFilter("lme2@me.com"), "eq.lme2%40me.com");
+t("no double quote is ever emitted", eqFilter("lme2@me.com").includes("%22"), false);
+t("no literal quote is ever emitted", eqFilter("lme2@me.com").includes('"'), false);
+t("dots survive unencoded in the value", eqFilter("a.b.com"), "eq.a.b.com");
+t("personality code passes through", eqFilter("INFJ-A"), "eq.INFJ-A");
+t("space is encoded", eqFilter("Strategic Thinking"), "eq.Strategic%20Thinking");
+t("ampersand cannot break the query string", eqFilter("a&b").includes("&"), false);
+t("hash is encoded", eqFilter("a#b").includes("#"), false);
+// Every real caller must stay inside the no-reserved-characters constraint the
+// helper documents. If a value ever gains a comma, this is where it surfaces.
+const REAL_VALUES = [
+  "lme2@me.com", "seth@inheritance.vision", "lowdenj@tecumsehschools.org",
+  "Achiever", "Strategic", "Woo", "Input", "Learner",
+  "INFJ-A", "ENTP-T", "ISTJ-A",
+  "Prophecy", "Teaching", "Mercy", "Faith", "Leadership",
+  "m1", "m2", "m3"
+];
+let reservedHits = 0;
+for (const v of REAL_VALUES) if (/[,():]/.test(v)) reservedHits++;
+t("no real value contains a reserved character", reservedHits, 0);
+for (const v of REAL_VALUES) {
+  t(`round-trip decodes to original: ${v}`, decodeURIComponent(eqFilter(v).slice(3)), v);
+}
 
 console.log("\n── normalizeEmail ──");
 t("lowercases", normalizeEmail("Seth@Inheritance.Vision"), "seth@inheritance.vision");
