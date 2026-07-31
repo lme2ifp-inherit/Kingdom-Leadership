@@ -10,7 +10,18 @@ const {
   monthsSince,
   EFFORT_CAPABLE,
   REGEN_MONTHS,
-  UPSTREAM_TIMEOUT_MS
+  UPSTREAM_TIMEOUT_MS,
+  powerConfig,
+  POWER_LEVELS,
+  GENERATION_POWER,
+  THINKING_OFF_ALLOWED,
+  SYSTEM_PROMPT,
+  buildM1Prompt,
+  buildM2Prompt,
+  buildM3Prompt,
+  buildM4Prompt,
+  buildM4StrCardPrompt,
+  buildM4BonusPrompt
 } = require("./api/ai.js")._internal;
 
 let pass = 0, fail = 0;
@@ -142,6 +153,71 @@ t("self-abort fires before Vercel limit", UPSTREAM_TIMEOUT_MS < MAX_DURATION_S *
 t("at least 20s margin to build error response", (MAX_DURATION_S * 1000 - UPSTREAM_TIMEOUT_MS) >= 20000, true);
 // The old Netlify ceiling was 8.5s and every generation exceeded it.
 t("headroom vastly exceeds old 8.5s ceiling", UPSTREAM_TIMEOUT_MS > 8500 * 10, true);
+
+console.log("\n── generation power dial ──");
+// THE 400 GUARD. Opus 5 rejects thinking:{disabled} at effort xhigh or max.
+// This must be structurally impossible, not merely documented.
+for (const [name, cfg] of Object.entries(POWER_LEVELS)) {
+  const p = powerConfig(name);
+  const illegal = p.disableThinking && !THINKING_OFF_ALLOWED.includes(p.effort);
+  t(`${name}: never disables thinking above high effort`, illegal, false);
+  t(`${name}: effort is a real Opus 5 level`, ["low", "medium", "high", "xhigh", "max"].includes(p.effort), true);
+  t(`${name}: maxTokens leaves room for card JSON`, p.maxTokens >= 15000, true);
+  t(`${name}: maxTokens within Opus 5 128k ceiling`, p.maxTokens <= 128000, true);
+  t(`${name}: config matches declared level`, p.effort, cfg.effort);
+}
+// Thinking ON tiers must carry more room, since thinking shares the ceiling.
+t("deep raises max_tokens above standard", POWER_LEVELS.deep.maxTokens > POWER_LEVELS.standard.maxTokens, true);
+t("max raises max_tokens above deep", POWER_LEVELS.max.maxTokens > POWER_LEVELS.deep.maxTokens, true);
+t("standard keeps the proven 14s config", powerConfig("standard"), { effort: "high", disableThinking: true, maxTokens: 15000 });
+t("deep leaves thinking on", powerConfig("deep").disableThinking, false);
+t("max leaves thinking on", powerConfig("max").disableThinking, false);
+// A typo in the dial must fall back to the proven setting, not crash or 400.
+t("unknown level falls back to standard", powerConfig("turbo"), powerConfig("standard"));
+t("empty level falls back to standard", powerConfig(""), powerConfig("standard"));
+t("undefined level falls back to standard", powerConfig(undefined), powerConfig("standard"));
+// Fail-safe direction: a hand-edit asking for the illegal combo must not 400.
+t("illegal hand-edit fails safe to thinking ON",
+  powerConfig(Object.keys(POWER_LEVELS).find((k) => POWER_LEVELS[k].effort === "max")).disableThinking, false);
+t("dial is set to a level that exists", Object.keys(POWER_LEVELS).includes(GENERATION_POWER), true);
+
+console.log("\n── card voice (A + C) ──");
+// The words "poetic" and "vivid" in the schemas are what produced the flat,
+// flowery cards. If either ever comes back, these fail.
+const ALL_PROMPTS = [
+  buildM1Prompt("Strategic", "ENTJ-A"),
+  buildM2Prompt("Strategic", "Leadership"),
+  buildM3Prompt("ENTJ-A", "Leadership"),
+  buildM4Prompt("Seth", ["Strategic", "Achiever"], "ENTJ-A", ["Leadership", "Faith"]),
+  buildM4StrCardPrompt("Seth", "Strategic", "ENTJ-A", ["Leadership"]),
+  buildM4BonusPrompt("Seth", ["Strategic", "Achiever", "Woo"], "ENTJ-A", ["Leadership", "Faith", "Teaching"])
+];
+for (const p of ALL_PROMPTS) {
+  t("no 'poetic' in schema", /poetic/i.test(p), false);
+  t("no 'vivid' in schema", /vivid/i.test(p), false);
+  t("still demands pure JSON", /pure JSON only/.test(p), true);
+}
+// Every card-shaped prompt (not the bonus, which has no shadowSide) must ask
+// for the cost to OTHERS, which is the whole point of option C.
+for (const p of ALL_PROMPTS.slice(0, 4)) {
+  t("shadowSide names cost to others", /PEOPLE (AROUND THEM|BEING SERVED)/.test(p), true);
+  t("growth edge has a real price", /costs? (this person )?time, comfort, or control/.test(p), true);
+}
+// Option A lives in the system prompt and must survive edits.
+t("system prompt demands observable behavior", /OBSERVABLE BEHAVIOR/.test(SYSTEM_PROMPT), true);
+t("system prompt demands honest cost", /HONEST COST/.test(SYSTEM_PROMPT), true);
+t("system prompt bans elevated nouns", /sovereign, architect, unflinching/.test(SYSTEM_PROMPT), true);
+t("system prompt still forbids non-Latin scripts", /non-Latin scripts/.test(SYSTEM_PROMPT), true);
+t("system prompt still demands pure JSON", /Return pure JSON only/.test(SYSTEM_PROMPT), true);
+// Prayers stay first person; the bonus blessing stays third person.
+for (const p of ALL_PROMPTS.slice(0, 5)) {
+  t("prayer stays first person", /NOT a prayer spoken over them/.test(p), true);
+}
+t("bonus blessing stays third person", /third person/.test(ALL_PROMPTS[5]), true);
+// M4 is the only tier that sees the whole person — it must actually use it.
+t("M4 receives the participant name", /Seth/.test(ALL_PROMPTS[3]), true);
+t("M4 receives all strengths", /Strategic, Achiever/.test(ALL_PROMPTS[3]), true);
+t("M4 is told to use the named traits", /ACTUAL named strengths and gifts/.test(ALL_PROMPTS[3]), true);
 
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

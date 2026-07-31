@@ -33,7 +33,68 @@ const UPSTREAM_TIMEOUT_MS = 270000;
 // July 30, 2026.
 const REGEN_MONTHS = 12;
 
-const SYSTEM_PROMPT = "You are a faith-based leadership profile writer for a church conference. Respond only in English. Do not use any characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, Arabic, or any other non-English writing system. Return pure JSON only with no markdown, preamble, or explanation.";
+// ── GENERATION POWER DIAL ─────────────────────────────────────────────────────
+// One knob. Change this single string and redeploy — nothing else needs editing.
+//
+//   "standard" — effort high, thinking off.  ~14s/card.  Current proven setting.
+//   "deep"     — effort xhigh, thinking on.  Slower and costs more per card.
+//   "max"      — effort max,   thinking on.  Deepest reasoning available.
+//
+// Cards are cached permanently per combination, so a higher setting is paid for
+// ONCE per combination, not once per participant. Raising this is cheap in
+// absolute terms; it mainly costs generation time.
+//
+// ⚠ Opus 5 rule (verified against Anthropic docs, July 30 2026): thinking can
+// only be DISABLED at effort "high" or below. Sending thinking:{disabled} with
+// effort "xhigh" or "max" returns a 400. powerConfig() enforces this in code
+// rather than in a comment, so the invalid combination is unreachable.
+//
+// ⚠ max_tokens is a hard ceiling on TOTAL output — thinking tokens plus card
+// JSON share it. That is why the higher tiers raise it: thinking on a 15000
+// ceiling can starve the card itself into truncated, unparseable output.
+const GENERATION_POWER = "standard";
+
+const POWER_LEVELS = {
+  standard: { effort: "high",  thinkingOff: true,  maxTokens: 15000 },
+  deep:     { effort: "xhigh", thinkingOff: false, maxTokens: 32000 },
+  max:      { effort: "max",   thinkingOff: false, maxTokens: 64000 }
+};
+
+// Effort levels at which Opus 5 permits thinking to be disabled.
+const THINKING_OFF_ALLOWED = ["low", "medium", "high"];
+
+function powerConfig(level) {
+  const cfg = POWER_LEVELS[level] || POWER_LEVELS.standard;
+  return {
+    effort: cfg.effort,
+    // Fails SAFE: if a future edit ever asks for thinking-off above "high", we
+    // silently leave thinking on rather than sending a request that 400s.
+    disableThinking: cfg.thinkingOff && THINKING_OFF_ALLOWED.includes(cfg.effort),
+    maxTokens: cfg.maxTokens
+  };
+}
+
+// ── VOICE ─────────────────────────────────────────────────────────────────────
+// Rewritten July 30 2026. The previous prompt said nothing about voice, and the
+// schemas asked for "poetic" titles and "vivid" sentences — which is precisely
+// what produced flowery, generic cards like "The Sovereign Architect".
+// This is the A+C combination: Observable Behavior + Honest Cost, with the
+// teaching obligation folded into the scripture and growth-edge fields.
+const SYSTEM_PROMPT = [
+  "You are writing leadership profile cards for participants at a faith-based church leadership conference.",
+  "These are real people trying to understand how God has wired them and how He wants to use them.",
+  "",
+  "VOICE RULES. These override any adjective used in the JSON schema:",
+  "1. OBSERVABLE BEHAVIOR. Every claim must cash out in something the reader would catch themselves actually doing — in a meeting, a decision, a conversation, a Sunday. If a sentence could be printed on a motivational poster, rewrite it. Name the behavior, not the abstraction.",
+  "2. HONEST COST. The shadow side must name what this wiring costs THE PEOPLE AROUND THEM, not only what it costs the reader internally. Then give a growth edge with a real price attached — something that costs them time, comfort, or control. No free virtues.",
+  "3. TEACH, DO NOT DECORATE. Every field should leave the reader knowing something they did not know walking in — the mechanism behind the pattern, not a restatement of the label they already have.",
+  "4. PLAIN WORDS. Do not use elevated nouns such as sovereign, architect, unflinching, warrior, beacon, tapestry, forge, crucible, mantle, or journey. Write the way a trusted mentor talks across a kitchen table.",
+  "5. END FORWARD. Encouragement is earned by honesty first. Close on something the reader can do or ask God for, never on a compliment.",
+  "6. SECOND PERSON. Address the reader directly as you, except in the prayer, which is first person.",
+  "",
+  "Respond only in English. Do not use characters from non-Latin scripts, including but not limited to Chinese, Japanese, Korean, or Arabic.",
+  "Return pure JSON only with no markdown, preamble, or explanation."
+].join("\n");
 
 const JSON_HEADERS = {
   "Content-Type": "application/json",
@@ -422,25 +483,26 @@ const EFFORT_CAPABLE = /^claude-(opus-5|opus-4-[5-8]|sonnet-5|sonnet-4-6|fable-5
 async function callClaude(prompt, maxTokens) {
   const apiKey = process.env.ANTHROPIC_KEY;
   if (!apiKey) throw new Error("API key not configured");
-  const payload = JSON.stringify({
+  const power = powerConfig(GENERATION_POWER);
+
+  const payloadObj = {
     model: "claude-opus-5",
-    max_tokens: maxTokens || 15000,
-    output_config: { effort: "high" },
-    // Opus 5 runs adaptive thinking ON by default when this field is omitted.
-    // Thinking tokens bill at the output rate but are never shown to participants,
-    // and they consume the same max_tokens ceiling as the card JSON — which was
-    // starving some cards into truncated/unparseable output.
-    // Devotional card writing does not benefit from step-by-step reasoning the
-    // way math or code does, so it is disabled here.
-    //
-    // ⚠ CONSTRAINT: disabling thinking is only permitted at effort "high" or
-    // below. If effort is ever raised to "xhigh" or "max", this thinking line
-    // MUST be removed first or the API returns a 400 error.
-    thinking: { type: "disabled" },
+    // A caller-supplied ceiling still wins, but the dial raises the floor so
+    // that turning thinking on does not starve the card JSON of room.
+    max_tokens: Math.max(maxTokens || 0, power.maxTokens),
+    output_config: { effort: power.effort },
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }]
-  });
-  return await postToAnthropic(payload, apiKey);
+  };
+
+  // Opus 5 runs adaptive thinking ON by default when this field is omitted.
+  // At "standard" we turn it off: thinking tokens bill at the output rate, are
+  // never shown to participants, and share the max_tokens ceiling with the card.
+  // At "deep"/"max" we omit the field entirely so thinking stays on — required,
+  // since disabling it above effort "high" is a 400.
+  if (power.disableThinking) payloadObj.thinking = { type: "disabled" };
+
+  return await postToAnthropic(JSON.stringify(payloadObj), apiKey);
 }
 
 // ── SERVER-SIDE PROMPT BUILDERS ───────────────────────────────────────────────
@@ -450,18 +512,18 @@ async function callClaude(prompt, maxTokens) {
 function buildM1Prompt(strength, personality) {
   const pBase = personality.split("-")[0];
   const v = personality.includes("-A") ? "Assertive" : "Turbulent";
-  const schema = '{"theme":"3-5 word poetic leadership title","description":"3-4 vivid sentences on how this strength and personality interact and what this person does differently because of this exact combination","gift":"One sentence on the unique gift this combination brings to a team","shadowSide":"2 sentences — first describes the dark side or blind spot of this exact combination when unchecked, second gives a specific growth edge to counteract it. Scoped only to this combination, no personal names","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 — choose whichever translation best fits this combination — then one sentence on why it speaks to this specific pairing. Format: BookChapter:Verse TranslationAbbrev — quote — explanation","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"theme":"3-5 word title naming what this person actually does. Concrete and plain, not decorative. No elevated nouns","description":"3-4 sentences on how this strength and this personality interact. Every sentence must describe observable behavior — what this person does in a meeting, a decision, or a conversation that someone with a different combination would not do. Name the mechanism, not the label","gift":"One sentence on what this combination gives a team, stated as a specific thing they do that unsticks something others could not","shadowSide":"2 sentences. FIRST: what this wiring costs THE PEOPLE AROUND THEM when unchecked — the effect others actually experience, not just an internal flaw. SECOND: one growth edge with a real price attached, something that costs this person time, comfort, or control. Scoped only to this combination, no personal names","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 — choose whichever translation best fits this combination — then one sentence explaining the MECHANISM of why it speaks to this exact pairing, not a general application. Format: BookChapter:Verse TranslationAbbrev — quote — explanation","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them. Ends forward: something asked for, not something admired"}';
   return `Faith-based leadership conference. Matrix 1 Core Traits combining Clifton Strengths and 16 Personalities. This combination is ${strength} strength with ${personality} personality (${pBase} ${v} variant). Return pure JSON only with no markdown or explanation matching this exact shape: ${schema}`;
 }
 
 function buildM2Prompt(strength, gift) {
-  const schema = '{"theme":"3-5 word poetic title for this talent and gift combination","description":"3-4 vivid sentences on how this natural talent and spiritual gift work together in kingdom ministry","gift":"One sentence on the unique contribution this combination makes to the body of Christ","shadowSide":"2 sentences — first describes the dark side or blind spot of this exact strength-gift combination when unchecked, second gives a specific growth edge to counteract it. Scoped only to this combination, no personal names","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 — choose whichever translation best fits this combination — then one sentence on why it speaks to this specific pairing. Format: BookChapter:Verse TranslationAbbrev — quote — explanation","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"theme":"3-5 word title naming what this talent and gift actually produce together. Concrete and plain, not decorative","description":"3-4 sentences on how this natural talent and this spiritual gift work together in ministry. Every sentence must describe observable behavior — what this person does in a serving context that someone with the same gift but a different strength would not do","gift":"One sentence on the specific contribution this combination makes to the body of Christ, stated as an action, not a quality","shadowSide":"2 sentences. FIRST: what this combination costs THE PEOPLE BEING SERVED when unchecked — the effect others actually experience. SECOND: one growth edge with a real price attached, something that costs this person time, comfort, or control. Scoped only to this combination, no personal names","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 — choose whichever translation best fits this combination — then one sentence explaining the MECHANISM of why it speaks to this exact pairing, not a general application. Format: BookChapter:Verse TranslationAbbrev — quote — explanation","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them. Ends forward: something asked for, not something admired"}';
   return `Faith-based leadership conference. Matrix 2 Empowered Abilities combining Clifton Strengths and Spiritual Gifts. This combination is ${strength} CliftonStrength with ${gift} Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: ${schema}`;
 }
 
 function buildM3Prompt(personality, gift) {
   const pBase = personality.split("-")[0];
-  const schema = '{"theme":"3-5 word poetic title for how the Spirit expresses this gift through this personality","description":"3-4 vivid sentences on how the Holy Spirit empowers this spiritual gift uniquely through this personality type","gift":"One sentence on how the Spirit uniquely moves through this personality to exercise this gift","shadowSide":"2 sentences — first describes the dark side or blind spot of this exact personality-gift combination when unchecked, second gives a specific growth edge to counteract it. Scoped only to this combination, no personal names","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 — choose whichever translation best fits this combination — then one sentence on why it speaks to this specific pairing. Format: BookChapter:Verse TranslationAbbrev — quote — explanation","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"theme":"3-5 word title naming how this gift actually shows up through this personality. Concrete and plain, not decorative","description":"3-4 sentences on how the Holy Spirit works this gift through this specific personality. Every sentence must describe observable behavior — what this looks like in practice, and how it differs visibly from the same gift exercised through an opposite personality","gift":"One sentence on what the Spirit does through this personality that would look different through another, stated as an action","shadowSide":"2 sentences. FIRST: what this pairing costs THE PEOPLE AROUND THEM when unchecked — the effect others actually experience, including how the personality can distort the gift. SECOND: one growth edge with a real price attached, something that costs this person time, comfort, or control. Scoped only to this combination, no personal names","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 — choose whichever translation best fits this combination — then one sentence explaining the MECHANISM of why it speaks to this exact pairing, not a general application. Format: BookChapter:Verse TranslationAbbrev — quote — explanation","prayer":"3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them. Ends forward: something asked for, not something admired"}';
   return `Faith-based leadership conference. Matrix 3 Innate Qualities combining 16 Personalities and Spiritual Gifts. This combination is ${personality} personality (${pBase}) with ${gift} Spiritual Gift. Return pure JSON only with no markdown or explanation matching this exact shape: ${schema}`;
 }
 
@@ -469,14 +531,14 @@ function buildM4Prompt(name, strengths, personality, gifts) {
   const sAll = strengths.join(", ");
   const gAll = gifts.join(", ");
   const pBase = personality.split("-")[0];
-  const schema = '{"unifiedTheme":"3-6 word poetic title capturing this persons complete God-given leadership identity","description":"4-5 vivid sentences on how all three frameworks work together as one unified expression of Gods design that should feel like a revelation","kingdomRole":"2-3 sentences on the specific irreplaceable role this person is designed to play in Gods kingdom","teamContribution":"2-3 sentences on what this person uniquely brings to any team that no one else can replicate","shadowSide":"2-3 sentences on where this combination can go wrong and the honest growth edge","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 then one sentence on why it speaks to this combination","prayer":"4-5 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"unifiedTheme":"3-6 word title naming what this person is actually built to do. Concrete and plain, not decorative. No elevated nouns","description":"4-5 sentences on how these specific strengths, this personality, and these gifts work as one system. Reference the ACTUAL named strengths and gifts given above — not leadership in general. Every sentence must describe observable behavior, and at least one must name a tension or friction between two of these traits and how it resolves in practice","kingdomRole":"2-3 sentences on the specific role this person is built for. Name the kind of situation, room, or season where this exact wiring is the right tool — and be concrete enough that the reader could recognize the situation next week","teamContribution":"2-3 sentences on what this person does for a team that a differently-wired person would not. State it as behavior others would notice, not as a quality they possess","shadowSide":"2-3 sentences. FIRST: what this combination costs THE PEOPLE AROUND THEM when unchecked — the effect others actually experience. Name which specific traits collide to produce it. THEN: a growth edge with a real price attached, something that costs this person time, comfort, or control. Be honest; do not soften it into a compliment","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 then one sentence explaining the MECHANISM of why it speaks to this exact combination, not a general application","prayer":"4-5 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them. It should name the growth edge honestly and end forward: something asked for, not something admired"}';
   return `Faith-based leadership conference. Matrix 4 Unified Potential master synthesis for ${name}. Top strengths: ${sAll}. Personality: ${personality} (${pBase}). Spiritual gifts: ${gAll}. Return pure JSON only with no markdown or explanation matching this exact shape: ${schema}`;
 }
 
 function buildM4StrCardPrompt(name, strength, personality, gifts) {
   const gAll = gifts.join(", ");
   const pBase = personality.split("-")[0];
-  const schema = '{"cardTheme":"3-5 word poetic title for how this strength integrates with this personality and gifts","description":"3-4 vivid sentences on how this specific strength filtered through this personality and activated by these spiritual gifts creates something unique and kingdom-powerful","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 anchoring this strength with these gifts","prayer":"2-3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them"}';
+  const schema = '{"cardTheme":"3-5 word title naming what this strength does once this personality and these gifts are running through it. Concrete and plain, not decorative","description":"3-4 sentences on how this strength changes shape when filtered through this personality and activated by these gifts. Every sentence must describe observable behavior. Name at least one thing this person does that another person with the SAME strength but different gifts would not do","scripture":"One Bible verse reference and brief quote from KJV, NIV, NLT, or NASB1995 anchoring this strength with these gifts, then one sentence on the mechanism of why it fits","prayer":"2-3 sentence prayer written in first person as if the participant is praying it themselves using I me my Lord You — NOT a prayer spoken over them. Ends forward: something asked for, not something admired"}';
   return `Faith-based leadership conference. Matrix 4 Individual Strength Card for ${name}. Strength: ${strength}. Personality: ${personality} (${pBase}). Spiritual gifts: ${gAll}. Return pure JSON only with no markdown or explanation matching this exact shape: ${schema}`;
 }
 
@@ -484,7 +546,7 @@ function buildM4BonusPrompt(name, strengths, personality, gifts) {
   const top3s = strengths.slice(0, 3).join(", ");
   const top3g = gifts.slice(0, 3).join(", ");
   const pBase = personality.split("-")[0];
-  const schema = '{"bonusTheme":"3-5 word poetic title","synthesis":"3-4 sentences distilling the essence of this persons kingdom identity","coreCall":"One powerful sentence naming this persons core kingdom calling","blessing":"3-4 sentence spoken blessing written in third person as if a pastor is speaking it over the participant using their name and he/she/they"}';
+  const schema = '{"bonusTheme":"3-5 word title, concrete and plain, not decorative","synthesis":"3-4 sentences distilling what this person is built to do, referencing the ACTUAL named strengths and gifts above. Observable behavior, not abstractions","coreCall":"One clear sentence naming what this person is called to do. Plain language a person would actually say out loud — not a slogan","blessing":"3-4 sentence spoken blessing written in third person as if a pastor is speaking it over the participant using their name and he/she/they. Warm and personal, grounded in the specific traits named above rather than generic praise"}';
   return `Faith-based leadership conference. Streamlined Synthesis for ${name}. Top 3 strengths: ${top3s}. Personality: ${personality} (${pBase}). Top spiritual gifts: ${top3g}. Return pure JSON only with no markdown or explanation matching this exact shape: ${schema}`;
 }
 
@@ -656,16 +718,17 @@ module.exports = async function handler(req, res) {
       const requestedModel = body.model || "claude-opus-5";
       const supportsEffort = EFFORT_CAPABLE.test(requestedModel);
 
+      const power = powerConfig(GENERATION_POWER);
       const payloadObj = {
         model: requestedModel,
-        max_tokens: body.max_tokens || 15000,
+        max_tokens: Math.max(body.max_tokens || 0, power.maxTokens),
         system: SYSTEM_PROMPT,
         messages: body.messages
       };
       if (supportsEffort) {
-        payloadObj.output_config = { effort: "high" };
-        // See callClaude(). Must be removed if effort ever goes above "high".
-        payloadObj.thinking = { type: "disabled" };
+        payloadObj.output_config = { effort: power.effort };
+        // Only sent when the dial permits it. See powerConfig().
+        if (power.disableThinking) payloadObj.thinking = { type: "disabled" };
       }
 
       const result = await postToAnthropic(JSON.stringify(payloadObj), apiKey);
@@ -689,5 +752,16 @@ module.exports._internal = {
   monthsSince,
   EFFORT_CAPABLE,
   REGEN_MONTHS,
-  UPSTREAM_TIMEOUT_MS
+  UPSTREAM_TIMEOUT_MS,
+  powerConfig,
+  POWER_LEVELS,
+  GENERATION_POWER,
+  THINKING_OFF_ALLOWED,
+  SYSTEM_PROMPT,
+  buildM1Prompt,
+  buildM2Prompt,
+  buildM3Prompt,
+  buildM4Prompt,
+  buildM4StrCardPrompt,
+  buildM4BonusPrompt
 };
