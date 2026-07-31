@@ -160,7 +160,8 @@ const runDiag = {
   attempted: 0,
   fromCache: 0,
   generated: 0,
-  failures: []   // { key, reason, detail }
+  failures: [],  // { key, reason, detail } — CARD generation failures only
+  infra: []      // { action, reason, detail, at } — server/network failures
 };
 function diagReset() {
   runDiag.startedAt = Date.now();
@@ -168,9 +169,41 @@ function diagReset() {
   runDiag.fromCache = 0;
   runDiag.generated = 0;
   runDiag.failures = [];
+  // NOTE: infra is deliberately NOT cleared here. A login or save failure
+  // happens outside a generation run, and clearing it on the next run would
+  // erase the only record of it before anyone read it.
 }
 function diagFail(key, reason, detail) {
   runDiag.failures.push({ key, reason, detail: String(detail || "").slice(0, 200) });
+}
+
+// ── INFRASTRUCTURE FAILURE RECORD ─────────────────────────────────────────────
+// Every serverless call failure lands here with the REAL reason. Before this
+// existed, fnCall() collapsed every possible failure — network down, HTTP 500,
+// Supabase rejection, HTML error page — into a bare null, and the callers then
+// translated that null into a confident lie: "you are not on the approved list"
+// when the truth was "we could not reach the server to ask".
+let lastFnError = null;
+function fnFail(action, reason, detail) {
+  lastFnError = {
+    action,
+    reason,
+    detail: String(detail == null ? "" : detail).slice(0, 300),
+    at: Date.now()
+  };
+  runDiag.infra.push(lastFnError);
+  // Keep the last 20 only — a conference room retrying all night should not
+  // grow this without bound.
+  if (runDiag.infra.length > 20) runDiag.infra.shift();
+  console.error(`fnCall ${action}: ${reason} — ${lastFnError.detail}`);
+  return lastFnError;
+}
+// Human-readable one-liner for the UI. Never returns an empty string, because
+// an empty error message is how a failure becomes invisible again.
+function fnErrorText(fallback) {
+  if (!lastFnError) return fallback || "Something went wrong. Please try again.";
+  const meaning = DIAG_MEANING[lastFnError.reason] || "";
+  return `${lastFnError.reason}${meaning ? " — " + meaning : ""}${lastFnError.detail ? " (" + lastFnError.detail + ")" : ""}`;
 }
 
 // ── AI ─────────────────────────────────────────────────────────────────────
@@ -237,15 +270,50 @@ async function resolveEndpoint() {
 const CLIENT_TIMEOUT_MS = 285000;
 
 // ── STORAGE — routes to the serverless function on live site, localStorage in dev ────
+// Returns the parsed response object on success, or null on ANY failure.
+// The null return is deliberate and unchanged — every existing caller depends
+// on it. What is new is that the REASON no longer evaporates: it is recorded
+// in lastFnError/runDiag.infra so the UI and the console can report what
+// actually happened instead of inventing an explanation.
 async function fnCall(body) {
+  const action = (body && body.action) || "unknown";
   try {
     const endpoint = await resolveEndpoint();
     const r = await fetch(endpoint, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    return await r.json();
-  } catch(e) { return null; }
+
+    // Read as text first. A function killed at the platform wall returns an
+    // HTML error page, and calling .json() on it throws — which is how a
+    // platform failure used to disguise itself as a network failure.
+    const raw = await r.text().catch(() => "");
+    let d = null;
+    try { d = raw ? JSON.parse(raw) : null; } catch(e) { d = null; }
+
+    if (!r.ok) {
+      const serverMsg = d && d.error && d.error.message;
+      const serverDiag = d && d.error && d.error._diag;
+      fnFail(action, serverDiag || ("HTTP_" + r.status), serverMsg || raw.slice(0, 300) || ("HTTP " + r.status));
+      return null;
+    }
+    if (d === null) {
+      fnFail(action, "BAD_JSON", raw.slice(0, 300) || "empty response body");
+      return null;
+    }
+    // A 200 response can still carry a structured error — the server returns
+    // 200 with an { error } body on several paths.
+    if (d.error) {
+      fnFail(action, d.error._diag || "API_ERROR", d.error.message || "unspecified server error");
+      return null;
+    }
+
+    lastFnError = null;
+    return d;
+  } catch(e) {
+    fnFail(action, e.name === "AbortError" ? "CLIENT_TIMEOUT" : "NETWORK", e.message);
+    return null;
+  }
 }
 
 // NOTE: storageGet/storageSet are currently UNUSED (left over from the June
@@ -287,11 +355,21 @@ async function getApprovedEmails() {
   try { return JSON.parse(localStorage.getItem("kld_approved_emails") || "[]"); } catch(e) { return []; }
 }
 
+// Returns true (approved), false (genuinely not on the list), or the string
+// "error" (we could not reach the server to find out). The third case used to
+// be reported as false — telling a legitimate participant they were not
+// approved when the real problem was on our side. Never conflate these again.
 async function isEmailApproved(email) {
   const e = email.toLowerCase().trim();
   if (IS_LIVE) {
     const r = await fnCall({ action: "checkEmail", email: e });
-    return r ? r.approved : false;
+    if (!r) return "error";
+    // A malformed success response is also a failure, not a denial.
+    if (typeof r.approved !== "boolean") {
+      fnFail("checkEmail", "BAD_SHAPE", "response had no boolean 'approved' field");
+      return "error";
+    }
+    return r.approved;
   }
   const list = await getApprovedEmails();
   return list.map(x=>x.toLowerCase().trim()).includes(e);
@@ -321,14 +399,24 @@ async function removeEmail(email) {
   return updated;
 }
 
+// Returns { ok, record, error }. The old version returned the record
+// unconditionally, so a failed write was indistinguishable from a successful
+// one and the UI told the participant their profile was saved when nothing had
+// been written. Callers MUST check ok before claiming a save.
 async function saveProfile(email, profileData) {
   const record = { email: email.toLowerCase().trim(), savedAt: Date.now(), ...profileData };
   if (IS_LIVE) {
-    await fnCall({ action: "saveProfile", email, profile: record });
-  } else {
-    localStorage.setItem("kld_profile_"+email.toLowerCase().trim(), JSON.stringify(record));
+    const r = await fnCall({ action: "saveProfile", email, profile: record });
+    if (!r) return { ok: false, record, error: fnErrorText("the profile could not be saved.") };
+    return { ok: true, record, error: null };
   }
-  return record;
+  try {
+    localStorage.setItem("kld_profile_"+email.toLowerCase().trim(), JSON.stringify(record));
+    return { ok: true, record, error: null };
+  } catch(e) {
+    fnFail("saveProfile", "LOCAL_STORAGE", e.message);
+    return { ok: false, record, error: fnErrorText("local storage rejected the write.") };
+  }
 }
 
 async function loadProfile(email) {
@@ -393,6 +481,14 @@ async function handleEmailLogin() {
 
   if (!email.includes("@")) { state.loginError="Please enter a valid email"; render(); return; }
   const approved = await isEmailApproved(email);
+  // Three outcomes, not two. "error" means we could not verify — keep the
+  // participant on the login screen with the real reason rather than sending
+  // them to the notApproved dead end, which they cannot recover from.
+  if (approved === "error") {
+    state.loginError = "Could not verify your email — " + fnErrorText("the server did not respond.") + " Please try again.";
+    render();
+    return;
+  }
   if (!approved) { state.view="notApproved"; state.userEmail=email; render(); return; }
   state.userEmail=email; state.loginError="";
   const existing = await loadProfile(email);
@@ -690,46 +786,81 @@ function render() {
 
 // ── ON-SCREEN DIAGNOSTICS ─────────────────────────────────────────────────────
 // iOS Safari offers no usable console, so failures are reported in the UI.
+// The two timeout strings interpolate their real constants rather than naming
+// hardcoded numbers — the previous versions still described Netlify's 8.5s/10s
+// ceiling months after the Vercel migration, which would have sent debugging
+// at entirely the wrong platform.
 const DIAG_MEANING = {
-  TIMEOUT:        "Generation took longer than 8.5s — the Netlify function had to abort before its 10s limit.",
-  CLIENT_TIMEOUT: "No response at all within 12s — the request never came back.",
+  TIMEOUT:        "The server aborted at 270s to return a readable error before Vercel's 300s function limit.",
+  CLIENT_TIMEOUT: `No response at all within ${Math.round(CLIENT_TIMEOUT_MS / 1000)}s — the request never came back.`,
   TRUNCATED:      "Response was cut off at the max_tokens ceiling, so the JSON was incomplete.",
   NO_JSON:        "Response came back but contained no JSON object.",
   BAD_JSON:       "Upstream returned something that wasn't JSON (usually a platform error page).",
   API_ERROR:      "Anthropic rejected the request — see the detail text.",
   EMPTY_CONTENT:  "Response contained no content blocks.",
   NETWORK:        "Network error reaching Anthropic.",
-  EXCEPTION:      "Unexpected client-side error."
+  EXCEPTION:      "Unexpected client-side error.",
+  BAD_SHAPE:      "Server replied successfully but the response was missing expected fields.",
+  LOCAL_STORAGE:  "The browser refused to write to local storage.",
+  SUPABASE_WRITE: "The database rejected the write — the data was NOT saved.",
+  SUPABASE_READ:  "The database could not be read."
 };
 
 function buildDiagBanner() {
   const fails = runDiag.failures;
-  if (!fails.length) return "";
+  const infra = runDiag.infra;
+  if (!fails.length && !infra.length) return "";
   const counts = {};
   fails.forEach(f => { counts[f.reason] = (counts[f.reason] || 0) + 1; });
-  const summary = Object.keys(counts).map(k => `${k} x${counts[k]}`).join(" · ");
+  const infraCounts = {};
+  infra.forEach(f => { infraCounts[f.reason] = (infraCounts[f.reason] || 0) + 1; });
+  const summary = Object.keys(counts).concat(Object.keys(infraCounts))
+    .map(k => `${k} x${counts[k] || infraCounts[k]}`).join(" · ");
+
+  const esc = (s) => String(s).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Server/network failures are listed separately from card failures. They
+  // have different causes and different fixes, and merging them was part of
+  // why a login failure used to look like a content problem.
+  const infraBlock = infra.length ? `
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid #7f1d1d55">
+        <div style="font-size:11px;color:#fca5a5;margin-bottom:6px">Server / network failures</div>
+        ${infra.slice().reverse().map(f => `
+          <div style="margin-bottom:6px">
+            <div style="font-size:11px;color:#fca5a5;font-family:monospace">${esc(f.action)} → ${esc(f.reason)}</div>
+            <div style="font-size:11px;color:#94a3b8">${esc(DIAG_MEANING[f.reason] || "Unrecognized failure code.")}</div>
+            <div style="font-size:10px;color:#64748b;font-family:monospace;white-space:pre-wrap">${esc(f.detail)}</div>
+          </div>`).join("")}
+      </div>` : "";
 
   const detail = state.diagVisible ? `
-    <div style="padding:10px 16px;background:#0b1220;border-top:1px solid #7f1d1d55;max-height:260px;overflow:auto">
+    <div style="padding:10px 16px;background:#0b1220;border-top:1px solid #7f1d1d55;max-height:320px;overflow:auto">
       <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">
-        Generated ${runDiag.generated} · from cache ${runDiag.fromCache} · failed ${fails.length}
+        Generated ${runDiag.generated} · from cache ${runDiag.fromCache} · cards failed ${fails.length} · server errors ${infra.length}
       </div>
       ${Object.keys(counts).map(k => `
         <div style="margin-bottom:8px">
-          <div style="font-size:11px;color:#fca5a5;font-family:monospace">${k} (${counts[k]})</div>
-          <div style="font-size:11px;color:#94a3b8">${DIAG_MEANING[k] || "Unrecognized failure code."}</div>
+          <div style="font-size:11px;color:#fca5a5;font-family:monospace">${esc(k)} (${counts[k]})</div>
+          <div style="font-size:11px;color:#94a3b8">${esc(DIAG_MEANING[k] || "Unrecognized failure code.")}</div>
         </div>`).join("")}
       <div style="font-size:10px;color:#64748b;font-family:monospace;margin-top:8px;white-space:pre-wrap">${
-        fails.map(f => `${f.key}\n   ${f.reason}: ${f.detail}`).join("\n")
-          .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        esc(fails.map(f => `${f.key}\n   ${f.reason}: ${f.detail}`).join("\n"))
       }</div>
+      ${infraBlock}
     </div>` : "";
+
+  // The headline must match what actually went wrong. Claiming "cards failed"
+  // when the real problem was a save or login failure sends debugging at the
+  // wrong thing.
+  const headline = fails.length
+    ? `⚠ ${fails.length} card${fails.length === 1 ? "" : "s"} failed to generate — showing placeholder text. Profile not saved.`
+    : `⚠ ${infra.length} server error${infra.length === 1 ? "" : "s"} — something did not reach the database.`;
 
   return `<div style="background:#7f1d1d22;border-bottom:1px solid #7f1d1d55">
     <div style="padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <span style="font-size:12px;color:#fca5a5">
-        ⚠ ${fails.length} card${fails.length === 1 ? "" : "s"} failed to generate — showing placeholder text. Profile not saved.
-        <span style="color:#94a3b8;font-family:monospace;font-size:11px"> ${summary}</span>
+        ${headline}
+        <span style="color:#94a3b8;font-family:monospace;font-size:11px"> ${esc(summary)}</span>
       </span>
       <button id="btnToggleDiag" style="background:#7f1d1d;border:1px solid #fca5a5;color:#fca5a5;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">
         ${state.diagVisible ? "Hide details" : "Show details"}
@@ -949,7 +1080,7 @@ function buildAdmin() {
         <div style="font-size:12px;color:#4a5568;line-height:2;">
           Admin access active · Profiles save automatically after generation · 
           ${REGEN_MONTHS}-month regeneration limit per participant · 
-          All data stored in Netlify persistent storage
+          All data stored in Supabase
         </div>
       </div>
     </div>
@@ -1744,7 +1875,7 @@ async function generate() {
   }
 
   if (state.userEmail && state.userEmail !== "admin@kingdom") {
-    await saveProfile(state.userEmail, {
+    const saved = await saveProfile(state.userEmail, {
       name: p.name,
       personality: p.personality,
       strengths: p.strengths,
@@ -1762,8 +1893,16 @@ async function generate() {
         m4Bonus: state.m4Bonus
       }
     });
-    state.savedProfile = { savedAt: Date.now() };
-    state.profileAge = 0;
+    // Only claim a save that actually happened. Marking savedProfile on a
+    // failed write told the participant their cards were stored when they
+    // were not — and they would find nothing on their next login.
+    if (saved.ok) {
+      state.savedProfile = { savedAt: Date.now() };
+      state.profileAge = 0;
+    } else {
+      state.diagVisible = true;
+      render();
+    }
   }
 }
 
