@@ -119,7 +119,11 @@ const MATRICES=[
 // ── STATE ──────────────────────────────────────────────────────────────────
 // ── VERSION 3 ────────────────────────────────────────────────────────────────
 // Admin password verified server-side via ADMIN_PASSWORD environment variable
-const REGEN_MONTHS = 6;
+// Soft freshness tracker. Must match REGEN_MONTHS in api/ai.js — the server
+// reports profile age against its own value, so a mismatch here shows the
+// participant a different number than the one actually being enforced.
+// Raised from 6 to 12 on July 31, 2026.
+const REGEN_MONTHS = 12;
 const REGISTER_URL = "https://go2.lc/leadership_id";
 
 let state = {
@@ -338,14 +342,17 @@ function profileAgeMonths(savedAt) { return (Date.now()-savedAt)/(1000*60*60*24*
 function profileNeedsRefresh(savedAt) { return profileAgeMonths(savedAt)>=REGEN_MONTHS || regenWindowOpen(); }
 
 // ── ONE-TIME REGENERATION WINDOW ──────────────────────────────────────────────
-// Temporarily suspends the 6-month gate so returning participants can rerun
-// their profile on the upgraded model. Participants still land on their saved
+// Temporarily suspends the 12-month gate so returning participants can rerun
+// their profile on an upgraded model. Participants still land on their saved
 // results first and choose to regenerate — nothing is overwritten automatically.
-// To close the window early: set REGEN_WINDOW.active = false.
-// To move the window: change start/end below. Dates are inclusive and use the
-// visitor's local time. "end" is the LAST day the window is open.
+//
+// CLOSED July 31, 2026. The Opus 5 migration was verified clean, so the bypass
+// is no longer needed. The mechanism is kept intact, not deleted: to reopen for
+// a future model upgrade, set active back to true and move start/end below.
+// Dates are inclusive and use the visitor's local time; "end" is the LAST day
+// the window is open.
 const REGEN_WINDOW = {
-  active: true,
+  active: false,
   start: { year: 2026, month: 7, day: 30 },  // July 30, 2026
   end:   { year: 2026, month: 8, day: 1 },   // August 1, 2026 (inclusive)
   reason: "Upgraded profile generation is now available."
