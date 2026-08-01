@@ -274,11 +274,13 @@ function assembleProfile(job, items) {
     return out;
   };
 
+  // m2Data uses FLAT pipe-delimited keys ("Strategic|Wisdom"), not nesting.
+  // This must match how index.html reads it — state.m2Data[`${s}|${g}`] — or
+  // every M2 card renders blank while the profile looks correctly saved.
   const m2Data = {};
   for (const it of byKind("m2")) {
     const p = it.params || {};
-    m2Data[p.strength] = m2Data[p.strength] || {};
-    m2Data[p.strength][p.gift] = it.result;
+    m2Data[`${p.strength}|${p.gift}`] = it.result;
   }
 
   return {

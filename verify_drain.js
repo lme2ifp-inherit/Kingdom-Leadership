@@ -164,7 +164,8 @@ const assembled = assembleProfile({ participant: PARTICIPANT }, [
 ]);
 // Shape must match what the frontend already reads, or restore breaks silently.
 t("m1Data keyed by strength", assembled.m1Data.Strategic.theme, "A");
-t("m2Data nested strength->gift", assembled.m2Data.Strategic.Wisdom.theme, "B");
+t("m2Data uses flat pipe keys", assembled.m2Data["Strategic|Wisdom"].theme, "B");
+t("m2Data is NOT nested", assembled.m2Data.Strategic, undefined);
 t("m3Data keyed by gift", assembled.m3Data.Wisdom.theme, "C");
 t("m4Cards keyed by strength", assembled.m4Cards.Strategic.cardTheme, "SC");
 t("m1Summary is a single object", assembled.m1Summary.theme, "S1");

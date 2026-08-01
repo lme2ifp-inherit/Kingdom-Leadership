@@ -148,6 +148,12 @@ let state = {
   savedProfile: null,
   profileAge: null,
   diagVisible: false,
+  // ── SERVER-SIDE GENERATION QUEUE ──────────────────────────────────────────
+  // Generation now runs on the server. The browser submits once and polls, so
+  // a participant can lock their phone or close the tab without losing the run.
+  job: null,          // { id, status, total, done, ahead, error }
+  jobPolling: false,
+  jobError: "",
 };
 
 const aiCache = {};
@@ -491,6 +497,10 @@ async function handleEmailLogin() {
   }
   if (!approved) { state.view="notApproved"; state.userEmail=email; render(); return; }
   state.userEmail=email; state.loginError="";
+  // If a job is already running for this person — they closed the tab, their
+  // phone locked, or they switched devices — rejoin it rather than letting
+  // them start a second one and pay for the same profile twice.
+  if (await resumeJobIfRunning(email)) { render(); return; }
   const existing = await loadProfile(email);
   if (existing) {
     state.savedProfile=existing;
@@ -875,6 +885,7 @@ function buildApp() {
   if (state.view === "landing") return buildLanding();
   if (state.view === "login") return buildLogin();
   if (state.view === "notApproved") return buildNotApproved();
+  if (state.view === "waiting") return buildWaiting();
   if (state.view === "admin") return buildAdminWrapper();
 
   const p = state.currentIdx !== null ? state.participants[state.currentIdx] : null;
@@ -994,6 +1005,54 @@ function buildNotApproved() {
 }
 
 // ── ADMIN SCREEN ───────────────────────────────────────────────────────────────
+
+// ── WAITING SCREEN ────────────────────────────────────────────────────────────
+// Shown while the server generates. The single most important line here is the
+// permission to leave: the whole point of moving generation off the browser is
+// that closing this page is safe, and a participant who does not know that
+// will sit and watch a progress bar for two minutes.
+function buildWaiting() {
+  const j = state.job || {};
+  const total = j.total || 0;
+  const done = j.done || 0;
+  const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+  const ahead = j.ahead || 0;
+
+  const queueLine = ahead > 0
+    ? `${ahead} ${ahead === 1 ? "person is" : "people are"} ahead of you in line.`
+    : (j.status === "processing" ? "Your profile is being written now." : "You're next in line.");
+
+  return `
+  <div class="wrap" style="max-width:560px;margin:0 auto;padding:48px 20px;text-align:center">
+    <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:12px">
+      Kingdom Leadership Discovery
+    </div>
+    <h1 style="font-size:26px;margin:0 0 8px">Building your profile</h1>
+    <p style="color:#94a3b8;margin:0 0 28px;line-height:1.6">${queueLine}</p>
+
+    <div style="background:#1e293b;border-radius:999px;height:10px;overflow:hidden;margin-bottom:10px">
+      <div style="background:linear-gradient(90deg,#7c3aed,#a78bfa);height:100%;width:${pct}%;transition:width .6s ease"></div>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:32px">
+      ${total > 0 ? `${done} of ${total} cards complete` : "Getting started&hellip;"}
+    </div>
+
+    <div style="background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:18px 20px;text-align:left">
+      <div style="font-size:13px;color:#e2e8f0;font-weight:600;margin-bottom:6px">
+        You can close this page
+      </div>
+      <div style="font-size:13px;color:#94a3b8;line-height:1.6">
+        Your profile is being written on our servers, not in this browser. Lock your phone,
+        switch apps, or come back tomorrow &mdash; it will keep going without you, and your
+        finished profile will be waiting when you sign back in.
+      </div>
+    </div>
+
+    <div style="margin-top:24px;font-size:12px;color:#475569">
+      Signed in as ${state.userEmail || ""}
+    </div>
+  </div>`;
+}
 
 function buildAdminWrapper() {
   return `<div style="display:flex;flex-direction:column;height:100vh;">
@@ -1794,116 +1853,146 @@ function promptM4Bonus(name, strengths, p, gifts) {
   return "Faith-based leadership conference. Matrix 4 Bonus Streamlined Summary for " + name + ". Top 3 strengths: " + top3S + ". Personality: " + p + " (" + pBase + "). Top 3 gifts: " + top3G + ". Create a tight distilled synthesis. Return pure JSON only no markdown: " + schema;
 }
 
+// ── GENERATION: ENQUEUE AND POLL ──────────────────────────────────────────────
+// Rewritten July 31, 2026. Previously this function drove all 33 card
+// generations from the browser with sequential awaits. On iOS Safari a
+// backgrounded tab is suspended, so a participant who locked their phone or
+// took a call lost the whole run and had to start over — at a conference,
+// most of the room.
+//
+// Now the server does the work. This submits one job and polls for progress.
+// Closing the tab is harmless: the drain keeps going and the finished profile
+// is waiting on the next visit.
+const POLL_INTERVAL_MS = 4000;
+let jobPollTimer = null;
+
+function stopJobPolling() {
+  if (jobPollTimer) { clearTimeout(jobPollTimer); jobPollTimer = null; }
+  state.jobPolling = false;
+}
+
 async function generate() {
   if (!validate()) { render(); return; }
   diagReset();
-  const p = {name:state.name.trim(), personality:state.personality, strengths:[...state.strengths], gifts:state.gifts.filter(Boolean), id:Date.now()};
-  state.participants.push(p);
-  state.currentIdx = state.participants.length-1;
-  state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null; state.m4Cards={}; state.m4Bonus=null;
-  state.view="profile"; state.activeMatrix="m1";
-
-  p.strengths.forEach(s=>{ state.m1Data[s]="loading"; });
-  p.strengths.forEach(s=>{ p.gifts.forEach(g=>{ state.m2Data[`${s}|${g}`]="loading"; }); });
-  p.gifts.forEach(g=>{ state.m3Data[g]="loading"; });
+  const p = {
+    name: state.name.trim(),
+    personality: state.personality,
+    strengths: [...state.strengths],
+    gifts: state.gifts.filter(Boolean),
+    id: Date.now()
+  };
+  state.participants = [p];
+  state.currentIdx = 0;
+  state.m1Data = {}; state.m2Data = {}; state.m3Data = {};
+  state.m4Data = null; state.m4Cards = {}; state.m4Bonus = null;
+  state.m1Summary = null; state.m2Summary = null; state.m3Summary = null;
+  state.jobError = "";
+  state.view = "waiting";
+  state.job = { status: "submitting", total: 0, done: 0, ahead: 0 };
   render();
 
-  // M1
-  for (const s of p.strengths) {
-    const res = await callAI({ matrix: "m1", strength: s, personality: p.personality }, `m1|${s}|${p.personality}`);
-    state.m1Data[s] = res || {_failed:true, description:`The ${s} strength expressed through the ${p.personality} personality creates a distinctive leadership presence.`, gift:`A unique contribution only this combination makes.`, shadowSide:"", scripture:"", prayer:`Lord, let this combination serve Your kingdom purposes.`};
-    render();
-  }
+  const r = await fnCall({
+    action: "enqueueJob",
+    email: state.userEmail,
+    participant: { name: p.name, personality: p.personality, strengths: p.strengths, gifts: p.gifts }
+  });
 
-  // M2
-  for (const s of p.strengths) {
-    for (const g of p.gifts) {
-      const res = await callAI({ matrix: "m2", strength: s, gift: g }, `m2|${s}|${g}`);
-      state.m2Data[`${s}|${g}`] = res || {_failed:true, description:`${s} and ${g} working together as a unified kingdom gift.`, gift:`A unique contribution to the body of Christ.`, shadowSide:"", scripture:"", prayer:`Lord, let my natural talent and spiritual gift work as one.`};
-      // Don't re-render mid-generation here to avoid flicker — only render at end of each outer loop
-    }
-    render();
-  }
-
-  // M3
-  for (const g of p.gifts) {
-    const res = await callAI({ matrix: "m3", personality: p.personality, gift: g }, `m3|${p.personality}|${g}`);
-    state.m3Data[g] = res || {_failed:true, description:`The ${g} gift expressed through the ${p.personality} personality.`, gift:`A unique way the Spirit moves through this personality type.`, shadowSide:"", scripture:"", prayer:`Spirit, flow through how I'm made to express this gift.`};
-    render();
-  }
-
-  // Matrix summaries
-  state.m1Summary = "loading";
-  state.m2Summary = "loading";
-  state.m3Summary = "loading";
-  render();
-  const r1s = await callAILegacy(promptM1Summary(p.strengths,p.personality),"m1sum|"+p.strengths.join(",")+"|"+p.personality);
-  state.m1Summary = r1s||null; render();
-  const r2s = await callAILegacy(promptM2Summary(p.strengths,p.gifts),"m2sum|"+p.strengths.join(",")+"|"+p.gifts.join(","));
-  state.m2Summary = r2s||null; render();
-  const r3s = await callAILegacy(promptM3Summary(p.personality,p.gifts),"m3sum|"+p.personality+"|"+p.gifts.join(","));
-  state.m3Summary = r3s||null; render();
-
-  // M4 master synthesis
-  state.m4Cards = {};
-  const m4res = await callAI({ matrix: "m4", name: p.name, strengths: p.strengths, personality: p.personality, gifts: p.gifts, maxTokens: 15000 }, `m4|${p.strengths.join(",")}|${p.personality}|${p.gifts.join(",")}`);
-  state.m4Data = m4res || {_failed:true, unifiedTheme:"Kingdom Servant Leader",description:`${p.name} carries a rare synthesis of natural talent, personality, and spiritual gift that positions them uniquely in God's kingdom design.`,kingdomRole:`A servant leader uniquely designed to advance God's kingdom.`,teamContribution:`Brings a combination of natural ability and Spirit-empowered gifting that elevates every team they serve.`,shadowSide:`The very strengths that make this combination powerful can become blind spots when not submitted to God's wisdom.`,scripture:`Ephesians 2:10 — "We are God's handiwork, created in Christ Jesus to do good works." Every dimension of how God wired ${p.name} is intentional.`,prayer:`${p.name}, you are God's masterpiece — wired with precision for purposes only you can fulfill. May your strengths serve His wisdom, your personality carry His grace, and your gifts flow with His power. Walk boldly in the fullness of who He made you to be.`};
-  render();
-  // M4 Bonus streamlined summary
-  state.m4Bonus = "loading"; render();
-  const rbns = await callAI({ matrix: "m4bonus", name: p.name, strengths: p.strengths, personality: p.personality, gifts: p.gifts }, "m4bonus|"+p.strengths.slice(0,3).join(",")+"|"+p.personality+"|"+p.gifts.slice(0,3).join(","));
-  state.m4Bonus = rbns || null; render();
-
-  // M4 individual strength cards
-  for (const s of p.strengths) {
-    const res = await callAI({ matrix: "m4str", name: p.name, strength: s, personality: p.personality, gifts: p.gifts }, `m4c|${s}|${p.personality}|${p.gifts.join(",")}`);
-    state.m4Cards[s] = res || {_failed:true, cardTheme:`${s} in Kingdom Purpose`,description:`The ${s} strength, expressed through the ${p.personality} personality and empowered by the ${p.gifts[0]} gift, creates a distinctive kingdom-powerful expression that belongs to ${p.name} alone.`,scripture:`Romans 12:6 — "We have different gifts, according to the grace given to each of us."`,prayer:`Lord, let ${p.name}'s ${s} strength be fully surrendered to You and activated by Your Spirit for kingdom purposes.`};
-    render();
-  }
-
-  // ── AUTO-SAVE PROFILE TO STORAGE ──────────────────────────────────────────
-  // IMPORTANT: a run with failures produces hardcoded placeholder text ("A unique
-  // contribution to the body of Christ."). Saving that would bake the filler into
-  // the participant's permanent profile, and restoreProfileToState() would then
-  // reload it — and even re-seed aiCache with it — so the bad cards would follow
-  // them forever and look identical to real output. Only save a clean run.
-  if (runDiag.failures.length > 0) {
-    console.warn(`Profile NOT saved — ${runDiag.failures.length} card(s) failed. Placeholder text will not be persisted.`);
+  if (!r || !r.jobId) {
+    // fnCall has already recorded the real reason; surface it rather than a
+    // generic failure the participant cannot act on.
+    state.jobError = fnErrorText("we could not start your profile.");
+    state.view = "entry";
     state.diagVisible = true;
     render();
     return;
   }
 
-  if (state.userEmail && state.userEmail !== "admin@kingdom") {
-    const saved = await saveProfile(state.userEmail, {
-      name: p.name,
-      personality: p.personality,
-      strengths: p.strengths,
-      gifts: p.gifts,
-      savedAt: Date.now(),
-      aiData: {
-        m1Data: state.m1Data,
-        m2Data: state.m2Data,
-        m3Data: state.m3Data,
-        m4Data: state.m4Data,
-        m4Cards: state.m4Cards,
-        m1Summary: state.m1Summary,
-        m2Summary: state.m2Summary,
-        m3Summary: state.m3Summary,
-        m4Bonus: state.m4Bonus
-      }
-    });
-    // Only claim a save that actually happened. Marking savedProfile on a
-    // failed write told the participant their cards were stored when they
-    // were not — and they would find nothing on their next login.
-    if (saved.ok) {
-      state.savedProfile = { savedAt: Date.now() };
-      state.profileAge = 0;
-    } else {
-      state.diagVisible = true;
-      render();
-    }
+  state.job = { id: r.jobId, status: r.status || "pending", total: r.total || 0, done: r.done || 0, ahead: r.queuePosition || 0 };
+  render();
+  startJobPolling();
+}
+
+function startJobPolling() {
+  if (state.jobPolling) return;
+  state.jobPolling = true;
+  pollJobOnce();
+}
+
+async function pollJobOnce() {
+  if (!state.jobPolling) return;
+
+  const r = await fnCall({ action: "jobStatus", email: state.userEmail, jobId: state.job && state.job.id });
+
+  if (!r) {
+    // A transient network blip must not look like a failed profile. Keep
+    // polling — the server is still working regardless of what this one
+    // request did.
+    jobPollTimer = setTimeout(pollJobOnce, POLL_INTERVAL_MS * 2);
+    return;
   }
+
+  if (!r.job) {
+    stopJobPolling();
+    state.job = null;
+    state.view = "entry";
+    state.jobError = "We could not find your profile request. Please try again.";
+    render();
+    return;
+  }
+
+  state.job = r.job;
+
+  if (r.job.status === "complete") {
+    stopJobPolling();
+    await loadFinishedProfile();
+    return;
+  }
+
+  if (r.job.status === "failed") {
+    stopJobPolling();
+    state.view = "entry";
+    state.jobError = r.job.error || "Some cards could not be generated. Please try again.";
+    state.diagVisible = true;
+    render();
+    return;
+  }
+
+  render();
+  jobPollTimer = setTimeout(pollJobOnce, POLL_INTERVAL_MS);
+}
+
+async function loadFinishedProfile() {
+  const existing = await loadProfile(state.userEmail);
+  if (!existing) {
+    // The job reported complete but the profile is not readable. Do NOT show
+    // an empty profile as if it were real — say so plainly.
+    state.view = "entry";
+    state.jobError = "Your profile finished but could not be loaded. Please try signing in again.";
+    render();
+    return;
+  }
+  state.savedProfile = existing;
+  state.profileAge = profileAgeMonths(existing.savedAt);
+  restoreProfileToState(existing);
+  state.job = null;
+  state.view = "profile";
+  state.activeMatrix = "m1";
+  render();
+}
+
+// Called on sign-in. If a job is already running for this participant — from
+// an earlier visit, another device, or a tab they closed — rejoin it instead
+// of offering to start a second one.
+async function resumeJobIfRunning(email) {
+  const r = await fnCall({ action: "jobStatus", email });
+  if (!r || !r.job) return false;
+  if (r.job.status === "pending" || r.job.status === "processing") {
+    state.job = r.job;
+    state.view = "waiting";
+    startJobPolling();
+    return true;
+  }
+  return false;
 }
 
 function selectParticipant(idx) {
