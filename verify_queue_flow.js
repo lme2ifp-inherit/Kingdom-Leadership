@@ -89,5 +89,53 @@ ok("no stray 'state.profileAge = 0;' outside a function", !/^\s{6}state\.profile
 const braces = (src.match(/\{/g) || []).length - (src.match(/\}/g) || []).length;
 t("braces balance across the script", braces, 0);
 
+console.log("\n-- refresh recovery (session) --");
+// A refresh used to reset state and dump the participant on the landing page,
+// which looks exactly like the app losing their work mid-generation.
+ok("startup is initApp, not a bare render", /<script>initApp\(\);<\/script>/.test(html));
+ok("bare render() startup is gone", !/<script>render\(\);<\/script>/.test(html));
+
+const initFn = src.match(/async function initApp\(\)[\s\S]*?\n\}/)[0];
+ok("startup reads the stored session", /readSession\(\)/.test(initFn));
+ok("no session goes straight to render", /if \(!email\) \{ render\(\); return; \}/.test(initFn));
+// A stored email is a hint, never proof. Approval must be re-checked because
+// access can be revoked between visits.
+ok("startup re-checks approval", /isEmailApproved\(email\)/.test(initFn));
+ok("revoked access clears the session", /clearSession\(\)/.test(initFn));
+ok("a verification error does not silently deny", /=== "error"/.test(initFn));
+// Priority order matters: a running job outranks a finished profile, or
+// someone mid-generation would be shown a stale profile instead.
+ok("startup rejoins a running job", /resumeJobIfRunning\(email\)/.test(initFn));
+ok("job check comes before profile load", initFn.indexOf("resumeJobIfRunning") < initFn.indexOf("loadProfile"));
+ok("falls back to the entry form", /state\.view = "entry"/.test(initFn));
+ok("startup failure never strands a blank screen", /catch \(e\)/.test(initFn));
+
+console.log("\n-- session hygiene --");
+const saveFn = src.match(/function saveSession\([\s\S]*?\n\}/)[0];
+ok("admin session is never persisted", /admin@kingdom/.test(saveFn));
+ok("storage failure is tolerated (private mode)", /catch \(e\)/.test(saveFn));
+ok("readSession tolerates storage failure", /function readSession[\s\S]*?catch \(e\) \{ return null; \}/.test(src));
+ok("login stores the session", /saveSession\(email\)/.test(src));
+// Both sign-out paths must clear it, or the next visitor on a shared device
+// resumes someone else's session.
+const headerLogout = src.match(/getElementById\("btnHeaderLogout"\)[\s\S]*?\n  \}\);/)[0];
+const adminLogout  = src.match(/getElementById\("btnAdminLogout"\)[\s\S]*?\n  \}\);/)[0];
+ok("participant sign-out clears the session", /clearSession\(\)/.test(headerLogout));
+ok("admin sign-out clears the session", /clearSession\(\)/.test(adminLogout));
+// Polling must stop on sign-out or it keeps running against the old identity.
+ok("participant sign-out stops polling", /stopJobPolling\(\)/.test(headerLogout));
+ok("admin sign-out stops polling", /stopJobPolling\(\)/.test(adminLogout));
+ok("participant sign-out clears the job", /state\.job=null/.test(headerLogout));
+
+console.log("\n-- returning to a throttled tab --");
+// Background tabs throttle timers. Without this, a finished profile can take
+// an extra minute to appear after the participant comes back.
+ok("visibilitychange is handled", /visibilitychange/.test(src));
+ok("returning re-polls immediately", /if \(!document\.hidden && state\.jobPolling\)/.test(src));
+
+console.log("\n-- restoring view --");
+ok("restoring view is in the dispatch", /state\.view === "restoring"/.test(src));
+ok("restoring view avoids a landing-page flash", /finding your profile/i.test(src));
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

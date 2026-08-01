@@ -158,6 +158,29 @@ let state = {
 
 const aiCache = {};
 
+// ── SESSION ───────────────────────────────────────────────────────────────────
+// Added July 31, 2026. Before this, a browser refresh reset all state and
+// dropped the participant back to the landing page with no memory of who they
+// were — a full stop mid-generation, and refreshing is a completely normal
+// thing to do when a page looks stuck.
+//
+// Only the participant's email is stored, and only so we can ask the server
+// what is already true. No profile content and no admin session: an admin must
+// re-enter the password after a refresh, deliberately.
+const SESSION_KEY = "kld_session_email";
+
+function saveSession(email) {
+  // Never persist the admin pseudo-account.
+  if (!email || email === "admin@kingdom") return;
+  try { localStorage.setItem(SESSION_KEY, email); } catch (e) { /* private mode */ }
+}
+function readSession() {
+  try { return localStorage.getItem(SESSION_KEY) || null; } catch (e) { return null; }
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* private mode */ }
+}
+
 // ── RUN DIAGNOSTICS ───────────────────────────────────────────────────────────
 // Safari has no accessible console on iOS, so generation failures are recorded
 // here and surfaced on screen instead. Reset at the start of every run.
@@ -497,6 +520,7 @@ async function handleEmailLogin() {
   }
   if (!approved) { state.view="notApproved"; state.userEmail=email; render(); return; }
   state.userEmail=email; state.loginError="";
+  saveSession(email);
   // If a job is already running for this person — they closed the tab, their
   // phone locked, or they switched devices — rejoin it rather than letting
   // them start a second one and pay for the same profile twice.
@@ -885,6 +909,13 @@ function buildApp() {
   if (state.view === "landing") return buildLanding();
   if (state.view === "login") return buildLogin();
   if (state.view === "notApproved") return buildNotApproved();
+  if (state.view === "restoring") return `
+  <div class="wrap" style="max-width:560px;margin:0 auto;padding:80px 20px;text-align:center">
+    <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:16px">
+      Kingdom Leadership Discovery
+    </div>
+    <div style="color:#94a3b8;font-size:14px">Welcome back &mdash; finding your profile&hellip;</div>
+  </div>`;
   if (state.view === "waiting") return buildWaiting();
   if (state.view === "admin") return buildAdminWrapper();
 
@@ -1455,7 +1486,8 @@ function attachHandlers() {
 
   // Admin panel
   document.getElementById("btnAdminLogout")?.addEventListener("click", () => {
-    state.isAdmin=false; state.userEmail=null; state.view="landing"; render();
+    stopJobPolling(); clearSession();
+    state.isAdmin=false; state.userEmail=null; state.job=null; state.view="landing"; render();
   });
   document.getElementById("btnGoAdmin")?.addEventListener("click", () => { state.view="admin"; render(); });
   document.getElementById("btnAdminToEntry")?.addEventListener("click", () => {
@@ -1516,7 +1548,8 @@ function attachHandlers() {
     state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.savedProfile=null; state.profileAge=null; render();
   });
   document.getElementById("btnHeaderLogout")?.addEventListener("click", () => {
-    state.userEmail=null; state.isAdmin=false; state.view="landing";
+    stopJobPolling(); clearSession();
+    state.userEmail=null; state.isAdmin=false; state.view="landing"; state.job=null;
     state.participants=[]; state.currentIdx=null; state.savedProfile=null; state.profileAge=null;
     state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null;
     state.m4Cards={}; state.m1Summary=null; state.m2Summary=null; state.m3Summary=null; state.m4Bonus=null;
@@ -1995,6 +2028,76 @@ async function resumeJobIfRunning(email) {
   return false;
 }
 
+// ── STARTUP ───────────────────────────────────────────────────────────────────
+// Replaces a bare render() call. A refresh used to reset everything and dump
+// the participant on the landing page — which looks like the app lost their
+// work, and refreshing is exactly what someone does when a screen seems stuck.
+//
+// Now startup asks the server what is already true for this person, in
+// priority order: a job still running, then a finished profile, then a blank
+// entry form. The server is the source of truth; this browser holds nothing
+// that matters.
+async function initApp() {
+  const email = readSession();
+  if (!email) { render(); return; }
+
+  // Show a restoring state immediately so there is no flash of the landing
+  // page before the answer comes back.
+  state.userEmail = email;
+  state.view = "restoring";
+  render();
+
+  try {
+    // Re-check approval. Access can be revoked between visits, and a stored
+    // email must never be treated as proof of anything on its own.
+    const approved = await isEmailApproved(email);
+    if (approved === "error") {
+      state.view = "login";
+      state.emailInput = email;
+      state.loginError = "Could not verify your email — " + fnErrorText("the server did not respond.") + " Please try again.";
+      render();
+      return;
+    }
+    if (!approved) {
+      clearSession();
+      state.userEmail = null;
+      state.view = "landing";
+      render();
+      return;
+    }
+
+    if (await resumeJobIfRunning(email)) { render(); return; }
+
+    const existing = await loadProfile(email);
+    if (existing) {
+      state.savedProfile = existing;
+      state.profileAge = profileAgeMonths(existing.savedAt);
+      restoreProfileToState(existing);
+      state.view = "profile";
+      state.activeMatrix = "m1";
+    } else {
+      state.view = "entry";
+    }
+  } catch (e) {
+    // Never strand someone on a blank screen because startup failed.
+    state.view = "login";
+    state.emailInput = email;
+    state.loginError = "Something went wrong restoring your session. Please sign in again.";
+  }
+  render();
+}
+
+// Polling lives in a timer, and a hidden tab may throttle timers heavily. When
+// the participant returns to the page, ask immediately rather than waiting out
+// a throttled timer — the difference between "it finished while I was away"
+// appearing instantly and appearing a minute later.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.jobPolling) {
+    if (jobPollTimer) { clearTimeout(jobPollTimer); jobPollTimer = null; }
+    pollJobOnce();
+  }
+});
+
 function selectParticipant(idx) {
   state.currentIdx=idx; state.view="profile"; state.shareMsg="";
   const p=state.participants[idx];
@@ -2028,6 +2131,6 @@ function showDebug(msg) {
 </script>
 
 <div id="app" style="display:flex;flex-direction:column;height:100vh"></div>
-<script>render();</script>
+<script>initApp();</script>
 </body>
 </html>
