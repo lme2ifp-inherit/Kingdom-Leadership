@@ -142,12 +142,6 @@ async function claimNextJob() {
   return job;
 }
 
-async function heartbeat(jobId) {
-  await supabaseRequest("PATCH", `/rest/v1/generation_jobs?id=${eqFilter(jobId)}`, {
-    body: { heartbeat_at: new Date().toISOString() }
-  });
-}
-
 async function pendingItems(jobId) {
   const r = await supabaseRequest(
     "GET",
@@ -388,6 +382,14 @@ module.exports = async function handler(req, res) {
   try {
     let queue = await pendingItems(job.id);
 
+    // Cards already finished by a previous invocation. Progress must be
+    // cumulative across runs, or a resumed job appears to restart at zero.
+    const priorDone = await supabaseRequest(
+      "GET",
+      `/rest/v1/generation_items?job_id=${eqFilter(job.id)}&status=eq.done&select=id`
+    );
+    const doneSoFar = (priorDone.ok && Array.isArray(priorDone.data)) ? priorDone.data.length : 0;
+
     while (queue.length > 0) {
       // THE BUDGET GATE. Ask whether the remaining budget can absorb this
       // wave's absolute worst case — not whether some elapsed threshold has
@@ -407,7 +409,16 @@ module.exports = async function handler(req, res) {
         else failedCount++;
       }
 
-      await heartbeat(job.id);
+      // Publish progress after EVERY wave, not just at the end of the run.
+      // A run can last ~100s; without this the job row reports 0 done for its
+      // entire duration and the participant watches a frozen progress bar
+      // while cards are actually completing.
+      await supabaseRequest("PATCH", `/rest/v1/generation_jobs?id=${eqFilter(job.id)}`, {
+        body: {
+          heartbeat_at: new Date().toISOString(),
+          done_items: doneSoFar + generated
+        }
+      });
     }
 
     // Recount from the database rather than from local tallies — the numbers

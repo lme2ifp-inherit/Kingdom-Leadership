@@ -891,6 +891,24 @@ module.exports = async function handler(req, res) {
 
       const job = r.data[0];
 
+      // Count progress LIVE from the items table rather than trusting
+      // job.done_items. The drain only writes that column when a run ends, so
+      // during a ~100s run it stays at 0 and the progress bar sits frozen at
+      // "0 of 33" while cards are genuinely completing. The items table is the
+      // only thing that is true at every moment.
+      let done = job.done_items || 0;
+      let total = job.total_items || 0;
+      let failed = 0;
+      const counts = await supabaseRequest(
+        "GET",
+        `/rest/v1/generation_items?job_id=${eqFilter(job.id)}&select=status`
+      );
+      if (counts.ok && Array.isArray(counts.data)) {
+        total = counts.data.length;
+        done = counts.data.filter((x) => x.status === "done").length;
+        failed = counts.data.filter((x) => x.status === "failed").length;
+      }
+
       // How many people are ahead of them. At a conference this is the number
       // that actually calms a room down.
       let ahead = 0;
@@ -906,8 +924,9 @@ module.exports = async function handler(req, res) {
         job: {
           id: job.id,
           status: job.status,
-          total: job.total_items,
-          done: job.done_items,
+          total: total,
+          done: done,
+          failed: failed,
           ahead,
           error: job.last_error || null,
           createdAt: job.created_at,
