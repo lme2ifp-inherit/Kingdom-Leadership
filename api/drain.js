@@ -102,14 +102,27 @@ async function recordRun(wasBad, summary) {
 
 // ── JOB CLAIMING ─────────────────────────────────────────────────────────────
 
+// How long a job's heartbeat must be silent before another drain may take it
+// over. Must exceed the longest plausible gap between heartbeats — one wave,
+// which is one card's worst case plus overhead.
+const HEARTBEAT_STALE_MS = 90000;
+
 async function claimNextJob() {
   // Release anything a hard-killed invocation left stranded, so a crashed run
   // cannot block the queue permanently.
   await supabaseRequest("POST", "/rest/v1/rpc/release_stale_generation_jobs", { body: {} });
 
+  // Eligible = never started, OR started but gone quiet. Without the heartbeat
+  // condition, the 1-minute cron would claim a job that a previous invocation
+  // is still actively draining — a ~100s cold job overlaps the next tick by
+  // ~40s — and both would generate the same in-flight cards. The unique index
+  // prevents duplicate ROWS but not duplicate Opus 5 calls, so this is a
+  // spending bug, not just a correctness one.
+  const staleBefore = new Date(Date.now() - HEARTBEAT_STALE_MS).toISOString();
   const r = await supabaseRequest(
     "GET",
-    "/rest/v1/generation_jobs?status=in.(pending,processing)&select=*&order=created_at.asc&limit=1"
+    "/rest/v1/generation_jobs?select=*&order=created_at.asc&limit=1" +
+    `&or=(status.eq.pending,and(status.eq.processing,heartbeat_at.lt.${encodeURIComponent(staleBefore)}))`
   );
   if (!r.ok || !Array.isArray(r.data) || r.data.length === 0) return null;
   const job = r.data[0];
@@ -454,5 +467,6 @@ module.exports._internal = {
   CARD_TIMEOUT_MS,
   RESPONSE_OVERHEAD_MS,
   WAVE_SIZE,
-  MAX_ITEM_ATTEMPTS
+  MAX_ITEM_ATTEMPTS,
+  HEARTBEAT_STALE_MS
 };

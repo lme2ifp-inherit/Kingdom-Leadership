@@ -196,6 +196,37 @@ console.log("\n── withTimeout ──");
   try { await withTimeout(Promise.reject(new Error("upstream")), 1000); } catch (e) { propagated = e.message === "upstream"; }
   ok("propagates the real error", propagated);
 
-  console.log(`\n${pass} passed, ${fail} failed\n`);
+  console.log("\n── concurrent drain safety ──");
+// The cron fires every 60s but a cold job runs ~100s, so two drains WILL
+// overlap. If both could claim the same job they would generate the same
+// in-flight cards twice — duplicate Opus 5 spend, which the unique index does
+// not prevent (it stops duplicate rows, not duplicate API calls).
+const { HEARTBEAT_STALE_MS } = drain;
+const CRON_INTERVAL_MS = 60000;
+ok("stale window exceeds the cron interval", HEARTBEAT_STALE_MS > CRON_INTERVAL_MS);
+// A heartbeat is written after every wave, so the longest legitimate silence
+// is one wave's worst case. The window must exceed that or a healthy job gets
+// stolen mid-run.
+const maxHeartbeatGap = CARD_TIMEOUT_MS + RESPONSE_OVERHEAD_MS;
+ok("stale window exceeds the longest legitimate heartbeat gap", HEARTBEAT_STALE_MS > maxHeartbeatGap);
+// But it must still be short enough that a genuinely dead job is picked up
+// well within the function budget, rather than stalling the queue.
+ok("stale window is shorter than the function budget", HEARTBEAT_STALE_MS < FUNCTION_BUDGET_MS);
+
+function claimable(job, nowMs) {
+  if (job.status === "pending") return true;
+  if (job.status !== "processing") return false;
+  return (nowMs - job.heartbeatMs) >= HEARTBEAT_STALE_MS;
+}
+const now = 1000000;
+t("pending job is claimable", claimable({ status: "pending" }, now), true);
+t("actively beating job is NOT claimable", claimable({ status: "processing", heartbeatMs: now - 5000 }, now), false);
+t("job one cron tick old is NOT claimable", claimable({ status: "processing", heartbeatMs: now - CRON_INTERVAL_MS }, now), false);
+t("job mid-wave is NOT claimable", claimable({ status: "processing", heartbeatMs: now - maxHeartbeatGap }, now), false);
+t("dead job IS reclaimable", claimable({ status: "processing", heartbeatMs: now - HEARTBEAT_STALE_MS - 1 }, now), true);
+t("complete job is never claimable", claimable({ status: "complete", heartbeatMs: 0 }, now), false);
+t("failed job is never claimable", claimable({ status: "failed", heartbeatMs: 0 }, now), false);
+
+console.log(`\n${pass} passed, ${fail} failed\n`);
   process.exit(fail === 0 ? 0 : 1);
 })();
