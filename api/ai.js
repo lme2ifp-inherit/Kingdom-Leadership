@@ -553,6 +553,115 @@ function buildM4BonusPrompt(name, strengths, personality, gifts) {
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 // Vercel signature: (req, res) — replaces Netlify's exports.handler(event, context).
 
+// ── MATRIX SUMMARY PROMPTS ────────────────────────────────────────────────────
+// Moved server-side July 31, 2026. These previously lived in index.html and
+// were built by the browser, which meant they were invisible to the July 30
+// voice rewrite — all three still asked for a "poetic title" and were still
+// producing the old flowery output long after the card schemas were fixed.
+// Server-side is also required for the drain, which has no browser to ask.
+function buildM1SummaryPrompt(strengths, personality) {
+  const sAll = (strengths || []).join(", ");
+  const pBase = String(personality || "").split("-")[0];
+  const schema = '{"theme":"3-5 word title naming the single leadership style these strengths add up to under this personality. Concrete and plain, not decorative","summary":"4-5 sentences on how the ' + pBase + ' personality unifies ALL these strengths into one operating style — the combined effect, not each strength separately. Describe observable behavior, and name at least one place two of these strengths pull against each other and how this personality resolves it","teamRole":"2 sentences on the role this combination actually plays on a team, stated as behavior others would notice"}';
+  return "Faith-based leadership conference. Matrix 1 Summary for " + personality + " personality (" + pBase + ") with these 5 strengths: " + sAll + ". Describe how this personality shapes and unifies all these strengths as one leadership style. Return pure JSON only no markdown: " + schema;
+}
+
+function buildM2SummaryPrompt(strengths, gifts) {
+  const sAll = (strengths || []).join(", ");
+  const gAll = (gifts || []).join(", ");
+  const schema = '{"theme":"3-5 word title naming what these gifts produce when they run through these strengths. Concrete and plain, not decorative","summary":"4-5 sentences on how these spiritual gifts work through these natural strengths as one expression — the overall pattern, not each pair. Describe observable behavior in a serving context","kingdomExpression":"2 sentences on what this combination actually does for the body of Christ, stated as action rather than quality"}';
+  return "Faith-based leadership conference. Matrix 2 Summary: spiritual gifts (" + gAll + ") flowing through strengths (" + sAll + ") as a unified expression. Describe the overall pattern. Return pure JSON only no markdown: " + schema;
+}
+
+function buildM3SummaryPrompt(personality, gifts) {
+  const pBase = String(personality || "").split("-")[0];
+  const gAll = (gifts || []).join(", ");
+  const schema = '{"theme":"3-5 word title naming how this personality carries these gifts. Concrete and plain, not decorative","summary":"4-5 sentences on how the ' + pBase + ' personality channels these gifts together — the overall Spirit-empowered pattern. Describe observable behavior, and name how this looks visibly different from the same gifts through an opposite personality","empoweredIdentity":"2 sentences on who this person is when operating at their best, in plain language rather than elevated nouns"}';
+  return "Faith-based leadership conference. Matrix 3 Summary: how does " + personality + " personality (" + pBase + ") channel these spiritual gifts together: " + gAll + ". Return pure JSON only no markdown: " + schema;
+}
+
+// ── PROMPT DISPATCH ───────────────────────────────────────────────────────────
+// Single source of truth mapping an item kind to its prompt. The drain worker
+// uses this rather than carrying its own copy — one place to change a prompt,
+// not two that can silently drift apart.
+function buildPromptFor(kind, p) {
+  const params = p || {};
+  // Validate BEFORE building. Two reasons this matters: an undefined value
+  // throws inside the builders (killing the item on an exception rather than a
+  // readable error), and a value that stringifies to "undefined" would produce
+  // a real, billable card about an undefined personality. Returning null lets
+  // the caller fail the item explicitly without spending anything.
+  const str = (v) => typeof v === "string" && v.length > 0;
+  const arr = (v) => Array.isArray(v) && v.length > 0;
+  const need = {
+    m1:      () => str(params.strength) && str(params.personality),
+    m2:      () => str(params.strength) && str(params.gift),
+    m3:      () => str(params.personality) && str(params.gift),
+    m1sum:   () => arr(params.strengths) && str(params.personality),
+    m2sum:   () => arr(params.strengths) && arr(params.gifts),
+    m3sum:   () => str(params.personality) && arr(params.gifts),
+    m4:      () => arr(params.strengths) && str(params.personality) && arr(params.gifts),
+    m4bonus: () => arr(params.strengths) && str(params.personality) && arr(params.gifts),
+    m4str:   () => str(params.strength) && str(params.personality) && arr(params.gifts)
+  };
+  if (!need[kind] || !need[kind]()) return null;
+
+  switch (kind) {
+    case "m1":      return buildM1Prompt(params.strength, params.personality);
+    case "m2":      return buildM2Prompt(params.strength, params.gift);
+    case "m3":      return buildM3Prompt(params.personality, params.gift);
+    case "m1sum":   return buildM1SummaryPrompt(params.strengths, params.personality);
+    case "m2sum":   return buildM2SummaryPrompt(params.strengths, params.gifts);
+    case "m3sum":   return buildM3SummaryPrompt(params.personality, params.gifts);
+    case "m4":      return buildM4Prompt(params.name, params.strengths, params.personality, params.gifts);
+    case "m4bonus": return buildM4BonusPrompt(params.name, params.strengths, params.personality, params.gifts);
+    case "m4str":   return buildM4StrCardPrompt(params.name, params.strength, params.personality, params.gifts);
+    default:        return null;
+  }
+}
+
+// Only M1/M2/M3 are shared across participants and therefore worth caching.
+// Everything else is personal to one person — the summaries depend on the whole
+// set of five strengths, and the M4 tier sees the entire profile.
+const CACHEABLE_KINDS = ["m1", "m2", "m3"];
+
+// ── JOB PLANNING ──────────────────────────────────────────────────────────────
+// Expands a participant into the full ordered list of cards their profile
+// needs. Order matters: cheap shared cards first (most likely to be cache
+// hits), the personal M4 tier last, so a partially drained job still shows
+// meaningful progress.
+function planItemsFor(participant) {
+  const p = participant || {};
+  const strengths = Array.isArray(p.strengths) ? p.strengths : [];
+  const gifts = Array.isArray(p.gifts) ? p.gifts : [];
+  const personality = p.personality;
+  const name = p.name;
+  const items = [];
+  const push = (kind, cache_key, params) => {
+    items.push({
+      kind,
+      cache_key,
+      params,
+      cacheable: CACHEABLE_KINDS.indexOf(kind) !== -1,
+      position: items.length
+    });
+  };
+
+  for (const s of strengths) push("m1", `m1|${s}|${personality}`, { strength: s, personality });
+  for (const s of strengths) for (const g of gifts) push("m2", `m2|${s}|${g}`, { strength: s, gift: g });
+  for (const g of gifts) push("m3", `m3|${personality}|${g}`, { personality, gift: g });
+
+  push("m1sum", `m1sum|${strengths.join(",")}|${personality}`, { strengths, personality });
+  push("m2sum", `m2sum|${strengths.join(",")}|${gifts.join(",")}`, { strengths, gifts });
+  push("m3sum", `m3sum|${personality}|${gifts.join(",")}`, { personality, gifts });
+
+  push("m4", `m4|${strengths.join(",")}|${personality}|${gifts.join(",")}`, { name, strengths, personality, gifts });
+  push("m4bonus", `m4bonus|${strengths.slice(0, 3).join(",")}|${personality}|${gifts.slice(0, 3).join(",")}`, { name, strengths, personality, gifts });
+  for (const s of strengths) push("m4str", `m4c|${s}|${personality}|${gifts.join(",")}`, { name, strength: s, personality, gifts });
+
+  return items;
+}
+
 module.exports = async function handler(req, res) {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -708,6 +817,132 @@ module.exports = async function handler(req, res) {
       return send(200, result);
     }
 
+    // ── QUEUE: ENQUEUE A GENERATION JOB ───────────────────────────────────────
+    // Replaces the browser orchestrating 33 sequential calls. The browser now
+    // submits once and polls; the drain does the work. A participant can close
+    // the tab, lock the phone, or lose signal without losing the run.
+    if (action === "enqueueJob") {
+      const email = normalizeEmail(body.email);
+      const participant = body.participant || {};
+      if (!email || !email.includes("@")) {
+        return send(400, { error: { message: "A valid email is required" } });
+      }
+      if (!participant.personality || !Array.isArray(participant.strengths) || !Array.isArray(participant.gifts)) {
+        return send(400, { error: { message: "participant needs personality, strengths[] and gifts[]" } });
+      }
+
+      // Never queue a second job for someone who already has one running —
+      // that would double the spend and produce two writes racing for the
+      // same profile row.
+      const existing = await supabaseRequest(
+        "GET",
+        `/rest/v1/generation_jobs?email=${eqFilter(email)}&status=in.(pending,processing)&select=id,status,total_items,done_items&limit=1`
+      );
+      if (existing.ok && Array.isArray(existing.data) && existing.data.length > 0) {
+        const j = existing.data[0];
+        return send(200, { jobId: j.id, status: j.status, alreadyQueued: true, total: j.total_items, done: j.done_items });
+      }
+
+      const items = planItemsFor(participant);
+      if (items.length === 0) {
+        return send(400, { error: { message: "Nothing to generate — check strengths and gifts" } });
+      }
+
+      const jobIns = await supabaseRequest("POST", "/rest/v1/generation_jobs", {
+        body: [{ email, participant, status: "pending", total_items: items.length, done_items: 0 }],
+        prefer: "return=representation"
+      });
+      if (!jobIns.ok || !Array.isArray(jobIns.data) || jobIns.data.length === 0) {
+        return send(500, { error: { message: "Could not create job", _diag: "SUPABASE_WRITE", detail: jobIns.error } });
+      }
+      const jobId = jobIns.data[0].id;
+
+      const itemIns = await supabaseRequest("POST", "/rest/v1/generation_items", {
+        body: items.map((it) => ({
+          job_id: jobId,
+          kind: it.kind,
+          cache_key: it.cache_key,
+          params: it.params,
+          cacheable: it.cacheable,
+          position: it.position,
+          status: "pending"
+        }))
+      });
+      if (!itemIns.ok) {
+        // Roll the job back rather than leaving an empty one to be claimed,
+        // drained to "zero pending", and marked complete with no cards.
+        await supabaseRequest("DELETE", `/rest/v1/generation_jobs?id=${eqFilter(jobId)}`);
+        return send(500, { error: { message: "Could not queue cards", _diag: "SUPABASE_WRITE", detail: itemIns.error } });
+      }
+
+      return send(200, { jobId, status: "pending", total: items.length, done: 0, queuePosition: null });
+    }
+
+    // ── QUEUE: JOB STATUS (polled by the browser) ─────────────────────────────
+    if (action === "jobStatus") {
+      const email = normalizeEmail(body.email);
+      const jobId = body.jobId;
+      const query = jobId
+        ? `/rest/v1/generation_jobs?id=${eqFilter(jobId)}&select=*&limit=1`
+        : `/rest/v1/generation_jobs?email=${eqFilter(email)}&select=*&order=created_at.desc&limit=1`;
+      const r = await supabaseRequest("GET", query);
+      if (!r.ok) return send(500, { error: { message: "Could not read job status", detail: r.error } });
+      if (!Array.isArray(r.data) || r.data.length === 0) return send(200, { job: null });
+
+      const job = r.data[0];
+
+      // How many people are ahead of them. At a conference this is the number
+      // that actually calms a room down.
+      let ahead = 0;
+      if (job.status === "pending" || job.status === "processing") {
+        const q = await supabaseRequest(
+          "GET",
+          `/rest/v1/generation_jobs?status=in.(pending,processing)&created_at=lt.${encodeURIComponent(job.created_at)}&select=id`
+        );
+        if (q.ok && Array.isArray(q.data)) ahead = q.data.length;
+      }
+
+      return send(200, {
+        job: {
+          id: job.id,
+          status: job.status,
+          total: job.total_items,
+          done: job.done_items,
+          ahead,
+          error: job.last_error || null,
+          createdAt: job.created_at,
+          finishedAt: job.finished_at
+        }
+      });
+    }
+
+    // ── QUEUE: ADMIN CONTROL ──────────────────────────────────────────────────
+    if (action === "queueStatus" || action === "queuePause" || action === "queueResume") {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (!adminPassword || body.password !== adminPassword) {
+        return send(401, { error: { message: "Admin password required" } });
+      }
+
+      if (action === "queuePause" || action === "queueResume") {
+        const pausing = action === "queuePause";
+        const patch = pausing
+          ? { paused: true, paused_reason: "Paused from admin panel", paused_at: new Date().toISOString(), paused_by: "admin" }
+          : { paused: false, paused_reason: null, paused_at: null, paused_by: null, consecutive_bad_runs: 0 };
+        const r = await supabaseRequest("PATCH", "/rest/v1/generation_control?id=eq.1", { body: patch });
+        if (!r.ok) return send(500, { error: { message: "Could not update queue control", detail: r.error } });
+      }
+
+      const ctl = await supabaseRequest("GET", "/rest/v1/generation_control?id=eq.1&select=*");
+      const jobs = await supabaseRequest(
+        "GET",
+        "/rest/v1/generation_jobs?select=id,email,status,total_items,done_items,created_at,last_error&order=created_at.desc&limit=25"
+      );
+      return send(200, {
+        control: (ctl.ok && Array.isArray(ctl.data) && ctl.data[0]) || null,
+        jobs: (jobs.ok && Array.isArray(jobs.data)) ? jobs.data : []
+      });
+    }
+
     // ── LEGACY AI PASSTHROUGH (used by the three matrix summaries) ────────────
     if (action === "ai" || !action) {
       const apiKey = process.env.ANTHROPIC_KEY;
@@ -763,5 +998,24 @@ module.exports._internal = {
   buildM3Prompt,
   buildM4Prompt,
   buildM4StrCardPrompt,
-  buildM4BonusPrompt
+  buildM4BonusPrompt,
+  buildM1SummaryPrompt,
+  buildM2SummaryPrompt,
+  buildM3SummaryPrompt,
+  buildPromptFor,
+  planItemsFor,
+  CACHEABLE_KINDS
+};
+
+// Used by api/drain.js. Exported separately from _internal (which is test-only)
+// because these are a real runtime dependency, not test scaffolding.
+module.exports._shared = {
+  supabaseRequest,
+  eqFilter,
+  normalizeEmail,
+  callClaude,
+  buildPromptFor,
+  planItemsFor,
+  powerConfig,
+  GENERATION_POWER
 };

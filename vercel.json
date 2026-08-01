@@ -3,6 +3,9 @@
   "functions": {
     "api/ai.js": {
       "maxDuration": 300
+    },
+    "api/drain.js": {
+      "maxDuration": 180
     }
   }
 }
