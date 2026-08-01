@@ -154,6 +154,10 @@ let state = {
   job: null,          // { id, status, total, done, ahead, error }
   jobPolling: false,
   jobError: "",
+  // Admin queue monitor
+  queueAdmin: null,   // { control, jobs }
+  adminAuth: null,    // verified admin password, memory only
+  queueMsg: "",
 };
 
 const aiCache = {};
@@ -490,6 +494,10 @@ async function handleAdminPwdSubmit() {
   const res = await fnCall({ action: "verifyAdmin", password: pwd });
   if (res && res.valid) {
     state.isAdmin=true; state.userEmail="admin@kingdom"; state.view="admin";
+    // Retained in memory only, for actions the server password-gates (queue
+    // pause/resume). Cleared on sign-out and never written to storage — a
+    // refresh deliberately requires re-entering it.
+    state.adminAuth = pwd;
     state.loginError=""; state.showAdminPwd=false; state.adminPwdInput=""; render();
   } else {
     state.loginError="Incorrect password"; render();
@@ -1085,6 +1093,118 @@ function buildWaiting() {
   </div>`;
 }
 
+// ── ADMIN: GENERATION QUEUE MONITOR ───────────────────────────────────────────
+// The pause button is the point of this panel. If something goes wrong with a
+// room full of people generating, this is the difference between stopping it
+// and watching it happen. Everything else here is context for that decision.
+function buildQueuePanel() {
+  const q = state.queueAdmin;
+  const esc = (s) => String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  if (!q) {
+    return `<div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:#7C9EC2;margin-bottom:4px;">&#10022; Generation Queue</div>
+      <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Server-side card generation. Profiles build here, not in the participant's browser.</div>
+      <button id="btnQueueRefresh" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">Load Queue Status</button>
+      ${state.queueMsg ? `<div style="font-size:12px;color:#fca5a5;margin-top:10px;">${esc(state.queueMsg)}</div>` : ""}
+    </div>`;
+  }
+
+  const c = q.control || {};
+  const paused = !!c.paused;
+  const bad = c.consecutive_bad_runs || 0;
+  const jobs = q.jobs || [];
+  const active = jobs.filter((j) => j.status === "pending" || j.status === "processing");
+  const failed = jobs.filter((j) => j.status === "failed");
+
+  // A paused queue is the single most important fact on this page — if it is
+  // paused during a conference, nothing is being generated for anyone.
+  const banner = paused
+    ? `<div style="background:#7f1d1d33;border:1px solid #7f1d1d;border-radius:8px;padding:12px;margin-bottom:14px;">
+         <div style="font-size:13px;color:#fca5a5;font-weight:600;margin-bottom:4px;">&#9888; Queue is PAUSED &mdash; nothing is generating</div>
+         <div style="font-size:12px;color:#94a3b8;">${esc(c.paused_reason || "No reason recorded")}</div>
+         ${c.paused_at ? `<div style="font-size:11px;color:#64748b;margin-top:4px;">Since ${esc(new Date(c.paused_at).toLocaleString())}${c.paused_by ? " &middot; " + esc(c.paused_by) : ""}</div>` : ""}
+       </div>`
+    : `<div style="background:#14532d33;border:1px solid #14532d;border-radius:8px;padding:12px;margin-bottom:14px;">
+         <div style="font-size:13px;color:#68d391;font-weight:600;">&#10003; Queue is running</div>
+         <div style="font-size:11px;color:#64748b;margin-top:4px;">
+           Drains every minute${bad > 0 ? ` &middot; <span style="color:#fbbf24">${bad} consecutive failed run${bad === 1 ? "" : "s"} (auto-pauses at 3)</span>` : ""}
+         </div>
+       </div>`;
+
+  const jobRow = (j) => {
+    const pct = j.total_items > 0 ? Math.round((j.done_items / j.total_items) * 100) : 0;
+    const colour = j.status === "complete" ? "#68d391"
+                 : j.status === "failed" ? "#fca5a5"
+                 : j.status === "processing" ? "#7C9EC2" : "#94a3b8";
+    return `<div style="border-bottom:1px solid #2d3748;padding:9px 0;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
+        <span style="font-size:12px;color:#e2e8f0;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">${esc(j.email)}</span>
+        <span style="font-size:11px;color:${colour};text-transform:uppercase;letter-spacing:.05em">${esc(j.status)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:5px;">
+        <div style="flex:1;background:#0f1117;border-radius:999px;height:5px;overflow:hidden;">
+          <div style="background:${colour};height:100%;width:${pct}%"></div>
+        </div>
+        <span style="font-size:11px;color:#64748b;white-space:nowrap">${j.done_items || 0}/${j.total_items || 0}</span>
+      </div>
+      ${j.last_error ? `<div style="font-size:11px;color:#fca5a5;margin-top:4px;font-family:monospace;">${esc(String(j.last_error).slice(0, 160))}</div>` : ""}
+    </div>`;
+  };
+
+  return `<div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:600;color:#7C9EC2;margin-bottom:4px;">&#10022; Generation Queue</div>
+    <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Server-side card generation. Profiles build here, not in the participant's browser.</div>
+
+    ${banner}
+
+    <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
+      <div><div style="font-size:20px;color:#f1f5f9;font-weight:600;">${active.length}</div><div style="font-size:11px;color:#4a5568;">in queue</div></div>
+      <div><div style="font-size:20px;color:#68d391;font-weight:600;">${jobs.filter((j) => j.status === "complete").length}</div><div style="font-size:11px;color:#4a5568;">complete</div></div>
+      <div><div style="font-size:20px;color:${failed.length ? "#fca5a5" : "#f1f5f9"};font-weight:600;">${failed.length}</div><div style="font-size:11px;color:#4a5568;">failed</div></div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button id="btnQueueRefresh" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">&#8635; Refresh</button>
+      ${paused
+        ? `<button id="btnQueueResume" style="background:#14532d;color:#fff;border:1px solid #68d391;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">&#9654; Resume Queue</button>`
+        : `<button id="btnQueuePause" style="background:#7f1d1d;color:#fff;border:1px solid #fca5a5;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">&#10073;&#10073; Pause Queue</button>`}
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;cursor:pointer;">
+        <input type="checkbox" id="chkQueueAuto" ${queueAutoTimer ? "checked" : ""}/> Auto-refresh
+      </label>
+    </div>
+
+    ${c.last_run_at ? `<div style="font-size:11px;color:#4a5568;margin-bottom:10px;font-family:monospace;">
+      Last drain ${esc(new Date(c.last_run_at).toLocaleTimeString())} &middot; ${esc(String(c.last_run_summary || "").slice(0, 140))}
+    </div>` : ""}
+
+    <div style="max-height:280px;overflow-y:auto;">
+      ${jobs.length ? jobs.map(jobRow).join("") : `<div style="font-size:12px;color:#4a5568;padding:8px 0;">No jobs yet.</div>`}
+    </div>
+
+    ${state.queueMsg ? `<div style="font-size:12px;color:#68d391;margin-top:10px;">${esc(state.queueMsg)}</div>` : ""}
+  </div>`;
+}
+
+let queueAutoTimer = null;
+
+async function loadQueueStatus(action) {
+  const r = await fnCall({ action: action || "queueStatus", password: state.adminAuth });
+  if (!r) {
+    state.queueMsg = fnErrorText("could not read the queue.");
+    state.queueAdmin = state.queueAdmin || null;
+    render();
+    return;
+  }
+  state.queueAdmin = { control: r.control, jobs: r.jobs || [] };
+  render();
+}
+
+function stopQueueAuto() {
+  if (queueAutoTimer) { clearInterval(queueAutoTimer); queueAutoTimer = null; }
+}
+
 function buildAdminWrapper() {
   return `<div style="display:flex;flex-direction:column;height:100vh;">
     <div style="padding:10px 16px;border-bottom:1px solid #1e293b;background:#111827;display:flex;align-items:center;justify-content:space-between;">
@@ -1163,6 +1283,8 @@ function buildAdmin() {
         </div>
         <div id="cacheMsg" style="font-size:12px;margin-top:8px;"></div>
       </div>
+
+      ${buildQueuePanel()}
 
       <!-- Stats -->
       <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;">
@@ -1486,10 +1608,52 @@ function attachHandlers() {
 
   // Admin panel
   document.getElementById("btnAdminLogout")?.addEventListener("click", () => {
-    stopJobPolling(); clearSession();
-    state.isAdmin=false; state.userEmail=null; state.job=null; state.view="landing"; render();
+    stopJobPolling(); stopQueueAuto(); clearSession();
+    state.isAdmin=false; state.adminAuth=null; state.userEmail=null; state.job=null;
+    state.queueAdmin=null; state.view="landing"; render();
   });
   document.getElementById("btnGoAdmin")?.addEventListener("click", () => { state.view="admin"; render(); });
+  // ── Generation queue controls ──────────────────────────────────────────────
+  document.getElementById("btnQueueRefresh")?.addEventListener("click", async () => {
+    state.queueMsg = "";
+    await loadQueueStatus("queueStatus");
+  });
+
+  document.getElementById("btnQueuePause")?.addEventListener("click", async () => {
+    // Pausing stops generation for EVERYONE, including people already waiting.
+    // That is sometimes exactly right, but never something to do by mis-tap.
+    const waiting = (state.queueAdmin?.jobs || []).filter(
+      (j) => j.status === "pending" || j.status === "processing"
+    ).length;
+    const warning = waiting > 0
+      ? `\n\n${waiting} participant${waiting === 1 ? " is" : "s are"} currently waiting. Their profile${waiting === 1 ? "" : "s"} will stop until you resume.`
+      : "";
+    if (!confirm("Pause the generation queue?" + warning + "\n\nWork already finished is kept. Nothing is lost — jobs resume where they stopped.")) return;
+    state.queueMsg = "";
+    await loadQueueStatus("queuePause");
+    state.queueMsg = "Queue paused.";
+    render();
+  });
+
+  document.getElementById("btnQueueResume")?.addEventListener("click", async () => {
+    state.queueMsg = "";
+    await loadQueueStatus("queueResume");
+    state.queueMsg = "Queue resumed — the failed-run counter has been reset.";
+    render();
+  });
+
+  document.getElementById("chkQueueAuto")?.addEventListener("change", (e) => {
+    stopQueueAuto();
+    if (e.target.checked) {
+      // Only refreshes while the admin panel is actually open, so it cannot
+      // keep polling in the background after navigating away.
+      queueAutoTimer = setInterval(() => {
+        if (state.view !== "admin") { stopQueueAuto(); return; }
+        loadQueueStatus("queueStatus");
+      }, 5000);
+    }
+  });
+
   document.getElementById("btnAdminToEntry")?.addEventListener("click", () => {
     state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; render();
   });
@@ -1548,8 +1712,9 @@ function attachHandlers() {
     state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.savedProfile=null; state.profileAge=null; render();
   });
   document.getElementById("btnHeaderLogout")?.addEventListener("click", () => {
-    stopJobPolling(); clearSession();
-    state.userEmail=null; state.isAdmin=false; state.view="landing"; state.job=null;
+    stopJobPolling(); stopQueueAuto(); clearSession();
+    state.userEmail=null; state.isAdmin=false; state.adminAuth=null; state.view="landing"; state.job=null;
+    state.queueAdmin=null;
     state.participants=[]; state.currentIdx=null; state.savedProfile=null; state.profileAge=null;
     state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null;
     state.m4Cards={}; state.m1Summary=null; state.m2Summary=null; state.m3Summary=null; state.m4Bonus=null;
