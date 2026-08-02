@@ -83,7 +83,17 @@ module.exports = async (req, res) => {
   }
 
   // -- GATE 2: is this user actually a facilitator, and still active? -------
+  //
+  // "The lookup broke" and "the lookup worked and found nobody" are different
+  // problems and must not share a status code. They did once, and it cost a
+  // session: a missing service_role SELECT grant on this table looked exactly
+  // like a legitimate refusal, so the failure pointed at the wrong suspect.
+  //   503 + diag  -> we could not ask the question. Operator problem.
+  //   403         -> we asked, and this person has no access. User problem.
+  // The diag code is deliberately coarse. Full detail goes to the Vercel log,
+  // never to the browser, so a stranger cannot map the backend by poking it.
   let person = null;
+  let rows = null;
   try {
     const url = baseUrl
       + "/rest/v1/facilitators"
@@ -93,18 +103,46 @@ module.exports = async (req, res) => {
     const r = await fetch(url, {
       headers: { "apikey": serviceKey, "Authorization": "Bearer " + serviceKey },
     });
-    const rows = await r.json().catch(() => null);
-    if (!r.ok || !Array.isArray(rows) || rows.length === 0) {
-      // Valid Supabase account, but not a facilitator. Participants have
-      // accounts too; this is the line that keeps them out.
-      json(res, 403, { ok: false, error: "This account has no facilitator access." });
+
+    if (!r.ok) {
+      let detail = "";
+      try { detail = String(await r.text()).slice(0, 300); } catch (e2) { detail = "(unreadable)"; }
+      console.error("library: facilitators lookup failed", r.status, detail);
+      json(res, 503, {
+        ok: false,
+        error: "Could not verify access. Please try again shortly.",
+        diag: "lookup-" + r.status,
+      });
       return;
     }
-    person = rows[0];
+
+    rows = await r.json().catch(() => null);
+    if (!Array.isArray(rows)) {
+      console.error("library: facilitators lookup returned a non-array body");
+      json(res, 503, {
+        ok: false,
+        error: "Could not verify access. Please try again shortly.",
+        diag: "lookup-shape",
+      });
+      return;
+    }
   } catch (e) {
-    json(res, 503, { ok: false, error: "Could not verify access." });
+    console.error("library: facilitators lookup threw", e && e.message);
+    json(res, 503, {
+      ok: false,
+      error: "Could not verify access. Please try again shortly.",
+      diag: "lookup-unreachable",
+    });
     return;
   }
+
+  if (rows.length === 0) {
+    // Valid Supabase account, but not a facilitator. Participants have
+    // accounts too; this is the line that keeps them out.
+    json(res, 403, { ok: false, error: "This account has no facilitator access." });
+    return;
+  }
+  person = rows[0];
 
   if (person.status !== "active") {
     json(res, 403, { ok: false, error: "This account has been disabled." });
