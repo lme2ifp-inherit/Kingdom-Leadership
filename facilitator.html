@@ -58,10 +58,15 @@ button{font-family:inherit;cursor:pointer}
 
 <script>
 // The library lives here and nowhere else. Never written to storage —
-// a refresh drops it and the password is required again. That is deliberate.
+// a refresh drops it and sign-in is required again. That is deliberate.
 let LIB = null;
 let view = "login";
-let pwd = "", loginErr = "", busy = false;
+let email = "", pwd = "", loginErr = "", busy = false;
+
+// Who signed in. Set by the server, never by the page. The page cannot
+// promote itself to admin by editing a variable, because every privileged
+// action is re-checked server-side against the facilitators table.
+let ME = { role: null, campusId: null, displayName: "" };
 let picked = { strengths: [], gifts: [] };
 let query = { strengths: "", gifts: "" };
 let focused = null;
@@ -103,12 +108,17 @@ function loginView() {
   return `
     <h1>Facilitator Tool</h1>
     <div class="sub">Leadership ID</div>
+    <input id="email" type="email" placeholder="Email address"
+           autocomplete="username" autocapitalize="off" autocorrect="off"
+           inputmode="email" value="${esc(email)}">
     <input id="pwd" type="password" placeholder="Password"
-           autocomplete="off" value="${esc(pwd)}">
-    <button class="btn" id="go">${busy ? "Checking…" : "Enter"}</button>
+           autocomplete="current-password" value="${esc(pwd)}"
+           style="margin-top:10px">
+    <button class="btn" id="go">${busy ? "Signing in…" : "Sign in"}</button>
     <div class="err">${esc(loginErr)}</div>
     <div class="hint">This tool is for facilitators. Participants should use
-      the main app.</div>`;
+      the main app.<br><br>Forgot your password? Contact an admin — password
+      reset is coming shortly.</div>`;
 }
 
 function picker(kind, label) {
@@ -159,6 +169,9 @@ function toolView() {
   return `
     <h1>Facilitator Tool</h1>
     <div class="sub">Leadership ID</div>
+    <div class="count" style="margin-top:-14px">Signed in as ${esc(ME.displayName)}
+      &middot; ${ME.role === "admin" ? "Admin &middot; all campuses"
+        : "Facilitator" + (ME.campusId ? " &middot; " + esc(ME.campusId) : "")}</div>
     <div class="tabs">
       <div class="tab on">Strengths &times; Gifts</div>
       <div class="tab off">Personality &times; Gifts</div>
@@ -176,6 +189,9 @@ function toolView() {
 function wire() {
   const pwdEl = document.getElementById("pwd");
   if (pwdEl) {
+    const emailEl = document.getElementById("email");
+    emailEl.oninput = e => { email = e.target.value; };
+    emailEl.onkeydown = e => { if (e.key === "Enter") document.getElementById("pwd").focus(); };
     pwdEl.oninput = e => { pwd = e.target.value; };
     pwdEl.onkeydown = e => { if (e.key === "Enter") login(); };
     document.getElementById("go").onclick = login;
@@ -209,13 +225,13 @@ function wire() {
 }
 
 async function login() {
-  if (busy || !pwd) return;
+  if (busy || !email.trim() || !pwd) return;
   busy = true; loginErr = ""; render();
   try {
     const r = await fetch("/api/library", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pwd }),
+      body: JSON.stringify({ email: email.trim(), password: pwd }),
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok || !d.ok) {
@@ -223,6 +239,8 @@ async function login() {
       busy = false; pwd = ""; render(); return;
     }
     LIB = { items: d.items, tensions: d.tensions };
+    ME = { role: d.role, campusId: d.campusId, displayName: d.displayName || "" };
+    // The password never stays in memory past the request that used it.
     pwd = ""; busy = false; view = "tool"; render();
   } catch (e) {
     loginErr = "Network error. Check your connection.";
