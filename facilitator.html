@@ -18,6 +18,15 @@ h1{font-size:22px;font-weight:700;color:#f5e6c0;margin:0 0 4px}
 input{width:100%;background:#111a28;border:1px solid #24344a;border-radius:8px;
       padding:13px 14px;color:#e8eef5;font-size:16px;font-family:inherit}
 input:focus{outline:none;border-color:#d4a520}
+select{width:100%;background:#111a28;border:1px solid #24344a;border-radius:8px;
+       padding:13px 14px;color:#e8eef5;font-size:16px;font-family:inherit;
+       -webkit-appearance:none;appearance:none;
+       background-image:linear-gradient(45deg,transparent 50%,#8898a8 50%),
+                        linear-gradient(135deg,#8898a8 50%,transparent 50%);
+       background-position:calc(100% - 19px) 21px,calc(100% - 13px) 21px;
+       background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+select:disabled{opacity:0.55}
+select:focus{outline:none;border-color:#d4a520}
 button{font-family:inherit;cursor:pointer}
 .btn{background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;
      padding:13px 28px;font-size:16px;font-weight:700;width:100%;margin-top:12px}
@@ -47,8 +56,9 @@ button{font-family:inherit;cursor:pointer}
 .k{flex:0 0 92px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;
    color:#8898a8;padding-top:3px}
 .v{flex:1}
-.tension{color:#f0e4cc;font-size:15.5px;line-height:1.65}
-.todo{color:#5f6f80;font-style:italic}
+.lead{color:#f0e4cc;font-size:15.5px;line-height:1.6}
+.ask{color:#d9c89a;font-size:15.5px;line-height:1.6;font-style:italic}
+.todo{color:#6b7c8e;font-style:italic;line-height:1.55}
 .count{font-size:12px;color:#8898a8;margin:18px 0 12px}
 .signrow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
 .signout{background:none;border:none;padding:0 0 0 4px;color:#d4a520;font-size:12px;
@@ -71,8 +81,6 @@ let email = "", pwd = "", loginErr = "", busy = false;
 // action is re-checked server-side against the facilitators table.
 let ME = { role: null, campusId: null, displayName: "" };
 let picked = { strengths: [], gifts: [] };
-let query = { strengths: "", gifts: "" };
-let focused = null;
 
 const MAX = { strengths: 5, gifts: 3 };
 const DOMAIN_COLORS = { Strategic:"#B8860B", Influencing:"#4A7C5E",
@@ -93,12 +101,24 @@ function item(kind, name) {
 
 // Type-ahead: substring match anywhere, not just prefix. Typing "com" should
 // surface both Command and Communication without knowing which comes first.
-function suggest(kind) {
-  const q = query[kind].trim().toLowerCase();
-  if (!q) return [];
-  return names(kind)
-    .filter(n => n.toLowerCase().includes(q) && !picked[kind].includes(n))
-    .slice(0, 8);
+// Options for the dropdowns. Strengths are grouped by domain -- a flat wheel
+// of 34 on a phone is a long spin, and the domain is already known. Gifts are
+// only 19, so they stay one alphabetical list. Anything already picked is
+// removed rather than disabled: an option you cannot choose is just clutter.
+function options(kind) {
+  const taken = picked[kind];
+  const all = names(kind).filter(n => !taken.includes(n)).sort();
+  if (kind === "gifts") {
+    return all.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  }
+  const order = ["Strategic", "Influencing", "Relationship", "Executing"];
+  return order.map(d => {
+    const inDomain = all.filter(n => item("strengths", n).domain === d);
+    if (!inDomain.length) return "";
+    return `<optgroup label="${esc(DOMAIN_LABELS[d])}">` +
+      inDomain.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") +
+      `</optgroup>`;
+  }).join("");
 }
 
 function render() {
@@ -126,18 +146,14 @@ function loginView() {
 
 function picker(kind, label) {
   const sel = picked[kind];
-  const sug = focused === kind ? suggest(kind) : [];
   const full = sel.length >= MAX[kind];
   return `
     <div class="lbl"><span>${label}</span><span>${sel.length} / ${MAX[kind]}</span></div>
-    <input id="q-${kind}" placeholder="${full ? "Remove one to add another" : "Start typing…"}"
-           autocomplete="off" autocorrect="off" autocapitalize="off"
-           value="${esc(query[kind])}" ${full ? "disabled" : ""}>
-    ${sug.length ? `<div class="sug">${sug.map(n => {
-      const d = kind === "strengths" ? item("strengths", n).domain : null;
-      return `<div data-add="${kind}" data-name="${esc(n)}">${esc(n)}${
-        d ? `<span class="dom">${esc(DOMAIN_LABELS[d])}</span>` : ""}</div>`;
-    }).join("")}</div>` : ""}
+    <select id="q-${kind}" ${full ? "disabled" : ""}>
+      <option value="">${full ? "Remove one to add another"
+                              : "Choose a " + (kind === "gifts" ? "gift" : "strength") + "\u2026"}</option>
+      ${full ? "" : options(kind)}
+    </select>
     ${sel.length ? `<div class="chips">${sel.map(n =>
       `<span class="chip"><b>${esc(n)}</b><span class="x" data-del="${kind}"
         data-name="${esc(n)}">&times;</span></span>`).join("")}</div>` : ""}`;
@@ -145,16 +161,23 @@ function picker(kind, label) {
 
 function cell(s, g) {
   const S = item("strengths", s), G = item("gifts", g);
-  const tension = LIB.tensions[s + "|" + g];
+  const b = LIB.blends[s + "|" + g] || null;
+  const seeds = esc(S.essence) + " + " + esc(G.essence);
   return `
     <div class="card" style="border-left-color:${DOMAIN_COLORS[S.domain]}">
       <h3>${esc(s)} &times; ${esc(g)}</h3>
       <div class="pair">Strengths &times; Gifts</div>
       <div class="row"><div class="k">Blend seeds</div>
-        <div class="v">${esc(S.essence)} + ${esc(G.essence)}</div></div>
-      <div class="row"><div class="k">The tension</div>
-        <div class="v tension">${tension ? esc(tension)
-          : `<span class="todo">Not yet written.</span>`}</div></div>
+        <div class="v">${seeds}</div></div>
+      ${b ? `
+      <div class="row"><div class="k">Looks like</div>
+        <div class="v lead">${esc(b.recognize)}</div></div>
+      <div class="row"><div class="k">Ask them</div>
+        <div class="v ask">${esc(b.ask)}</div></div>`
+      : `
+      <div class="row"><div class="k">Looks like</div>
+        <div class="v todo">Start with the two seed words above and let them
+          find their own name for it.</div></div>`}
       <div class="row"><div class="k">In action</div>
         <div class="v">${esc(S.action)} + ${esc(G.action)}</div></div>
       <div class="row"><div class="k">Watch for</div>
@@ -167,7 +190,7 @@ function toolView() {
   const cells = [];
   for (const s of S) for (const g of G) cells.push(cell(s, g));
   const written = S.reduce((n, s) =>
-    n + G.filter(g => LIB.tensions[s + "|" + g]).length, 0);
+    n + G.filter(g => LIB.blends[s + "|" + g]).length, 0);
 
   return `
     <h1>Facilitator Tool</h1>
@@ -186,8 +209,8 @@ function toolView() {
     ${cells.length ? `<div class="count">${cells.length} pairing${
         cells.length === 1 ? "" : "s"} &middot; ${written} written</div>${cells.join("")}`
       : `<div class="hint">Enter their strengths and gifts above to see the pairings.</div>`}
-    <div class="hint">Never read a card aloud. Give them the two seed words and
-      let them find their own name for it.</div>`;
+    <div class="hint">Never read a card aloud. Lead with the two seed words. The
+      other lines are there for when someone gets stuck.</div>`;
 }
 
 function wire() {
@@ -206,21 +229,17 @@ function wire() {
   for (const kind of ["strengths", "gifts"]) {
     const q = document.getElementById("q-" + kind);
     if (!q) continue;
-    q.onfocus = () => { focused = kind; };
-    q.oninput = e => {
-      query[kind] = e.target.value; focused = kind;
+    q.onchange = e => {
+      const name = e.target.value;
+      if (!name) return;
+      // Guard the cap here as well as in the markup. The select is disabled at
+      // the limit, but a disabled control is a UI state, not a rule.
+      if (picked[kind].length < MAX[kind] && !picked[kind].includes(name)) {
+        picked[kind].push(name);
+      }
       render();
-      const el = document.getElementById("q-" + kind);
-      el.focus(); el.setSelectionRange(el.value.length, el.value.length);
     };
   }
-  document.querySelectorAll("[data-add]").forEach(el => {
-    el.onclick = () => {
-      const k = el.dataset.add;
-      if (picked[k].length < MAX[k]) picked[k].push(el.dataset.name);
-      query[k] = ""; focused = null; render();
-    };
-  });
   document.querySelectorAll("[data-del]").forEach(el => {
     el.onclick = () => {
       const k = el.dataset.del;
@@ -240,8 +259,6 @@ function signOut() {
   LIB = null;
   ME = { role: null, campusId: null, displayName: "" };
   picked = { strengths: [], gifts: [] };
-  query = { strengths: "", gifts: "" };
-  focused = null;
   email = ""; pwd = ""; loginErr = ""; busy = false;
   view = "login";
   render();
@@ -261,7 +278,7 @@ async function login() {
       loginErr = d.error || ("Failed (" + r.status + ")");
       busy = false; pwd = ""; render(); return;
     }
-    LIB = { items: d.items, tensions: d.tensions };
+    LIB = { items: d.items, blends: d.blends };
     ME = { role: d.role, campusId: d.campusId, displayName: d.displayName || "" };
     // The password never stays in memory past the request that used it.
     pwd = ""; busy = false; view = "tool"; render();

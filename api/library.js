@@ -158,6 +158,6 @@ module.exports = async (req, res) => {
     campusId: person.campus_id,
     displayName: person.display_name || person.email,
     items: LIBRARY.items,
-    tensions: LIBRARY.tensions,
+    blends: LIBRARY.blends,
   });
 };

@@ -1,72 +1,316 @@
 {
   "version": "1.0.0",
-  "phase": "strengths-gifts",
+  "phase": "strengths-gifts-blends",
   "built": "2026-08-02",
   "totalCells": 646,
-  "note": "Facilitator-only teaching library. Served from an authenticated endpoint. Never ship inside the page.",
+  "note": "Facilitator-only teaching library. Served from an authenticated endpoint. Never ship inside the page. blends[strength|gift] holds recognize (what it looks like in a person) and ask (a question the facilitator can put to them). Purpose is unblocking, not teaching.",
   "items": {
     "strengths": {
-      "Analytical":        { "domain": "Strategic",    "essence": "proof",       "action": "tests",         "shadow": "dissects" },
-      "Context":           { "domain": "Strategic",    "essence": "roots",       "action": "traces",        "shadow": "clings" },
-      "Futuristic":        { "domain": "Strategic",    "essence": "horizon",     "action": "envisions",     "shadow": "outruns" },
-      "Ideation":          { "domain": "Strategic",    "essence": "spark",       "action": "invents",       "shadow": "scatters" },
-      "Input":             { "domain": "Strategic",    "essence": "reserves",    "action": "gathers",       "shadow": "stockpiles" },
-      "Intellection":      { "domain": "Strategic",    "essence": "reflection",  "action": "ponders",       "shadow": "spirals" },
-      "Learner":           { "domain": "Strategic",    "essence": "growth",      "action": "studies",       "shadow": "restarts" },
-      "Strategic":         { "domain": "Strategic",    "essence": "paths",       "action": "navigates",     "shadow": "reroutes" },
-
-      "Activator":         { "domain": "Influencing",  "essence": "ignition",    "action": "starts",        "shadow": "rushes" },
-      "Command":           { "domain": "Influencing",  "essence": "authority",   "action": "confronts",     "shadow": "steamrolls" },
-      "Communication":     { "domain": "Influencing",  "essence": "voice",       "action": "articulates",   "shadow": "embellishes" },
-      "Competition":       { "domain": "Influencing",  "essence": "measure",     "action": "contends",      "shadow": "diminishes" },
-      "Maximizer":         { "domain": "Influencing",  "essence": "excellence",  "action": "refines",       "shadow": "discards" },
-      "Self-Assurance":    { "domain": "Influencing",  "essence": "conviction",  "action": "decides",       "shadow": "dismisses" },
-      "Significance":      { "domain": "Influencing",  "essence": "weight",      "action": "reaches",       "shadow": "postures" },
-      "Woo":               { "domain": "Influencing",  "essence": "charm",       "action": "draws",         "shadow": "skims" },
-
-      "Adaptability":      { "domain": "Relationship", "essence": "presence",    "action": "flexes",        "shadow": "drifts" },
-      "Connectedness":     { "domain": "Relationship", "essence": "thread",      "action": "links",         "shadow": "overreads" },
-      "Developer":         { "domain": "Relationship", "essence": "potential",   "action": "cultivates",    "shadow": "overinvests" },
-      "Empathy":           { "domain": "Relationship", "essence": "feeling",     "action": "absorbs",       "shadow": "drowns" },
-      "Harmony":           { "domain": "Relationship", "essence": "peace",       "action": "smooths",       "shadow": "avoids" },
-      "Includer":          { "domain": "Relationship", "essence": "welcome",     "action": "widens",        "shadow": "dilutes" },
-      "Individualization": { "domain": "Relationship", "essence": "distinction", "action": "tailors",       "shadow": "favors" },
-      "Positivity":        { "domain": "Relationship", "essence": "lift",        "action": "brightens",     "shadow": "glosses" },
-      "Relator":           { "domain": "Relationship", "essence": "closeness",   "action": "binds",         "shadow": "excludes" },
-
-      "Achiever":          { "domain": "Executing",    "essence": "output",      "action": "produces",      "shadow": "grinds" },
-      "Arranger":          { "domain": "Executing",    "essence": "fit",         "action": "orchestrates",  "shadow": "meddles" },
-      "Belief":            { "domain": "Executing",    "essence": "values",      "action": "anchors",       "shadow": "hardens" },
-      "Consistency":       { "domain": "Executing",    "essence": "fairness",    "action": "levels",        "shadow": "flattens" },
-      "Deliberative":      { "domain": "Executing",    "essence": "caution",     "action": "weighs",        "shadow": "delays" },
-      "Discipline":        { "domain": "Executing",    "essence": "routine",     "action": "systematizes",  "shadow": "fixates" },
-      "Focus":             { "domain": "Executing",    "essence": "target",      "action": "narrows",       "shadow": "tunnels" },
-      "Responsibility":    { "domain": "Executing",    "essence": "ownership",   "action": "delivers",      "shadow": "overloads" },
-      "Restorative":       { "domain": "Executing",    "essence": "repair",      "action": "fixes",         "shadow": "dwells" }
+      "Analytical": {
+        "domain": "Strategic",
+        "essence": "proof",
+        "action": "tests",
+        "shadow": "dissects"
+      },
+      "Context": {
+        "domain": "Strategic",
+        "essence": "roots",
+        "action": "traces",
+        "shadow": "clings"
+      },
+      "Futuristic": {
+        "domain": "Strategic",
+        "essence": "horizon",
+        "action": "envisions",
+        "shadow": "outruns"
+      },
+      "Ideation": {
+        "domain": "Strategic",
+        "essence": "spark",
+        "action": "invents",
+        "shadow": "scatters"
+      },
+      "Input": {
+        "domain": "Strategic",
+        "essence": "reserves",
+        "action": "gathers",
+        "shadow": "stockpiles"
+      },
+      "Intellection": {
+        "domain": "Strategic",
+        "essence": "reflection",
+        "action": "ponders",
+        "shadow": "spirals"
+      },
+      "Learner": {
+        "domain": "Strategic",
+        "essence": "growth",
+        "action": "studies",
+        "shadow": "restarts"
+      },
+      "Strategic": {
+        "domain": "Strategic",
+        "essence": "paths",
+        "action": "navigates",
+        "shadow": "reroutes"
+      },
+      "Activator": {
+        "domain": "Influencing",
+        "essence": "ignition",
+        "action": "starts",
+        "shadow": "rushes"
+      },
+      "Command": {
+        "domain": "Influencing",
+        "essence": "authority",
+        "action": "confronts",
+        "shadow": "steamrolls"
+      },
+      "Communication": {
+        "domain": "Influencing",
+        "essence": "voice",
+        "action": "articulates",
+        "shadow": "embellishes"
+      },
+      "Competition": {
+        "domain": "Influencing",
+        "essence": "measure",
+        "action": "contends",
+        "shadow": "diminishes"
+      },
+      "Maximizer": {
+        "domain": "Influencing",
+        "essence": "excellence",
+        "action": "refines",
+        "shadow": "discards"
+      },
+      "Self-Assurance": {
+        "domain": "Influencing",
+        "essence": "conviction",
+        "action": "decides",
+        "shadow": "dismisses"
+      },
+      "Significance": {
+        "domain": "Influencing",
+        "essence": "weight",
+        "action": "reaches",
+        "shadow": "postures"
+      },
+      "Woo": {
+        "domain": "Influencing",
+        "essence": "charm",
+        "action": "draws",
+        "shadow": "skims"
+      },
+      "Adaptability": {
+        "domain": "Relationship",
+        "essence": "presence",
+        "action": "flexes",
+        "shadow": "drifts"
+      },
+      "Connectedness": {
+        "domain": "Relationship",
+        "essence": "thread",
+        "action": "links",
+        "shadow": "overreads"
+      },
+      "Developer": {
+        "domain": "Relationship",
+        "essence": "potential",
+        "action": "cultivates",
+        "shadow": "overinvests"
+      },
+      "Empathy": {
+        "domain": "Relationship",
+        "essence": "feeling",
+        "action": "absorbs",
+        "shadow": "drowns"
+      },
+      "Harmony": {
+        "domain": "Relationship",
+        "essence": "peace",
+        "action": "smooths",
+        "shadow": "avoids"
+      },
+      "Includer": {
+        "domain": "Relationship",
+        "essence": "welcome",
+        "action": "widens",
+        "shadow": "dilutes"
+      },
+      "Individualization": {
+        "domain": "Relationship",
+        "essence": "distinction",
+        "action": "tailors",
+        "shadow": "favors"
+      },
+      "Positivity": {
+        "domain": "Relationship",
+        "essence": "lift",
+        "action": "brightens",
+        "shadow": "glosses"
+      },
+      "Relator": {
+        "domain": "Relationship",
+        "essence": "closeness",
+        "action": "binds",
+        "shadow": "excludes"
+      },
+      "Achiever": {
+        "domain": "Executing",
+        "essence": "output",
+        "action": "produces",
+        "shadow": "grinds"
+      },
+      "Arranger": {
+        "domain": "Executing",
+        "essence": "fit",
+        "action": "orchestrates",
+        "shadow": "meddles"
+      },
+      "Belief": {
+        "domain": "Executing",
+        "essence": "values",
+        "action": "anchors",
+        "shadow": "hardens"
+      },
+      "Consistency": {
+        "domain": "Executing",
+        "essence": "fairness",
+        "action": "levels",
+        "shadow": "flattens"
+      },
+      "Deliberative": {
+        "domain": "Executing",
+        "essence": "caution",
+        "action": "weighs",
+        "shadow": "delays"
+      },
+      "Discipline": {
+        "domain": "Executing",
+        "essence": "routine",
+        "action": "systematizes",
+        "shadow": "fixates"
+      },
+      "Focus": {
+        "domain": "Executing",
+        "essence": "target",
+        "action": "narrows",
+        "shadow": "tunnels"
+      },
+      "Responsibility": {
+        "domain": "Executing",
+        "essence": "ownership",
+        "action": "delivers",
+        "shadow": "overloads"
+      },
+      "Restorative": {
+        "domain": "Executing",
+        "essence": "repair",
+        "action": "fixes",
+        "shadow": "dwells"
+      }
     },
     "gifts": {
-      "Administration":  { "essence": "order",         "action": "organizes",  "shadow": "controls" },
-      "Apostleship":     { "essence": "frontier",      "action": "plants",     "shadow": "abandons" },
-      "Discernment":     { "essence": "sight",         "action": "perceives",  "shadow": "suspects" },
-      "Evangelism":      { "essence": "proclamation",  "action": "invites",    "shadow": "pressures" },
-      "Exhortation":     { "essence": "courage",       "action": "urges",      "shadow": "shames" },
-      "Faith":           { "essence": "certainty",     "action": "risks",      "shadow": "presumes" },
-      "Giving":          { "essence": "release",       "action": "provides",   "shadow": "buys" },
-      "Healing":         { "essence": "wholeness",     "action": "restores",   "shadow": "rescues" },
-      "Interpretation":  { "essence": "meaning",       "action": "translates", "shadow": "imposes" },
-      "Knowledge":       { "essence": "depth",         "action": "uncovers",   "shadow": "hoards" },
-      "Leadership":      { "essence": "direction",     "action": "mobilizes",  "shadow": "drives" },
-      "Mercy":           { "essence": "compassion",    "action": "comforts",   "shadow": "excuses" },
-      "Miracles":        { "essence": "power",         "action": "expects",    "shadow": "demands" },
-      "Pastor/Shepherd": { "essence": "protection",    "action": "tends",      "shadow": "smothers" },
-      "Prophecy":        { "essence": "truth",         "action": "exposes",    "shadow": "wounds" },
-      "Service":         { "essence": "hands",         "action": "labors",     "shadow": "disappears" },
-      "Teaching":        { "essence": "clarity",       "action": "explains",   "shadow": "lectures" },
-      "Tongues":         { "essence": "surrender",     "action": "yields",     "shadow": "performs" },
-      "Wisdom":          { "essence": "timing",        "action": "counsels",   "shadow": "withholds" }
+      "Administration": {
+        "essence": "order",
+        "action": "organizes",
+        "shadow": "controls"
+      },
+      "Apostleship": {
+        "essence": "frontier",
+        "action": "plants",
+        "shadow": "abandons"
+      },
+      "Discernment": {
+        "essence": "sight",
+        "action": "perceives",
+        "shadow": "suspects"
+      },
+      "Evangelism": {
+        "essence": "proclamation",
+        "action": "invites",
+        "shadow": "pressures"
+      },
+      "Exhortation": {
+        "essence": "courage",
+        "action": "urges",
+        "shadow": "shames"
+      },
+      "Faith": {
+        "essence": "certainty",
+        "action": "risks",
+        "shadow": "presumes"
+      },
+      "Giving": {
+        "essence": "release",
+        "action": "provides",
+        "shadow": "buys"
+      },
+      "Healing": {
+        "essence": "wholeness",
+        "action": "restores",
+        "shadow": "rescues"
+      },
+      "Interpretation": {
+        "essence": "meaning",
+        "action": "translates",
+        "shadow": "imposes"
+      },
+      "Knowledge": {
+        "essence": "depth",
+        "action": "uncovers",
+        "shadow": "hoards"
+      },
+      "Leadership": {
+        "essence": "direction",
+        "action": "mobilizes",
+        "shadow": "drives"
+      },
+      "Mercy": {
+        "essence": "compassion",
+        "action": "comforts",
+        "shadow": "excuses"
+      },
+      "Miracles": {
+        "essence": "power",
+        "action": "expects",
+        "shadow": "demands"
+      },
+      "Pastor/Shepherd": {
+        "essence": "protection",
+        "action": "tends",
+        "shadow": "smothers"
+      },
+      "Prophecy": {
+        "essence": "truth",
+        "action": "exposes",
+        "shadow": "wounds"
+      },
+      "Service": {
+        "essence": "hands",
+        "action": "labors",
+        "shadow": "disappears"
+      },
+      "Teaching": {
+        "essence": "clarity",
+        "action": "explains",
+        "shadow": "lectures"
+      },
+      "Tongues": {
+        "essence": "surrender",
+        "action": "yields",
+        "shadow": "performs"
+      },
+      "Wisdom": {
+        "essence": "timing",
+        "action": "counsels",
+        "shadow": "withholds"
+      }
     }
   },
-  "tensions": {
+  "blends": {},
+  "retired_tensions": {
     "Command|Administration": "One of these takes hold of people. The other takes hold of the process. Both of them are you deciding that someone else's way isn't good enough.",
     "Command|Apostleship": "One of these builds a following. The other keeps walking away from one. Ask who is left standing where you used to be.",
     "Command|Discernment": "You see it before anyone else does, and you say it before anyone else is ready. Neither of those waited for evidence.",
