@@ -3,7 +3,51 @@
   "phase": "strengths-gifts-blends",
   "built": "2026-08-02",
   "totalCells": 646,
-  "note": "Facilitator-only teaching library. Served from an authenticated endpoint. Never ship inside the page. blends[strength|gift] holds recognize (what it looks like in a person) and ask (a question the facilitator can put to them). Purpose is unblocking, not teaching.",
+  "coverage": {
+    "written": 209,
+    "of": 646,
+    "rowsComplete": [
+      "Analytical",
+      "Activator",
+      "Command",
+      "Communication",
+      "Competition",
+      "Maximizer",
+      "Self-Assurance",
+      "Significance",
+      "Woo",
+      "Adaptability",
+      "Connectedness"
+    ],
+    "rowsRemaining": [
+      "Context",
+      "Futuristic",
+      "Ideation",
+      "Input",
+      "Intellection",
+      "Learner",
+      "Strategic",
+      "Developer",
+      "Empathy",
+      "Harmony",
+      "Includer",
+      "Individualization",
+      "Positivity",
+      "Relator",
+      "Achiever",
+      "Arranger",
+      "Belief",
+      "Consistency",
+      "Deliberative",
+      "Discipline",
+      "Focus",
+      "Responsibility",
+      "Restorative"
+    ],
+    "lastWritten": "2026-08-02",
+    "note": "Written by the authoring session, asserted by scripts/verify_library.js. If these numbers disagree with the blends object the tests fail. Never edit by hand."
+  },
+  "note": "Facilitator-only teaching library. Served from an authenticated endpoint. Never ship inside the page. blends[strength|gift] holds recognize (what it looks like in a person) and ask (a question the facilitator can put to them). Purpose is unblocking, not teaching. retired_tensions holds the original Command tension lines from the first format; they are read by nothing and are kept so the earlier work is not lost.",
   "items": {
     "strengths": {
       "Analytical": {
@@ -309,7 +353,844 @@
       }
     }
   },
-  "blends": {},
+  "blends": {
+    "Analytical|Administration": {
+      "recognize": "You build systems that hold up, and you can usually explain why every piece of one is there.",
+      "ask": "Where have you kept a process running that you had already stopped believing in?"
+    },
+    "Analytical|Apostleship": {
+      "recognize": "You are drawn to new ground, but you want to know it will hold weight before you put people on it.",
+      "ask": "What would you need to see before starting something you could not prove would work?"
+    },
+    "Analytical|Discernment": {
+      "recognize": "You often sense something is off before you can point to what, and you would rather not say it until you can.",
+      "ask": "When did you last sit on a read about someone because you could not back it up yet?"
+    },
+    "Analytical|Evangelism": {
+      "recognize": "You would rather answer someone's real objection than collect a quick yes.",
+      "ask": "Who stopped bringing you questions because the answers got too heavy?"
+    },
+    "Analytical|Exhortation": {
+      "recognize": "Your encouragement is specific -- you tell people what you have actually watched them do.",
+      "ask": "What do you do when someone needs encouraging and the evidence is not there yet?"
+    },
+    "Analytical|Faith": {
+      "recognize": "You carry conviction and caution at the same time, and they do not always agree.",
+      "ask": "Where is God asking you to move before the proof shows up?"
+    },
+    "Analytical|Giving": {
+      "recognize": "You are generous, and you think hard about where it lands and what it does.",
+      "ask": "What would it cost you to give without knowing how it gets used?"
+    },
+    "Analytical|Healing": {
+      "recognize": "You want to understand what is actually wrong before you try to make it better.",
+      "ask": "When has someone needed comfort from you and gotten questions instead?"
+    },
+    "Analytical|Interpretation": {
+      "recognize": "You are careful with other people's words, and would rather check a meaning than pass along something you are unsure of.",
+      "ask": "Where has your checking slowed down something that needed to arrive fast?"
+    },
+    "Analytical|Knowledge": {
+      "recognize": "You go deep, and you tend to keep going well after most people would call it settled.",
+      "ask": "What have you learned that you have not handed to anyone yet?"
+    },
+    "Analytical|Leadership": {
+      "recognize": "You want the numbers before you commit, and the people following you can feel the pause.",
+      "ask": "Where has waiting for certainty cost your team momentum?"
+    },
+    "Analytical|Mercy": {
+      "recognize": "You care by trying to understand -- your first instinct is to find out what actually happened.",
+      "ask": "Has anyone ever felt examined by you when they were hoping to be comforted?"
+    },
+    "Analytical|Miracles": {
+      "recognize": "You expect God to act, and some part of you is still looking for the mechanism.",
+      "ask": "What have you seen that you have never been able to explain?"
+    },
+    "Analytical|Pastor/Shepherd": {
+      "recognize": "You look after people thoroughly, and you notice patterns in them before they notice themselves.",
+      "ask": "Who have you been watching closely that you have not actually talked to?"
+    },
+    "Analytical|Prophecy": {
+      "recognize": "You say the true thing, and you have usually built the case before you open your mouth.",
+      "ask": "When has being right mattered more to you than the person hearing it?"
+    },
+    "Analytical|Service": {
+      "recognize": "You will do the work, once you are satisfied it is the work worth doing.",
+      "ask": "What needed doing while you were still deciding whether it was the right thing?"
+    },
+    "Analytical|Teaching": {
+      "recognize": "You explain thoroughly, because a half-understood answer bothers you more than a long one.",
+      "ask": "When did you last stop explaining before you had covered everything?"
+    },
+    "Analytical|Tongues": {
+      "recognize": "Letting go of understanding is close to the hardest thing you are ever asked to do.",
+      "ask": "Where in your life with God have you had to stop needing an explanation?"
+    },
+    "Analytical|Wisdom": {
+      "recognize": "You usually know whether something is true well before you know whether it is the moment to say it.",
+      "ask": "What true thing are you holding right now, waiting for the right time?"
+    },
+    "Activator|Administration": {
+      "recognize": "You get things moving and build the system afterward, usually in that order. It works until something you started is still running with nobody owning it.",
+      "ask": "What did you start that still doesn't have anyone's name on it?"
+    },
+    "Activator|Apostleship": {
+      "recognize": "You're happiest at the beginning of things, and there's always another beginning available.",
+      "ask": "What's the last thing you started that you actually stayed for?"
+    },
+    "Activator|Discernment": {
+      "recognize": "You see it and you act on it in nearly the same motion. Being right often, you've stopped noticing there's a gap between the two.",
+      "ask": "When did you last see something and wait before moving?"
+    },
+    "Activator|Evangelism": {
+      "recognize": "You'll ask anyone, early, without much setup. Some people need a longer runway than you're used to giving.",
+      "ask": "Who did you invite once and never follow up with?"
+    },
+    "Activator|Exhortation": {
+      "recognize": "You get people off the fence. You're the reason several of them did the thing they were scared of.",
+      "ask": "Who's still stuck that your usual push hasn't moved?"
+    },
+    "Activator|Faith": {
+      "recognize": "You move first and you're sure while you're doing it. From inside, it's hard to tell whether you prayed about it or just felt ready.",
+      "ask": "What did you start this year that you'd say God started?"
+    },
+    "Activator|Giving": {
+      "recognize": "When you see a need you cover it that day. Speed is your generosity -- it's also how you skip the longer conversation.",
+      "ask": "What need did you meet quickly that actually needed you to stay?"
+    },
+    "Activator|Healing": {
+      "recognize": "You move toward broken things instead of away, and you start doing something about it immediately. Restoration is slower than starting.",
+      "ask": "What are you trying to fix fast that needs time instead?"
+    },
+    "Activator|Interpretation": {
+      "recognize": "You name what's going on and have people moving on it before the room has caught up.",
+      "ask": "What would you have understood differently if you'd waited a week?"
+    },
+    "Activator|Knowledge": {
+      "recognize": "You know enough to start and starting teaches you the rest. People around you can't always tell which part you actually know yet.",
+      "ask": "What are you doing right now that you haven't finished learning?"
+    },
+    "Activator|Leadership": {
+      "recognize": "You start it and people come. Momentum covers a lot, including whether anyone knows where this ends.",
+      "ask": "Where does this end, and have you told them?"
+    },
+    "Activator|Mercy": {
+      "recognize": "You show up fast for people who are hurting, which is more than most people manage. Staying still with them is the harder half.",
+      "ask": "Who needs you to stay longer than you usually do?"
+    },
+    "Activator|Miracles": {
+      "recognize": "You'll step out and expect God to meet you there, publicly, before there's any evidence.",
+      "ask": "What have you started that only works if God shows up?"
+    },
+    "Activator|Pastor/Shepherd": {
+      "recognize": "You act on behalf of your people quickly, sometimes before they've told you what they need.",
+      "ask": "What did you handle for someone who'd have wanted a say?"
+    },
+    "Activator|Prophecy": {
+      "recognize": "You say the true thing early, in the moment, with no runway in front of it.",
+      "ask": "What did you say in the moment that you'd say differently now?"
+    },
+    "Activator|Service": {
+      "recognize": "You see it needs doing and it's already done. No meeting, no sign-up sheet.",
+      "ask": "What have you quietly taken over that was somebody's job to learn?"
+    },
+    "Activator|Teaching": {
+      "recognize": "You'd rather get people into it and explain as you go. Some people can't move until they understand.",
+      "ask": "Who's still standing still because they don't have the whole picture?"
+    },
+    "Activator|Tongues": {
+      "recognize": "Starting is yours; yielding isn't. You're better at going than at waiting to be sent.",
+      "ask": "When did you last wait on purpose?"
+    },
+    "Activator|Wisdom": {
+      "recognize": "One of these says go and the other says not yet, and both of them are you.",
+      "ask": "Which one has been winning lately?"
+    },
+    "Command|Administration": {
+      "recognize": "When something's a mess you don't ask who's in charge, you start assigning. It usually works, which is why nobody's told you it can feel like being managed.",
+      "ask": "Who was already carrying that before you picked it up?"
+    },
+    "Command|Apostleship": {
+      "recognize": "You can start something from nothing and get people to follow you into it. What surprises them is how ready you are to leave once it stands on its own.",
+      "ask": "What are you starting next -- and is it because it needs starting, or because this one is finished for you?"
+    },
+    "Command|Discernment": {
+      "recognize": "You read a room fast and you're usually right. You also say it before you've checked, and being right doesn't make people less defensive.",
+      "ask": "What do you see here that you haven't said yet, and what's stopping you?"
+    },
+    "Command|Evangelism": {
+      "recognize": "You're not nervous about bringing it up. You'll say the thing everyone else is circling. What's hard to feel from inside is when an invitation turned into pressure.",
+      "ask": "Who said yes to you, and who just stopped arguing?"
+    },
+    "Command|Exhortation": {
+      "recognize": "You push people toward what they're capable of and you don't soften it much. Most of them needed that. A few heard something you didn't say.",
+      "ask": "Who have you been hardest on lately, and what were you hoping they'd hear?"
+    },
+    "Command|Faith": {
+      "recognize": "You move before other people are ready, and you're not bluffing -- you're sure. The hard part is sorting which of that certainty came from God and which came from you.",
+      "ask": "The last time you were certain, how did you know?"
+    },
+    "Command|Giving": {
+      "recognize": "You see a need and you cover it, often before anyone asks, and you don't like it discussed afterward.",
+      "ask": "When you gave that, what did you expect to change?"
+    },
+    "Command|Healing": {
+      "recognize": "You step into broken situations other people back away from and take charge of putting them right. Sometimes the person never asked to be rescued.",
+      "ask": "Is this person asking you to fix it, or asking you to stay?"
+    },
+    "Command|Interpretation": {
+      "recognize": "You can take something tangled and say what it actually means, with enough weight that people accept it. Your reading tends to close the question.",
+      "ask": "What's another way to read that -- even one you don't believe?"
+    },
+    "Command|Knowledge": {
+      "recognize": "You dig until you have it, then speak from a place people can't argue with. You're not hiding what you know; you release it when you've decided it's time.",
+      "ask": "What do you know here that you haven't put on the table yet?"
+    },
+    "Command|Leadership": {
+      "recognize": "Both of these move people, so you rarely meet resistance to your face. You set direction and people go. You don't hear the conversation after you leave the room.",
+      "ask": "Who disagrees with you, and how would you know?"
+    },
+    "Command|Mercy": {
+      "recognize": "You're the one who confronts and the one who stays. People are usually surprised by the second part. Inside, it can feel like two settings with nothing between them.",
+      "ask": "Which is harder right now -- saying the hard thing, or letting it be enough that you said it?"
+    },
+    "Command|Miracles": {
+      "recognize": "You expect God to move and you'll say so publicly, which puts you on the hook. When nothing happens it's not your faith that takes the first hit, it's your authority.",
+      "ask": "What have you asked God for out loud that hasn't come yet?"
+    },
+    "Command|Pastor/Shepherd": {
+      "recognize": "You protect your people, and protecting them sometimes means deciding for them. You'd take the hit for any of them -- you'd also rather they didn't take it themselves.",
+      "ask": "Who are you protecting from something they could probably handle?"
+    },
+    "Command|Prophecy": {
+      "recognize": "You say what's true, plainly, and you carry the cost without much complaint. What you can't see from inside is the difference between landing and leaving a mark.",
+      "ask": "When you said that, what did you want to happen next?"
+    },
+    "Command|Service": {
+      "recognize": "You'll do the work yourself rather than negotiate for it. It looks like humility and partly is -- it's also faster than asking.",
+      "ask": "What are you doing yourself that someone else should be learning?"
+    },
+    "Command|Teaching": {
+      "recognize": "You explain things well and with weight, so people don't push back much. The gap you can't measure is between agreeing with you and understanding you.",
+      "ask": "Who in that room could teach it back to you?"
+    },
+    "Command|Tongues": {
+      "recognize": "One of these takes charge and the other lets go, and you live in both. It gets confusing in public, where surrender can start to look like something you're doing well.",
+      "ask": "Where do you yield when no one is watching?"
+    },
+    "Command|Wisdom": {
+      "recognize": "You know what to say and you know when. Those two don't always agree, and waiting costs you something that speaking never did.",
+      "ask": "What are you holding back right now -- is it timing, or is it something else?"
+    },
+    "Communication|Administration": {
+      "recognize": "You can make a plan sound clear and compelling before it actually is one. People sign on to the telling.",
+      "ask": "Is that plan as finished as it sounded when you described it?"
+    },
+    "Communication|Apostleship": {
+      "recognize": "You can describe a place nobody's been to well enough that people will go there.",
+      "ask": "Who followed you somewhere because of how you told it?"
+    },
+    "Communication|Discernment": {
+      "recognize": "You perceive something and immediately have language for it. The language is usually further along than the certainty underneath it.",
+      "ask": "How sure are you -- on a number you'd say out loud?"
+    },
+    "Communication|Evangelism": {
+      "recognize": "You're good at this and you know it. The story lands. What you can't see is whether it landed on them or just landed.",
+      "ask": "What happened after they said yes?"
+    },
+    "Communication|Exhortation": {
+      "recognize": "You know exactly what to say to get someone moving. Words that strong don't come with a volume control.",
+      "ask": "Who's still carrying something you said to them?"
+    },
+    "Communication|Faith": {
+      "recognize": "You speak it out, and speaking it makes it feel more settled than it is.",
+      "ask": "Do you believe that, or did you just say it well?"
+    },
+    "Communication|Giving": {
+      "recognize": "You give, and you tell the story of it, usually because the story raises more.",
+      "ask": "Whose generosity have you told about lately besides your own?"
+    },
+    "Communication|Healing": {
+      "recognize": "You give people words for what happened to them, and the naming is part of the healing.",
+      "ask": "Have you let them tell it in their own words yet?"
+    },
+    "Communication|Interpretation": {
+      "recognize": "You take what's murky and make it plain, and people trust the version you hand them.",
+      "ask": "What's in the room that your version leaves out?"
+    },
+    "Communication|Knowledge": {
+      "recognize": "You explain things you're still learning, well enough that nobody asks.",
+      "ask": "What have you spoken about with more confidence than you actually have?"
+    },
+    "Communication|Leadership": {
+      "recognize": "You cast it and people move. The message travels further than the plan does.",
+      "ask": "Could someone repeat back what you asked them to do?"
+    },
+    "Communication|Mercy": {
+      "recognize": "You put words around people's pain and they feel less alone in it. Sometimes they need silence and you fill it.",
+      "ask": "When did you last sit with someone and say nothing?"
+    },
+    "Communication|Miracles": {
+      "recognize": "You tell the stories of what God has done, and expectation rises in the room when you do.",
+      "ask": "What's the last one you told -- and were you there?"
+    },
+    "Communication|Pastor/Shepherd": {
+      "recognize": "You speak for your people, especially in rooms they're not in.",
+      "ask": "What have you said on someone's behalf that they didn't ask you to say?"
+    },
+    "Communication|Prophecy": {
+      "recognize": "You can say a hard thing so that it's actually heard. The same skill lets you sharpen it past what it needed.",
+      "ask": "Did that need to be that sharp?"
+    },
+    "Communication|Service": {
+      "recognize": "You'd rather describe the work than do it, and describing it genuinely does move people.",
+      "ask": "When did you last do the part you usually recruit for?"
+    },
+    "Communication|Teaching": {
+      "recognize": "This is your obvious lane. People remember you.",
+      "ask": "Do they remember the point, or do they remember you?"
+    },
+    "Communication|Tongues": {
+      "recognize": "Your voice is the thing you're known for, and yielding means setting it down.",
+      "ask": "Where do you serve without saying anything?"
+    },
+    "Communication|Wisdom": {
+      "recognize": "You always have something to say and you don't always need to say it.",
+      "ask": "What did you say this week that could have waited?"
+    },
+    "Competition|Administration": {
+      "recognize": "You'll build the system and then track yourself against it. Numbers are how you know where you stand.",
+      "ask": "What are you measuring right now, and who set the number?"
+    },
+    "Competition|Apostleship": {
+      "recognize": "New ground is a fresh scoreboard. Nobody's ahead of you there yet.",
+      "ask": "Are you going because it needs planting, or because you're behind here?"
+    },
+    "Competition|Discernment": {
+      "recognize": "You size people up quickly and accurately, and part of what you're reading is where you rank.",
+      "ask": "When you meet someone new, what's the first thing you find out?"
+    },
+    "Competition|Evangelism": {
+      "recognize": "You'll invite more people than anyone in the room, and you'll know the number.",
+      "ask": "What's the last name you'd tell me about if there were no count?"
+    },
+    "Competition|Exhortation": {
+      "recognize": "You bring out someone's best by putting something on the line. It works on the ones built like you.",
+      "ask": "Who shrank when you meant to push them?"
+    },
+    "Competition|Faith": {
+      "recognize": "You're willing to risk publicly, which means the outcome is visible either way.",
+      "ask": "What are you believing for that nobody would see if it happened?"
+    },
+    "Competition|Giving": {
+      "recognize": "You give real amounts, and you'd like to know where that lands.",
+      "ask": "Would you still give it if no one ever knew?"
+    },
+    "Competition|Healing": {
+      "recognize": "You go at someone's brokenness like a problem to beat, with real energy. Healing doesn't keep score.",
+      "ask": "What if this one doesn't get better -- where does that leave you?"
+    },
+    "Competition|Interpretation": {
+      "recognize": "You explain what's happening and you want your read to be the one that holds.",
+      "ask": "Whose reading of this is better than yours?"
+    },
+    "Competition|Knowledge": {
+      "recognize": "You go deeper than the others in the room, partly on purpose.",
+      "ask": "What do you study that no one would ever grade?"
+    },
+    "Competition|Leadership": {
+      "recognize": "You move people, and you compare your results to other people's. Your team can start to feel like proof.",
+      "ask": "When your team wins, who is it for?"
+    },
+    "Competition|Mercy": {
+      "recognize": "You're drawn to the ones losing. Compassion is one of the few places you don't measure.",
+      "ask": "Who have you helped that could never pay it back?"
+    },
+    "Competition|Miracles": {
+      "recognize": "You expect God to show up big, and big is partly a comparison.",
+      "ask": "Would a quiet answer count?"
+    },
+    "Competition|Pastor/Shepherd": {
+      "recognize": "You defend your people fiercely, including against other groups.",
+      "ask": "Who have you made into an opponent who isn't one?"
+    },
+    "Competition|Prophecy": {
+      "recognize": "You'll say the thing, and being right about it is part of what you get.",
+      "ask": "If someone else had said it first, would you still have wanted it said?"
+    },
+    "Competition|Service": {
+      "recognize": "You'll outwork the room and let that be the argument.",
+      "ask": "What are you proving with that?"
+    },
+    "Competition|Teaching": {
+      "recognize": "You teach to be the one who knows it best, and it makes you prepare harder than most.",
+      "ask": "What have you learned lately from someone in your class?"
+    },
+    "Competition|Tongues": {
+      "recognize": "Yielding is the opposite of contending. You've had to learn a posture that doesn't come with a result.",
+      "ask": "What have you given up that you were winning at?"
+    },
+    "Competition|Wisdom": {
+      "recognize": "You know when to speak, and you also know when speaking would score.",
+      "ask": "What are you waiting on right now -- is that timing, or leverage?"
+    },
+    "Maximizer|Administration": {
+      "recognize": "You don't just build the system, you keep improving it after it already worked. At some point the improving costs more than the problem did.",
+      "ask": "What are you still tuning that was good enough six months ago?"
+    },
+    "Maximizer|Apostleship": {
+      "recognize": "You'd rather start something clean than inherit something mediocre. New ground doesn't come with anyone else's compromises in it.",
+      "ask": "What did you leave because it was never going to get to excellent?"
+    },
+    "Maximizer|Discernment": {
+      "recognize": "You see the flaw first, in situations and in people, and you're usually right about it.",
+      "ask": "What's the last thing you noticed was good and actually said so?"
+    },
+    "Maximizer|Evangelism": {
+      "recognize": "You want the invitation to be right before you give it, so sometimes you don't give it.",
+      "ask": "Who haven't you invited because you're still working on how to say it?"
+    },
+    "Maximizer|Exhortation": {
+      "recognize": "You push people toward their strongest thing, which is a real gift. They can still hear that the rest of them didn't make the cut.",
+      "ask": "What do you love about them that has nothing to do with what they're good at?"
+    },
+    "Maximizer|Faith": {
+      "recognize": "You want to be sure it's excellent before you risk it. Faith rarely waits for that.",
+      "ask": "What are you not stepping into until it's ready?"
+    },
+    "Maximizer|Giving": {
+      "recognize": "You give where it'll do the most good, and anyone watching can tell you did the math.",
+      "ask": "When did you last give somewhere inefficient?"
+    },
+    "Maximizer|Healing": {
+      "recognize": "You're drawn to restoring people, and restoration for you means all the way. Some people heal partway and stop there.",
+      "ask": "Can you be at peace with someone who gets better but not well?"
+    },
+    "Maximizer|Interpretation": {
+      "recognize": "You refine the meaning until it's exact. The room usually needed the rough version an hour ago.",
+      "ask": "What's good enough to say right now, unfinished?"
+    },
+    "Maximizer|Knowledge": {
+      "recognize": "You go deep and keep going, well past what anyone needed.",
+      "ask": "When is it done?"
+    },
+    "Maximizer|Leadership": {
+      "recognize": "You build strong teams by putting people where they're best. The ones who aren't best at anything yet can feel it.",
+      "ask": "Who on your team is still becoming -- and does it show in how you treat them?"
+    },
+    "Maximizer|Mercy": {
+      "recognize": "Comfort doesn't improve anyone. You've had to learn to sit with someone without fixing what's wrong with them.",
+      "ask": "Can you be with them without a plan?"
+    },
+    "Maximizer|Miracles": {
+      "recognize": "You expect God to do it well, not just to do it.",
+      "ask": "What would you call a partial answer?"
+    },
+    "Maximizer|Pastor/Shepherd": {
+      "recognize": "You tend your people toward their potential, and being tended toward potential is tiring.",
+      "ask": "Who needs a rest from you right now?"
+    },
+    "Maximizer|Prophecy": {
+      "recognize": "You see the flaw and you name it, and both halves of you agree it should be named.",
+      "ask": "What do you say about them when you're not correcting them?"
+    },
+    "Maximizer|Service": {
+      "recognize": "You'll do the work again to get it right, and you'll do it yourself so that it is.",
+      "ask": "What did you redo that nobody would have noticed?"
+    },
+    "Maximizer|Teaching": {
+      "recognize": "You explain it well because you've cut everything unnecessary. What's left can be more polished than it is warm.",
+      "ask": "Who in that room stopped asking questions?"
+    },
+    "Maximizer|Tongues": {
+      "recognize": "Yielding means letting something stay unrefined and offering it anyway.",
+      "ask": "What have you offered God unfinished?"
+    },
+    "Maximizer|Wisdom": {
+      "recognize": "You wait until the counsel is right, and sometimes waiting is just polishing.",
+      "ask": "Is it not time yet, or is it not perfect yet?"
+    },
+    "Self-Assurance|Administration": {
+      "recognize": "You decide how it'll be run and you don't need much input to do it. The system works; the question is whose it is.",
+      "ask": "Whose fingerprints are on that besides yours?"
+    },
+    "Self-Assurance|Apostleship": {
+      "recognize": "You'll go somewhere nobody has been on your own conviction, without needing anyone to confirm it.",
+      "ask": "Who told you to go -- or did anyone?"
+    },
+    "Self-Assurance|Discernment": {
+      "recognize": "You perceive it and you're settled about it immediately. There's no draft stage.",
+      "ask": "When were you last wrong about a read, and how did you find out?"
+    },
+    "Self-Assurance|Evangelism": {
+      "recognize": "You're not rattled by a no. You'll ask again. That's a strength right up until they've answered three times.",
+      "ask": "Who's told you no in a way you haven't accepted?"
+    },
+    "Self-Assurance|Exhortation": {
+      "recognize": "You tell people what you're sure they can do, and your certainty carries them further than encouragement normally would.",
+      "ask": "Who have you decided about without asking them?"
+    },
+    "Self-Assurance|Faith": {
+      "recognize": "Two kinds of certainty, and from the inside they feel identical.",
+      "ask": "How do you tell your own confidence apart from God's leading?"
+    },
+    "Self-Assurance|Giving": {
+      "recognize": "You decide what to give and you don't put it up for discussion.",
+      "ask": "Who else should have had a say in that?"
+    },
+    "Self-Assurance|Healing": {
+      "recognize": "You walk into someone's mess sure that it can be put right, and that conviction is worth a lot to a person who's lost theirs.",
+      "ask": "What do you do when they don't believe you?"
+    },
+    "Self-Assurance|Interpretation": {
+      "recognize": "You say what it means and it becomes what it means, because you never say it tentatively.",
+      "ask": "What would it take to change your mind about that?"
+    },
+    "Self-Assurance|Knowledge": {
+      "recognize": "You know what you know, and you're not troubled by what you don't.",
+      "ask": "What's the last thing that genuinely surprised you?"
+    },
+    "Self-Assurance|Leadership": {
+      "recognize": "You decide, people follow, and it's efficient. It's also a very short conversation.",
+      "ask": "When did you last change a decision because of something somebody said?"
+    },
+    "Self-Assurance|Mercy": {
+      "recognize": "Compassion doesn't require you to be sure of anything, which makes it unfamiliar ground.",
+      "ask": "Who are you sitting with that you can't form an opinion about?"
+    },
+    "Self-Assurance|Miracles": {
+      "recognize": "You expect it and you're not embarrassed to say so in front of people.",
+      "ask": "What happens to your certainty when nothing happens?"
+    },
+    "Self-Assurance|Pastor/Shepherd": {
+      "recognize": "You decide what's best for your people, usually correctly, usually without asking them.",
+      "ask": "What would they say they need, if you asked?"
+    },
+    "Self-Assurance|Prophecy": {
+      "recognize": "You say it, and you don't circle back to see how it landed.",
+      "ask": "Who's still bruised by something you're sure was true?"
+    },
+    "Self-Assurance|Service": {
+      "recognize": "You'll do it your way and you don't need it acknowledged.",
+      "ask": "What have you decided to carry that nobody asked you to?"
+    },
+    "Self-Assurance|Teaching": {
+      "recognize": "You teach with weight because you're settled. Settled people don't invite many questions.",
+      "ask": "What don't you know about this that you'd say out loud in front of them?"
+    },
+    "Self-Assurance|Tongues": {
+      "recognize": "Surrender means not deciding, and deciding is the thing you're best at.",
+      "ask": "Where in your life are you not the one deciding?"
+    },
+    "Self-Assurance|Wisdom": {
+      "recognize": "You know and you wait, but waiting for you is rarely uncertainty.",
+      "ask": "Are you holding that back for them, or until they've earned it?"
+    },
+    "Significance|Administration": {
+      "recognize": "You want what you build to matter and to be seen mattering. The org chart is not a neutral document to you.",
+      "ask": "What would this look like if your name came off it?"
+    },
+    "Significance|Apostleship": {
+      "recognize": "You want to plant something that outlasts you, and part of the appeal is the outlasting.",
+      "ask": "Who runs it after you -- and have you told them?"
+    },
+    "Significance|Discernment": {
+      "recognize": "You read what's really going on, including where the weight in the room sits.",
+      "ask": "Who in that room did you stop paying attention to?"
+    },
+    "Significance|Evangelism": {
+      "recognize": "You want your life to count, and the invitation you give carries that weight with it.",
+      "ask": "Who's the least impressive person you've invited?"
+    },
+    "Significance|Exhortation": {
+      "recognize": "You call people up to something larger, and you mean it.",
+      "ask": "What do you want them to become -- and how much of it is about you?"
+    },
+    "Significance|Faith": {
+      "recognize": "You believe for big things, and you'd like them witnessed.",
+      "ask": "What are you believing for that nobody will ever know about?"
+    },
+    "Significance|Giving": {
+      "recognize": "You give substantially, and being known for it is complicated to sort out honestly.",
+      "ask": "What's the last thing you gave anonymously?"
+    },
+    "Significance|Healing": {
+      "recognize": "You go after the ones whose restoration would mean something.",
+      "ask": "Who's broken in a way that would never make a story?"
+    },
+    "Significance|Interpretation": {
+      "recognize": "You want your reading to be the one that carries weight in the room.",
+      "ask": "Whose interpretation deserves more room than you've given it?"
+    },
+    "Significance|Knowledge": {
+      "recognize": "You learn things worth being known for knowing.",
+      "ask": "What are you learning that will never come up?"
+    },
+    "Significance|Leadership": {
+      "recognize": "You reach for something worth leading, and people feel the size of it.",
+      "ask": "If this worked and someone else got the credit, would you still want it?"
+    },
+    "Significance|Mercy": {
+      "recognize": "Mercy has no audience.",
+      "ask": "Who have you comforted that nobody knows you comforted?"
+    },
+    "Significance|Miracles": {
+      "recognize": "You expect God to do something significant, and significant is a word about size.",
+      "ask": "What has He already done that you rushed past?"
+    },
+    "Significance|Pastor/Shepherd": {
+      "recognize": "You protect your people, and you want to be their person.",
+      "ask": "Who would they go to if not you -- and how does that sit?"
+    },
+    "Significance|Prophecy": {
+      "recognize": "You say the weighty thing, and saying it places you somewhere in the room.",
+      "ask": "What true thing have you not said because it wouldn't land well on you?"
+    },
+    "Significance|Service": {
+      "recognize": "You'll labor hard for something that matters.",
+      "ask": "What are you doing that no one will ever see, and how long has that been going?"
+    },
+    "Significance|Teaching": {
+      "recognize": "You teach things that matter, to rooms where it counts.",
+      "ask": "What's the smallest room you've taught this in this year?"
+    },
+    "Significance|Tongues": {
+      "recognize": "Surrender is not a platform.",
+      "ask": "What have you done for God with nobody there?"
+    },
+    "Significance|Wisdom": {
+      "recognize": "You know when to speak, and you know which moments carry.",
+      "ask": "What are you saving for the right room?"
+    },
+    "Woo|Administration": {
+      "recognize": "You know everyone, so you can find the right person for anything in two minutes. The system itself bores you once the people are sorted.",
+      "ask": "What did you set up that you've stopped maintaining?"
+    },
+    "Woo|Apostleship": {
+      "recognize": "New rooms are your favorite rooms, and there are always more strangers somewhere else.",
+      "ask": "Who did you meet last year that you never got past the first conversation with?"
+    },
+    "Woo|Discernment": {
+      "recognize": "You read people fast and warmly, which disarms them. You get access most people don't get.",
+      "ask": "What do you do with what people tell you?"
+    },
+    "Woo|Evangelism": {
+      "recognize": "Nobody invites more people than you. It's the second conversation that's harder.",
+      "ask": "Who said yes to you and then heard nothing?"
+    },
+    "Woo|Exhortation": {
+      "recognize": "You make people feel capable just by being interested in them.",
+      "ask": "Who needs more from you than encouragement right now?"
+    },
+    "Woo|Faith": {
+      "recognize": "You'll walk up to anyone, which is its own kind of risk.",
+      "ask": "Where has God sent you that charm won't help?"
+    },
+    "Woo|Giving": {
+      "recognize": "You're generous quickly and widely. Warmth and money get tangled easily.",
+      "ask": "Who do you give to that you don't actually know?"
+    },
+    "Woo|Healing": {
+      "recognize": "You make people feel welcome, which is where healing usually starts. It isn't where it finishes.",
+      "ask": "Who have you welcomed that you've never gone deep with?"
+    },
+    "Woo|Interpretation": {
+      "recognize": "You connect people to what's going on and make it feel easy.",
+      "ask": "What are you smoothing over to keep it comfortable?"
+    },
+    "Woo|Knowledge": {
+      "recognize": "You collect people the way other people collect information. Depth takes longer than you usually stay.",
+      "ask": "Who knows the whole story about you?"
+    },
+    "Woo|Leadership": {
+      "recognize": "People come because they like you, and then you point somewhere.",
+      "ask": "Would they still follow if the relationship got hard?"
+    },
+    "Woo|Mercy": {
+      "recognize": "You're easy to talk to, so people bring you things.",
+      "ask": "Who told you something heavy that you moved past too quickly?"
+    },
+    "Woo|Miracles": {
+      "recognize": "You'll pray out loud in front of people you met an hour ago.",
+      "ask": "What have you promised someone that only God can deliver?"
+    },
+    "Woo|Pastor/Shepherd": {
+      "recognize": "You gather people in easily. Tending is slower and less fun than gathering.",
+      "ask": "How many people are you actually caring for, not just knowing?"
+    },
+    "Woo|Prophecy": {
+      "recognize": "You can say a hard thing and stay liked, which is rare. It also means you can get away with not saying it.",
+      "ask": "What haven't you said because you'd rather they liked you?"
+    },
+    "Woo|Service": {
+      "recognize": "You'll bring twenty people to help. Doing it alone in an empty room is a different thing.",
+      "ask": "What have you done where nobody was watching and nobody came?"
+    },
+    "Woo|Teaching": {
+      "recognize": "You're warm and people stay engaged. Engaged isn't the same as changed.",
+      "ask": "What did they walk out able to do?"
+    },
+    "Woo|Tongues": {
+      "recognize": "Yielding in a room where you're the warmth means going quiet.",
+      "ask": "Where are you not the one everyone's drawn to?"
+    },
+    "Woo|Wisdom": {
+      "recognize": "You know how to say things so they land easy. Sometimes that's timing and sometimes it's avoidance.",
+      "ask": "What are you waiting to say, and what are you waiting for?"
+    },
+    "Adaptability|Administration": {
+      "recognize": "You can run something that keeps changing, but you'd rather respond than plan.",
+      "ask": "What needs a decision from you that you've been leaving open?"
+    },
+    "Adaptability|Apostleship": {
+      "recognize": "You can land anywhere and be fine. Fine isn't the same as planted.",
+      "ask": "Where have you been long enough to have roots?"
+    },
+    "Adaptability|Discernment": {
+      "recognize": "You feel the shift in a room before anyone names it, because you're already adjusting to it.",
+      "ask": "What did you notice today that you didn't say?"
+    },
+    "Adaptability|Evangelism": {
+      "recognize": "You meet people where they are without effort. You also move on when they do.",
+      "ask": "Who needed you to stay in the conversation longer?"
+    },
+    "Adaptability|Exhortation": {
+      "recognize": "You encourage in the moment, with exactly what's needed right then.",
+      "ask": "Who needs the same thing from you three months running?"
+    },
+    "Adaptability|Faith": {
+      "recognize": "You're at peace with not knowing, which looks a lot like trust and sometimes is.",
+      "ask": "Is that faith, or have you just stopped asking?"
+    },
+    "Adaptability|Giving": {
+      "recognize": "You give what's in front of you when it's in front of you.",
+      "ask": "What would you commit to giving every month?"
+    },
+    "Adaptability|Healing": {
+      "recognize": "You stay present with people in a mess without needing it resolved. That's rarer than you think.",
+      "ask": "Who have you walked with longest through something hard?"
+    },
+    "Adaptability|Interpretation": {
+      "recognize": "You read the present moment well. The long arc is harder to see from inside it.",
+      "ask": "What's the pattern here, not just today?"
+    },
+    "Adaptability|Knowledge": {
+      "recognize": "You learn what the moment requires.",
+      "ask": "What have you studied that the moment never asked for?"
+    },
+    "Adaptability|Leadership": {
+      "recognize": "You lead by responding, so your people always feel met. They don't always know where you're going.",
+      "ask": "What's the plan -- could they say it back?"
+    },
+    "Adaptability|Mercy": {
+      "recognize": "You're with people in whatever they're feeling, immediately.",
+      "ask": "When did you last say something they didn't want to hear?"
+    },
+    "Adaptability|Miracles": {
+      "recognize": "You're open to whatever God does, whenever.",
+      "ask": "What are you specifically asking for?"
+    },
+    "Adaptability|Pastor/Shepherd": {
+      "recognize": "You tend people as they come, and nobody ever feels like an interruption.",
+      "ask": "Who have you lost track of?"
+    },
+    "Adaptability|Prophecy": {
+      "recognize": "Truth is fixed and you are flexible. That tension lives in you.",
+      "ask": "What won't you bend on?"
+    },
+    "Adaptability|Service": {
+      "recognize": "You'll do whatever's needed and never complain about the change.",
+      "ask": "What are you doing that you should have handed off a year ago?"
+    },
+    "Adaptability|Teaching": {
+      "recognize": "You adjust to the room in real time, which is why people learn from you.",
+      "ask": "What are you always going to say, no matter the room?"
+    },
+    "Adaptability|Tongues": {
+      "recognize": "Yielding comes naturally to you. Possibly too naturally.",
+      "ask": "What have you called surrender that was really just going along?"
+    },
+    "Adaptability|Wisdom": {
+      "recognize": "You have good instincts about the moment.",
+      "ask": "What decision have you been letting the moment make for you?"
+    },
+    "Connectedness|Administration": {
+      "recognize": "You see how the parts belong to each other, so what you build holds together.",
+      "ask": "What are you connecting that's actually fine apart?"
+    },
+    "Connectedness|Apostleship": {
+      "recognize": "You can go somewhere new and still feel it's the same story continuing.",
+      "ask": "What thread are you following right now?"
+    },
+    "Connectedness|Discernment": {
+      "recognize": "You sense the thing under the thing, and you're often right. You're also sure quickly.",
+      "ask": "What else could explain that?"
+    },
+    "Connectedness|Evangelism": {
+      "recognize": "You believe nobody is outside the story, which makes your invitation warm and unforced.",
+      "ask": "Who did you decide was part of it before they did?"
+    },
+    "Connectedness|Exhortation": {
+      "recognize": "You help people see that their piece fits somewhere.",
+      "ask": "What if this part doesn't mean anything yet?"
+    },
+    "Connectedness|Faith": {
+      "recognize": "You see God's hand in things and you're not shy about saying so.",
+      "ask": "What have you attributed to God that you're not actually certain about?"
+    },
+    "Connectedness|Giving": {
+      "recognize": "You give because it's all one purse anyway.",
+      "ask": "What's the specific need in front of you, not the pattern?"
+    },
+    "Connectedness|Healing": {
+      "recognize": "You help people find where their pain fits in a larger story, and that's real medicine.",
+      "ask": "Is there meaning here yet, or do they just need it to stop hurting?"
+    },
+    "Connectedness|Interpretation": {
+      "recognize": "You make meaning fast, and meaning is what you make.",
+      "ask": "What if it just happened?"
+    },
+    "Connectedness|Knowledge": {
+      "recognize": "You gather what links to what.",
+      "ask": "What have you learned that connects to nothing?"
+    },
+    "Connectedness|Leadership": {
+      "recognize": "You give people a why that's bigger than the task, and they carry it further for it.",
+      "ask": "What's the next actual step?"
+    },
+    "Connectedness|Mercy": {
+      "recognize": "You sit with people and help them feel less random.",
+      "ask": "Have you told them what you think it means -- and did they ask?"
+    },
+    "Connectedness|Miracles": {
+      "recognize": "You see God moving in things other people call ordinary.",
+      "ask": "What would you call a coincidence?"
+    },
+    "Connectedness|Pastor/Shepherd": {
+      "recognize": "You tend the whole flock as one body, and you feel it when a piece is missing.",
+      "ask": "Who's drifting, and when did you notice?"
+    },
+    "Connectedness|Prophecy": {
+      "recognize": "You say what a thing means, and meaning stated with authority is hard to question.",
+      "ask": "How would you know if you'd read that wrong?"
+    },
+    "Connectedness|Service": {
+      "recognize": "You'll do the small thing because you know it's part of the large thing.",
+      "ask": "What small thing have you let slide because it felt disconnected?"
+    },
+    "Connectedness|Teaching": {
+      "recognize": "You teach in threads, so people leave with a whole picture.",
+      "ask": "What's the one thing, by itself?"
+    },
+    "Connectedness|Tongues": {
+      "recognize": "Yielding fits you -- you already believe you're part of something you don't control.",
+      "ask": "What are you still holding that you say you've surrendered?"
+    },
+    "Connectedness|Wisdom": {
+      "recognize": "You wait for the moment because you trust the moment is coming.",
+      "ask": "What if it doesn't, and you had to act now?"
+    }
+  },
   "retired_tensions": {
     "Command|Administration": "One of these takes hold of people. The other takes hold of the process. Both of them are you deciding that someone else's way isn't good enough.",
     "Command|Apostleship": "One of these builds a following. The other keeps walking away from one. Ask who is left standing where you used to be.",

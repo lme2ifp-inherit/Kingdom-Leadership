@@ -185,6 +185,19 @@ function cell(s, g) {
     </div>`;
 }
 
+// The deployed library, counted in the page from the data the server actually
+// sent. This is the only number in the whole project that is read off the live
+// deployment rather than off a copy of a file, which makes it the check to
+// trust when a count is in doubt. If content is ever silently dropped, this
+// number falls and you can see it without running anything.
+function libraryWritten() {
+  return LIB && LIB.blends ? Object.keys(LIB.blends).length : 0;
+}
+function libraryTotal() {
+  if (!LIB || !LIB.items) return 0;
+  return Object.keys(LIB.items.strengths).length * Object.keys(LIB.items.gifts).length;
+}
+
 function toolView() {
   const S = picked.strengths, G = picked.gifts;
   const cells = [];
@@ -199,6 +212,7 @@ function toolView() {
       &middot; ${ME.role === "admin" ? "Admin &middot; all campuses"
         : "Facilitator" + (ME.campusId ? " &middot; " + esc(ME.campusId) : "")}</span><button
       class="signout" id="signout" type="button">Sign out</button></div>
+    <div class="count" style="margin-top:-6px">Library: ${libraryWritten()} of ${libraryTotal()} cells written</div>
     <div class="tabs">
       <div class="tab on">Strengths &times; Gifts</div>
       <div class="tab off">Personality &times; Gifts</div>
