@@ -4,7 +4,7 @@
   "built": "2026-08-03",
   "totalCells": 646,
   "coverage": {
-    "written": 323,
+    "written": 646,
     "of": 646,
     "rowsComplete": [
       "Analytical",
@@ -23,27 +23,26 @@
       "Harmony",
       "Includer",
       "Individualization",
-      "Positivity"
-    ],
-    "rowsRemaining": [
+      "Positivity",
+      "Strategic",
+      "Relator",
+      "Achiever",
       "Context",
       "Futuristic",
       "Ideation",
       "Input",
       "Intellection",
       "Learner",
-      "Strategic",
-      "Relator",
-      "Achiever",
       "Arranger",
-      "Belief",
-      "Consistency",
-      "Deliberative",
       "Discipline",
       "Focus",
+      "Belief",
+      "Consistency",
       "Responsibility",
+      "Deliberative",
       "Restorative"
     ],
+    "rowsRemaining": [],
     "lastWritten": "2026-08-03",
     "note": "Written by the authoring session, asserted by scripts/verify_library.js. If these numbers disagree with the blends object the tests fail. Never edit by hand."
   },
@@ -1645,6 +1644,1298 @@
     "Positivity|Wisdom": {
       "recognize": "You know when to speak, and your instinct is that people can nearly always take encouragement. The harder read is when they can take correction.",
       "ask": "Who could handle a hard word from you right now?"
+    },
+    "Strategic|Administration": {
+      "recognize": "You can see three ways to run something before most people have seen one, and you tend to switch to the better one midstream, which is clarity to you and whiplash to everyone downstream.",
+      "ask": "Who had to redo work last month because you found a better way after they had started?"
+    },
+    "Strategic|Apostleship": {
+      "recognize": "You are willing to go first because you have already played out how the ground gives way, and you rarely tell anyone the version where it fails.",
+      "ask": "What collapse have you already pictured for the thing you are starting, and who else knows about it?"
+    },
+    "Strategic|Discernment": {
+      "recognize": "You read a room and a plan at the same time, and you can talk yourself out of a warning by finding a way around it instead of naming it.",
+      "ask": "What did you steer around recently that you should have said out loud?"
+    },
+    "Strategic|Evangelism": {
+      "recognize": "You know which door a person is most likely to walk through, and you will wait for it. The waiting can look from the outside like you are saying nothing at all.",
+      "ask": "Who have you been timing a conversation with for months?"
+    },
+    "Strategic|Exhortation": {
+      "recognize": "You move people toward the option you have already settled on, and because you can see why it is right, you sometimes skip the part where they get to see it too.",
+      "ask": "Who did you talk into something recently without walking them through the reasoning?"
+    },
+    "Strategic|Faith": {
+      "recognize": "You will take a large step when you can see a way through, and you can mistake having a good plan for having heard from God.",
+      "ask": "When did you last move on something with no fallback in mind?"
+    },
+    "Strategic|Giving": {
+      "recognize": "You give where it will do the most good, and you can spend a long time deciding where that is, which from the outside looks like you decided no.",
+      "ask": "Who asked you for help months ago and never got an answer either way?"
+    },
+    "Strategic|Healing": {
+      "recognize": "You see the exit from someone's mess quickly, and you hand it to them before they have finished describing the mess.",
+      "ask": "Who needed you to just listen the last time you offered a fix?"
+    },
+    "Strategic|Interpretation": {
+      "recognize": "You are good at showing people what a situation adds up to for them, and you choose which parts to show based on where you want them to end up.",
+      "ask": "What did you leave out of an explanation last week because it would have slowed someone down?"
+    },
+    "Strategic|Knowledge": {
+      "recognize": "You gather exactly what you need in order to choose well, and you can stop studying something the moment you have enough to act on.",
+      "ask": "What are you sure about right now that you stopped learning about two years ago?"
+    },
+    "Strategic|Leadership": {
+      "recognize": "People follow you because you always seem to know the next move, and that reputation makes it expensive for you to admit you are unsure.",
+      "ask": "When did you last tell your team you did not know what to do?"
+    },
+    "Strategic|Mercy": {
+      "recognize": "You feel for people and you think in terms of what will actually get them out, so your care often arrives as a plan rather than as warmth.",
+      "ask": "Who last needed you to sit with them longer than you did?"
+    },
+    "Strategic|Miracles": {
+      "recognize": "You keep working the problem while you pray about it, and you may not be able to tell which of the two you are actually leaning on.",
+      "ask": "What are you praying about that you also have a backup for?"
+    },
+    "Strategic|Pastor/Shepherd": {
+      "recognize": "You see trouble coming for the people in your care and start steering before they notice, which keeps them safe and keeps them from learning the road.",
+      "ask": "Who have you shielded from a consequence they needed to feel?"
+    },
+    "Strategic|Prophecy": {
+      "recognize": "You know almost exactly when a hard word will land best, and waiting for that moment can quietly become never finding it.",
+      "ask": "What hard word have you been holding for the right moment since spring?"
+    },
+    "Strategic|Service": {
+      "recognize": "You find the shortest useful thing to do and you do it, and you rarely mention that you also saw four other things nobody else picked up.",
+      "ask": "What did you quietly fix last week that no one knows was broken?"
+    },
+    "Strategic|Teaching": {
+      "recognize": "You can lay out why one approach beats another so cleanly that people stop weighing it for themselves and just take your answer.",
+      "ask": "Who have you trained to ask you instead of to think it through?"
+    },
+    "Strategic|Tongues": {
+      "recognize": "You are comfortable praying about a decision and much less comfortable with a prompting that arrives without any reasoning attached to it.",
+      "ask": "When did you last obey something you could not justify to yourself?"
+    },
+    "Strategic|Wisdom": {
+      "recognize": "People bring you tangled situations because you can find the way out of them, and you can grow used to being the one who is asked rather than the one who asks.",
+      "ask": "Who have you let into the situation you are currently stuck in?"
+    },
+    "Relator|Administration": {
+      "recognize": "You run things through the people you already trust, which is fast and clean until someone capable is standing outside that group wondering how decisions actually get made.",
+      "ask": "Who on your team has never been in a conversation that shaped their own work?"
+    },
+    "Relator|Apostleship": {
+      "recognize": "You will go somewhere new if the right two or three people are going with you, and a new thing without them can feel not worth beginning.",
+      "ask": "What have you turned down because the people you trust were not coming?"
+    },
+    "Relator|Discernment": {
+      "recognize": "You read people accurately because you have spent real time with them, and you extend that same confidence to people you have barely met.",
+      "ask": "Who did you size up quickly and get wrong this year?"
+    },
+    "Relator|Evangelism": {
+      "recognize": "You talk about God the way you talk about everything, slowly and with people you actually know, so your inner group hears the most and strangers hear nothing.",
+      "ask": "When did you last bring up Jesus with someone whose last name you do not know?"
+    },
+    "Relator|Exhortation": {
+      "recognize": "You can say hard things to the people you know best because the friendship will hold it, and you go quiet with everyone else.",
+      "ask": "Who needed a straight word from you recently and got a polite one instead?"
+    },
+    "Relator|Faith": {
+      "recognize": "You trust God steadily, and much of that steadiness is held with a few particular people, which makes it strong and fragile in the same motion.",
+      "ask": "Whose belief are you leaning on right now more than your own?"
+    },
+    "Relator|Giving": {
+      "recognize": "You give generously and specifically, to people whose situations you know in detail, and giving to a cause with no face attached to it feels hollow.",
+      "ask": "What need have you passed over this year because you did not know anyone inside it?"
+    },
+    "Relator|Healing": {
+      "recognize": "You stay with people through the long unglamorous middle of their recovery, and you can take their setbacks as though they happened to you.",
+      "ask": "Whose relapse or failure last year hit you harder than it hit them?"
+    },
+    "Relator|Interpretation": {
+      "recognize": "You explain people to each other well, because you know what they meant and not only what they said, and you sometimes speak for someone who could have spoken.",
+      "ask": "Who have you been speaking for lately instead of putting in the room?"
+    },
+    "Relator|Knowledge": {
+      "recognize": "You learn things thoroughly and pass them along mostly one conversation at a time, so what you know travels at the speed of your friendships.",
+      "ask": "What do you understand well that your whole team has never heard you say?"
+    },
+    "Relator|Leadership": {
+      "recognize": "People follow you because they know you and know you mean it, and the ones who have not had that time with you cannot tell why anyone does.",
+      "ask": "Who follows your decisions without ever having had a real conversation with you?"
+    },
+    "Relator|Mercy": {
+      "recognize": "You carry the details of people's hardest seasons for years, and you rarely hand any of it to anyone else.",
+      "ask": "Whose story are you holding right now that is too heavy to hold alone?"
+    },
+    "Relator|Miracles": {
+      "recognize": "You pray boldly for the handful of people whose situations you know from the inside, and praying for a crowd you have never met leaves you cold.",
+      "ask": "Who are you praying for by name every single day right now?"
+    },
+    "Relator|Pastor/Shepherd": {
+      "recognize": "You know your people down to the details of their weeks, and your group stops growing at whatever number you can still know that well.",
+      "ask": "Who joined a year ago that you still have not sat down with?"
+    },
+    "Relator|Prophecy": {
+      "recognize": "You will name a hard thing to a friend's face, and you assume that long friendship is what earns the right, so newer people never hear it from you.",
+      "ask": "What have you noticed about someone you do not know well enough to say it to?"
+    },
+    "Relator|Service": {
+      "recognize": "You show up for the people you love with work rather than words, and you can be worn thin by a very small number of people before anyone notices.",
+      "ask": "How many people are counting on you personally right now, and who else knows the number?"
+    },
+    "Relator|Teaching": {
+      "recognize": "You are at your best across a table with one person, and a room full of faces you do not know flattens out everything that makes you good at it.",
+      "ask": "When did you last stand in front of people you had built no relationship with?"
+    },
+    "Relator|Tongues": {
+      "recognize": "Your prayer life is intimate and private, and praying out loud in a group can feel like being watched rather than being heard.",
+      "ask": "When did you last pray aloud in front of people who barely know you?"
+    },
+    "Relator|Wisdom": {
+      "recognize": "You advise people in ways that fit them because you know their history, and you can be slow to say anything at all to someone whose history you have not earned.",
+      "ask": "Who asked your advice recently and got a deferral instead?"
+    },
+    "Achiever|Administration": {
+      "recognize": "You build the structure and then work inside it harder than anyone, and you tend to measure a day by what moved rather than by whether it should have moved.",
+      "ask": "What did you finish last week that did not need to exist?"
+    },
+    "Achiever|Apostleship": {
+      "recognize": "You are willing to begin from nothing because beginning is work and work is what you do, and the long slow keeping of it afterward is where you lose interest.",
+      "ask": "What have you launched and handed off before it was really standing?"
+    },
+    "Achiever|Discernment": {
+      "recognize": "You usually notice a problem with a person or a plan and keep going anyway, because stopping to deal with it costs you a day.",
+      "ask": "What have you noticed and not addressed because addressing it would slow you down?"
+    },
+    "Achiever|Evangelism": {
+      "recognize": "You bring people week after week without fail, and you can start counting the times instead of noticing the person you brought.",
+      "ask": "Who did you bring recently without ever asking how they were?"
+    },
+    "Achiever|Exhortation": {
+      "recognize": "You move people forward by example far more than by speech, and you can leave someone feeling measured rather than helped.",
+      "ask": "Who has told you they feel behind when they stand next to you?"
+    },
+    "Achiever|Faith": {
+      "recognize": "You trust God and you also get up early, and it can be hard to tell whether you are resting on him or on how much you can carry.",
+      "ask": "What would fall apart right now if you took a full week off?"
+    },
+    "Achiever|Giving": {
+      "recognize": "You give steadily and without drama, often out of what you earned by working more, and it can become another line you clear rather than a real letting go.",
+      "ask": "When did you last give something away that actually cost you comfort?"
+    },
+    "Achiever|Healing": {
+      "recognize": "You stay in the work long after other people have moved on, and you can start treating someone's progress as your own project.",
+      "ask": "Whose recovery are you working harder on than they are?"
+    },
+    "Achiever|Interpretation": {
+      "recognize": "You make things plain quickly because you want people moving, and nuance is usually the first thing you cut.",
+      "ask": "What did you oversimplify last week to keep something on schedule?"
+    },
+    "Achiever|Knowledge": {
+      "recognize": "You learn what the task requires and then stop, so you know a great deal in practice and can feel thin the moment a conversation turns theoretical.",
+      "ask": "What have you avoided studying because it would not change what you do tomorrow?"
+    },
+    "Achiever|Leadership": {
+      "recognize": "You set the pace and people follow it, and the ones who cannot sustain your pace tend to leave without ever saying that is why.",
+      "ask": "Who burned out under you and told you it was something else?"
+    },
+    "Achiever|Mercy": {
+      "recognize": "Your care for people shows up as effort on their behalf, and sitting still with someone who is not getting better is the hardest thing you do.",
+      "ask": "Who last needed your presence when you offered them a task instead?"
+    },
+    "Achiever|Miracles": {
+      "recognize": "You pray for God to act and then you act, and you would have trouble pointing to one thing this year that your own effort cannot account for.",
+      "ask": "What has happened recently that you cannot take any credit for?"
+    },
+    "Achiever|Pastor/Shepherd": {
+      "recognize": "You take responsibility for people the way you take responsibility for everything, completely, and you can end up carrying weeks that were never yours to carry.",
+      "ask": "Whose problem are you carrying right now that they never handed you?"
+    },
+    "Achiever|Prophecy": {
+      "recognize": "You say the blunt thing briskly, usually in the middle of doing something else, and the timing does more damage than the words ever would.",
+      "ask": "What honest thing did you say last month in the wrong five minutes?"
+    },
+    "Achiever|Service": {
+      "recognize": "You are the one still going when the room has emptied, and somewhere along the way you decided that being needed is the same as being valued.",
+      "ask": "What would you be worth to this group if you stopped doing so much?"
+    },
+    "Achiever|Teaching": {
+      "recognize": "You show people by doing, and you tend to finish the task yourself rather than watch someone learn it slowly.",
+      "ask": "Who could be doing something you are still doing yourself?"
+    },
+    "Achiever|Tongues": {
+      "recognize": "You are more comfortable praying while moving than praying while sitting, and stillness can feel like waste rather than worship.",
+      "ask": "When did you last sit in silence with God for longer than ten minutes?"
+    },
+    "Achiever|Wisdom": {
+      "recognize": "You have real practical judgment, earned by doing rather than reading, and you can answer too fast because a pause feels to you like a stall.",
+      "ask": "Whose question did you answer this week before you had heard all of it?"
+    },
+    "Context|Administration": {
+      "recognize": "You want to know how a system came to be before you change it, which saves everyone from repeating an old mistake and can also keep a dead rule alive for years.",
+      "ask": "What policy are you still defending because of something that happened before most of your team arrived?"
+    },
+    "Context|Apostleship": {
+      "recognize": "You are willing to break new ground, but you want to know what was tried here before, and we did that in 2014 can end a conversation that deserved more.",
+      "ask": "What idea did you shut down recently by pointing at the last time it failed?"
+    },
+    "Context|Discernment": {
+      "recognize": "You read people through their history and you are usually right, which makes it very hard for someone who has actually changed to convince you.",
+      "ask": "Who have you not let out of who they used to be?"
+    },
+    "Context|Evangelism": {
+      "recognize": "You tell people what God has already done, in your life and in others', and a person with no patience for the long version may never reach the point.",
+      "ask": "Who stopped listening before you got to the part that mattered?"
+    },
+    "Context|Exhortation": {
+      "recognize": "You steady people by reminding them what they have already survived, which lands hard and true, unless the thing in front of them is nothing like what came before.",
+      "ask": "Who did you compare to their own past when they needed you to look at today?"
+    },
+    "Context|Faith": {
+      "recognize": "You believe because you have watched God come through over decades, and a season with no history behind it can shake you more than it should.",
+      "ask": "What are you being asked to trust God for that has no precedent in your life?"
+    },
+    "Context|Giving": {
+      "recognize": "You give to what has proven itself, and a new work with nothing behind it has to clear a bar that the ones you already support never had to clear.",
+      "ask": "What did you decline to fund this year simply because it was new?"
+    },
+    "Context|Healing": {
+      "recognize": "You help people by walking backward with them to where the injury started, and some of them needed to be walked forward instead.",
+      "ask": "Who did you take back through their story when they were ready to leave it?"
+    },
+    "Context|Interpretation": {
+      "recognize": "You tell people what something is by telling them where it came from, and by the time you arrive at the point, some of them have quietly checked out.",
+      "ask": "When did someone last ask you a short question and get a very long answer?"
+    },
+    "Context|Knowledge": {
+      "recognize": "You know the history behind what you know, which makes you unusually hard to mislead and unusually slow to accept something genuinely new.",
+      "ask": "What did you dismiss recently because you had seen a version of it before?"
+    },
+    "Context|Leadership": {
+      "recognize": "You carry a strong sense of where this group has been, and the newest people can feel like they showed up after the real story had already ended.",
+      "ask": "Who on your team has never been told why things are the way they are?"
+    },
+    "Context|Mercy": {
+      "recognize": "You are patient with people because you know what they came out of, and that same knowledge can quietly lower what you ask of them.",
+      "ask": "Whose past have you been using as a reason not to expect more from them?"
+    },
+    "Context|Miracles": {
+      "recognize": "You pray with real confidence because you can list what God has done before, and you may be waiting for him to do it the same way again.",
+      "ask": "What are you praying for in a form you would recognize?"
+    },
+    "Context|Pastor/Shepherd": {
+      "recognize": "You keep the whole history of your people in your head, which makes them feel known, and can make it hard for any of them to start over in front of you.",
+      "ask": "Who is trying to become someone new while you still see the old version?"
+    },
+    "Context|Prophecy": {
+      "recognize": "You name what is wrong by showing how it got that way, which is fair and thorough, and by then the room is arguing about the past instead of the problem.",
+      "ask": "What correction turned into a debate about what happened years ago?"
+    },
+    "Context|Service": {
+      "recognize": "You do the work the way it has always been done, and done well, and a better method can feel to you like disrespect to the people who built the old one.",
+      "ask": "What have you kept doing the old way out of loyalty to someone?"
+    },
+    "Context|Teaching": {
+      "recognize": "You cannot make sense of a thing without telling people where it came from, which is why what you say sticks, and why it runs long.",
+      "ask": "What could you have covered in ten minutes last time?"
+    },
+    "Context|Tongues": {
+      "recognize": "You are steadied in prayer by the ways God has met you before, and a prompting with no familiar shape to it makes you hesitate.",
+      "ask": "When did you last hold back from obeying because it did not feel the way God usually feels?"
+    },
+    "Context|Wisdom": {
+      "recognize": "People come to you because you remember how the last one of these turned out, and the situation in front of you may not be the same situation.",
+      "ask": "Where are you treating a current problem as a repeat of an old one?"
+    },
+    "Futuristic|Administration": {
+      "recognize": "You design for the version of this that exists in three years, and the people running today's version have to live inside a structure built for a place they have not reached.",
+      "ask": "What did you put in place this year that nobody currently needs?"
+    },
+    "Futuristic|Apostleship": {
+      "recognize": "You can describe a new thing so vividly that people sign on, and you are usually already picturing the one after it before the first one has walls.",
+      "ask": "What are you starting next while something you started is still unfinished?"
+    },
+    "Futuristic|Discernment": {
+      "recognize": "You sense where a situation is heading long before it gets there, and because you cannot yet point at anything, you get told you are being dramatic.",
+      "ask": "What did you see coming that no one believed until it arrived?"
+    },
+    "Futuristic|Evangelism": {
+      "recognize": "You draw people in by showing them who they could become, and someone in real pain today may need you to notice today first.",
+      "ask": "Who needed you to ask about right now and got a picture of later?"
+    },
+    "Futuristic|Exhortation": {
+      "recognize": "You lift people by describing who they are going to be, and someone who cannot yet see that person can hear it as a verdict on who they are now.",
+      "ask": "Who walked away from something you said feeling further behind?"
+    },
+    "Futuristic|Faith": {
+      "recognize": "You believe God for things that have not happened yet with striking confidence, and you can hold it so firmly that it stops being trust and becomes a schedule.",
+      "ask": "What have you decided God is going to do, and by when?"
+    },
+    "Futuristic|Giving": {
+      "recognize": "You give toward what something will become, which funds a lot of good beginnings, and the unglamorous ongoing bills get much less of your attention.",
+      "ask": "What have you helped start that you never helped sustain?"
+    },
+    "Futuristic|Healing": {
+      "recognize": "You help people by holding out a picture of who they will be when this is over, and someone in the middle of it may not be able to look that far.",
+      "ask": "Who needed you to say this week is survivable instead of next year is bright?"
+    },
+    "Futuristic|Interpretation": {
+      "recognize": "You are good at telling people what a change will do for them a year out, and much less interested in what it costs them this month.",
+      "ask": "What short-term cost have you been skipping past when you lay out your plans?"
+    },
+    "Futuristic|Knowledge": {
+      "recognize": "You chase what is coming and read ahead of everyone around you, and the well-tested thing can bore you before you have finished getting the use out of it.",
+      "ask": "What did you move on from before you had gotten the good out of it?"
+    },
+    "Futuristic|Leadership": {
+      "recognize": "People are pulled along by the picture you paint, and the ones who need this week's plan can feel like you never quite gave them one.",
+      "ask": "Who is waiting on a next step from you while you talk about next year?"
+    },
+    "Futuristic|Mercy": {
+      "recognize": "You console people by promising better days ahead, which is true, and sometimes a person needs today taken seriously before they can hear anything about later.",
+      "ask": "Who did you tell it will get better before you asked what was wrong?"
+    },
+    "Futuristic|Miracles": {
+      "recognize": "You pray with vivid confidence about what God is going to do, and confidence like that is a short walk from a deadline.",
+      "ask": "What have you told God the timeline for?"
+    },
+    "Futuristic|Pastor/Shepherd": {
+      "recognize": "You see who your people are becoming and keep steering them toward it, and someone who wanted to be met where they are can feel managed instead.",
+      "ask": "Who have you been developing when they just needed you to sit with them?"
+    },
+    "Futuristic|Prophecy": {
+      "recognize": "You name where a road ends, which is a real warning and a real gift, and people hear a threat because the thing you are describing has not happened yet.",
+      "ask": "What warning have you given that landed as an attack?"
+    },
+    "Futuristic|Service": {
+      "recognize": "You work happily on things that will not pay off for years, and the ordinary needs right in front of you can feel too small to be worth your time.",
+      "ask": "What ordinary task have you left undone because it did not matter long term?"
+    },
+    "Futuristic|Teaching": {
+      "recognize": "You are at your best showing people where a subject is going, and you can lose the person who has not yet grasped where it currently is.",
+      "ask": "Who did you lose last time because you started three steps ahead of them?"
+    },
+    "Futuristic|Tongues": {
+      "recognize": "You pray easily about what is ahead and with much less ease about what is happening to you today.",
+      "ask": "When did you last pray about this week rather than this decade?"
+    },
+    "Futuristic|Wisdom": {
+      "recognize": "Your advice is aimed years out, which is exactly why people should ask you, and it can arrive with no answer at all to what they should do on Monday.",
+      "ask": "Who asked you what to do tomorrow and got a five-year answer?"
+    },
+    "Ideation|Administration": {
+      "recognize": "You can imagine six better ways to run this by Tuesday, and the people maintaining the current way pay for every one of them you say out loud.",
+      "ask": "How many of your ideas from last month is someone still trying to implement?"
+    },
+    "Ideation|Apostleship": {
+      "recognize": "New ground is where you come alive, and the moment something becomes established you start looking around for the next blank space.",
+      "ask": "What did you leave the moment it started working?"
+    },
+    "Ideation|Discernment": {
+      "recognize": "You make connections other people do not make, which sometimes surfaces something genuinely wrong, and sometimes builds a whole theory out of two coincidences.",
+      "ask": "What conclusion about someone did you reach without enough to go on?"
+    },
+    "Ideation|Evangelism": {
+      "recognize": "You find fresh ways into the conversation that nobody has heard before, and newness can start mattering to you more than whether the old way was working.",
+      "ask": "What approach have you dropped that was actually reaching people?"
+    },
+    "Ideation|Exhortation": {
+      "recognize": "You can show someone a possibility for their life they had never considered, and a possibility with no first step attached is just a heavier thing to carry.",
+      "ask": "Who did you inspire recently and leave with nothing to actually do?"
+    },
+    "Ideation|Faith": {
+      "recognize": "You imagine what God might do in ways that stretch a whole room, and you can fall for the idea of a thing more than you obey about it.",
+      "ask": "What have you been dreaming about instead of starting?"
+    },
+    "Ideation|Giving": {
+      "recognize": "You give creatively, in ways nobody thought to ask for, and the plain need that only wanted money can go unmet while you design something better.",
+      "ask": "Who asked you for one straightforward thing and got a proposal?"
+    },
+    "Ideation|Healing": {
+      "recognize": "You see a way through for people that nobody else has thought of, and getting better is usually boring repetition rather than a new approach.",
+      "ask": "Who needed the ordinary slow thing from you last month?"
+    },
+    "Ideation|Interpretation": {
+      "recognize": "You reframe a situation until people see it completely differently, which can be a real gift and can also be you rearranging something until it says what you wanted.",
+      "ask": "What did you reframe recently that simply needed to be faced?"
+    },
+    "Ideation|Knowledge": {
+      "recognize": "You collect from everywhere and cross-pollinate, so you link fields nobody else links, and you can be thinnest exactly where you sound most impressive.",
+      "ask": "What are you speaking confidently about that you have never properly studied?"
+    },
+    "Ideation|Leadership": {
+      "recognize": "You generate the possibility that gets a group moving, and a team handed ten new ideas in a year eventually stops moving on any of them.",
+      "ask": "How many new priorities have you given your people this year?"
+    },
+    "Ideation|Mercy": {
+      "recognize": "You think up ways to ease what someone is carrying, and a person in grief may need you present far more than they need your good idea.",
+      "ask": "Who did you try to solve when you should have stayed quiet?"
+    },
+    "Ideation|Miracles": {
+      "recognize": "You have no trouble picturing God doing something unprecedented, and picturing it can quietly take the place of asking for it.",
+      "ask": "What have you imagined God doing that you have never actually prayed for?"
+    },
+    "Ideation|Pastor/Shepherd": {
+      "recognize": "You keep finding new ways to care for your people, and constant change in how you do it can feel to them like instability rather than attention.",
+      "ask": "What have you changed about your group three times in the last year?"
+    },
+    "Ideation|Prophecy": {
+      "recognize": "You see what is wrong from an angle no one else took, and an unfamiliar framing can make a right word very easy to wave off.",
+      "ask": "What did you say that was correct and got dismissed because of how you said it?"
+    },
+    "Ideation|Service": {
+      "recognize": "You improve whatever you are helping with, usually without being asked, and sometimes the person wanted the thing done rather than done differently.",
+      "ask": "What did you redesign last week when you had been asked to just help?"
+    },
+    "Ideation|Teaching": {
+      "recognize": "Your illustrations are original and people remember them for years, and occasionally the illustration is what they remember instead of the point of it.",
+      "ask": "What have people quoted back to you that missed what you were actually saying?"
+    },
+    "Ideation|Tongues": {
+      "recognize": "You are drawn to whatever is new in prayer, and a practice can go stale for you long before it has finished doing its work in you.",
+      "ask": "What prayer habit did you abandon because it got boring?"
+    },
+    "Ideation|Wisdom": {
+      "recognize": "You produce more options than anyone else in the room, and the person who came to you needing one clear answer leaves holding five.",
+      "ask": "Who left a conversation with you holding more choices than they came in with?"
+    },
+    "Input|Administration": {
+      "recognize": "You have a file, a template or a contact for almost any situation, and some of what you keep on hand has not been opened since the year you saved it.",
+      "ask": "What are you still holding onto for a project that ended two years ago?"
+    },
+    "Input|Apostleship": {
+      "recognize": "You arrive at new ground carrying everything anyone might possibly need, and the sheer weight of what you brought can slow down the start.",
+      "ask": "What did you feel you had to have before you would begin?"
+    },
+    "Input|Discernment": {
+      "recognize": "You notice small details about people and you keep them, which makes your read of someone unusually complete, and can make it feel to them like a file is being kept.",
+      "ask": "What do you know about someone that they never told you directly?"
+    },
+    "Input|Evangelism": {
+      "recognize": "You have an answer, an article or a story ready for almost any objection, and the person in front of you may have wanted a conversation instead of a resource.",
+      "ask": "Who did you send something to when you should have sat down with them?"
+    },
+    "Input|Exhortation": {
+      "recognize": "You can put exactly the right book or verse in someone's hands at the right moment, and material is much easier to give than your own honest word.",
+      "ask": "Who got a recommendation from you when they needed you to say something yourself?"
+    },
+    "Input|Faith": {
+      "recognize": "You keep evidence of what God has done and you can produce it the moment someone is struggling, and you can lean on the archive more than on him.",
+      "ask": "What do you turn to first when your own belief is shaky?"
+    },
+    "Input|Giving": {
+      "recognize": "You are the person who already has the thing that is needed, and you can hold something useful for years waiting for the perfect person to give it to.",
+      "ask": "What are you keeping that someone could use right now?"
+    },
+    "Input|Healing": {
+      "recognize": "You bring people options, names and reading when they are hurting, and a person not ready to look at anything just needed you in the room.",
+      "ask": "Who did you hand a list to when they wanted your company?"
+    },
+    "Input|Interpretation": {
+      "recognize": "You have so much material on any subject that you can show people what a thing signifies from six angles, and six angles is usually five too many.",
+      "ask": "When did you last give someone more than they could hold?"
+    },
+    "Input|Knowledge": {
+      "recognize": "You accumulate constantly and you know exactly where everything is, and there is a real difference between having a thing and having understood it.",
+      "ask": "What have you saved that you have never actually read?"
+    },
+    "Input|Leadership": {
+      "recognize": "You give your people everything they could conceivably need, and a team buried in material stalls just as easily as a team with nothing.",
+      "ask": "What have you sent your team that nobody opened?"
+    },
+    "Input|Mercy": {
+      "recognize": "You remember every detail of what people are going through and you carry all of it, which is why they trust you, and why you are tired.",
+      "ask": "How many people's situations are you holding in your head right now?"
+    },
+    "Input|Miracles": {
+      "recognize": "You can recount what God has done for other people in remarkable detail, and telling those stories can sit in the place where asking for your own would go.",
+      "ask": "What have you never asked God for while recounting what he did for someone else?"
+    },
+    "Input|Pastor/Shepherd": {
+      "recognize": "You know the names, the birthdays and the whole history of everyone in your care, and holding all of it can become the work instead of the people.",
+      "ask": "Who do you know a great deal about and have not spoken to in months?"
+    },
+    "Input|Prophecy": {
+      "recognize": "You can back a hard word with chapter and verse and three examples, and the weight of the case can bury the one sentence they actually needed to hear.",
+      "ask": "What did you say last time that would have landed better in a single line?"
+    },
+    "Input|Service": {
+      "recognize": "You show up with the tool, the spare and the thing nobody thought of, and the quiet pile of it all lands on you to sort and store.",
+      "ask": "What are you maintaining that nobody asked you to keep?"
+    },
+    "Input|Teaching": {
+      "recognize": "You have far more material than any session can hold, and deciding what to leave out is harder for you than preparing ever was.",
+      "ask": "What did you cram into your last session that could have waited?"
+    },
+    "Input|Tongues": {
+      "recognize": "You have prayers, liturgies and words from other people ready, and praying with nothing prepared can feel like being caught empty-handed.",
+      "ask": "When did you last pray with nothing at all in front of you?"
+    },
+    "Input|Wisdom": {
+      "recognize": "People ask you because you always have a precedent or an example ready, and an example is not the same thing as knowing what they should do.",
+      "ask": "Who needed a decision from you and got three case studies?"
+    },
+    "Intellection|Administration": {
+      "recognize": "You think a structure all the way through before you propose it, and the people waiting on you cannot tell the difference between deep thought and no answer.",
+      "ask": "What has your team been waiting on you for longer than a week?"
+    },
+    "Intellection|Apostleship": {
+      "recognize": "You will go to new ground once you have thought it all the way through, and thinking it all the way through has no natural stopping point.",
+      "ask": "What have you been considering starting for more than a year?"
+    },
+    "Intellection|Discernment": {
+      "recognize": "You turn a person or a situation over in your mind until you understand it, and by the time you are sure, the moment to say it has usually gone.",
+      "ask": "What did you work out about someone too late for it to be useful?"
+    },
+    "Intellection|Evangelism": {
+      "recognize": "You would rather have one long conversation than ten short ones, and the ten short ones are where most people actually begin.",
+      "ask": "Who did you avoid talking to because there was not enough time to do it properly?"
+    },
+    "Intellection|Exhortation": {
+      "recognize": "What you say to people is considered and worth hearing, and the person who needed one quick sentence in the hallway did not get it.",
+      "ask": "Who needed something from you in thirty seconds this week?"
+    },
+    "Intellection|Faith": {
+      "recognize": "You think hard about what you believe, which makes it durable, and you can keep examining a step God asked for until the asking has gone quiet.",
+      "ask": "What have you been thinking about obeying?"
+    },
+    "Intellection|Giving": {
+      "recognize": "You weigh a gift carefully, its effect and its message both, and the weighing can consume the entire window in which it would have mattered.",
+      "ask": "What did you decide to give too late for it to help?"
+    },
+    "Intellection|Healing": {
+      "recognize": "You help people understand what happened to them, which is real and lasting work, and understanding is not the same as being well.",
+      "ask": "Who understands their own pain perfectly and is still exactly where they were?"
+    },
+    "Intellection|Interpretation": {
+      "recognize": "You get to what a situation actually is, underneath what everyone assumed, and you may still be working on it when the group has already moved.",
+      "ask": "When did a discussion move on without the thing you were about to say?"
+    },
+    "Intellection|Knowledge": {
+      "recognize": "You are not satisfied until you have thought your way to the bottom of something, and the bottom keeps receding as you go.",
+      "ask": "What have you been working out for years without ever concluding?"
+    },
+    "Intellection|Leadership": {
+      "recognize": "Your decisions are unusually well reasoned, and the silence while you reach them reads to your people as indecision.",
+      "ask": "Who assumed you had no plan while you were still building one?"
+    },
+    "Intellection|Mercy": {
+      "recognize": "You think seriously about what someone is carrying, and the person is very often looking for a face rather than an answer.",
+      "ask": "Who needed you to simply be in the room this month?"
+    },
+    "Intellection|Miracles": {
+      "recognize": "You think through what God could do, thoroughly, and thinking about it has a way of feeling like praying about it.",
+      "ask": "How much have you actually asked for out loud this week?"
+    },
+    "Intellection|Pastor/Shepherd": {
+      "recognize": "You know your people at a level most leaders never reach, and you can spend so long thinking about someone that you never call them.",
+      "ask": "Who have you been meaning to reach out to for a month?"
+    },
+    "Intellection|Prophecy": {
+      "recognize": "When you finally speak, it is precise and hard to argue with, and a great deal of damage happened while you were getting it right.",
+      "ask": "What did you stay quiet about far too long?"
+    },
+    "Intellection|Service": {
+      "recognize": "You work out the best way to help before you help, and sometimes the need was simply for someone to move.",
+      "ask": "What did you plan while somebody else went and did it?"
+    },
+    "Intellection|Teaching": {
+      "recognize": "You give people frameworks that hold up for decades, and you can lose a room by taking them somewhere they were not ready to go.",
+      "ask": "Who nodded through your last talk without following any of it?"
+    },
+    "Intellection|Tongues": {
+      "recognize": "Your prayer is interior and considered, and letting go of the analysis while you pray is the hardest part of it for you.",
+      "ask": "When did you last pray without watching yourself do it?"
+    },
+    "Intellection|Wisdom": {
+      "recognize": "People bring you their hardest questions because you will really think about them, and some of them needed an answer that same afternoon.",
+      "ask": "Who is still waiting on an answer you have been working on?"
+    },
+    "Learner|Administration": {
+      "recognize": "You pick up any system quickly and can run it well within weeks, and once you have mastered it, keeping it going holds very little for you.",
+      "ask": "What are you running now that stopped interesting you months ago?"
+    },
+    "Learner|Apostleship": {
+      "recognize": "New ground appeals to you partly because it means learning everything from scratch again, and the second year of a thing is where you fade.",
+      "ask": "What did you help begin and then quietly step back from?"
+    },
+    "Learner|Discernment": {
+      "recognize": "You are always taking in something new about people, and a fresh framework can convince you of a read that the framework produced rather than the person.",
+      "ask": "What did you conclude about someone because of a book you had just finished?"
+    },
+    "Learner|Evangelism": {
+      "recognize": "You can talk with almost anyone because you know a little about their world, and the width of that can mean nothing you say goes very far down.",
+      "ask": "Who have you had five surface conversations with and no real one?"
+    },
+    "Learner|Exhortation": {
+      "recognize": "You believe anyone can learn their way out of where they are, which is honest hope, and it can sound like their problem is a lack of effort.",
+      "ask": "Who did you hand a solution to when they were not yet able to work on themselves?"
+    },
+    "Learner|Faith": {
+      "recognize": "You are constantly reading and listening about God, and there is a wide gap between knowing more about him and trusting him further.",
+      "ask": "What do you understand well and not actually live by?"
+    },
+    "Learner|Giving": {
+      "recognize": "You give to what teaches you something, and a plain need with nothing interesting attached to it competes badly for your attention.",
+      "ask": "What need have you overlooked because it was not interesting?"
+    },
+    "Learner|Healing": {
+      "recognize": "You bring people what you have picked up and it genuinely helps, and someone stuck in the same place for years does not need new information.",
+      "ask": "Who already knows everything you have told them?"
+    },
+    "Learner|Interpretation": {
+      "recognize": "You make sense of unfamiliar situations fast because you are used to being a beginner, and you can be confident far earlier than your grasp deserves.",
+      "ask": "What did you speak authoritatively about after two weeks of exposure?"
+    },
+    "Learner|Knowledge": {
+      "recognize": "You are drawn to the front end of a subject, where everything is new, and you can leave just before the point where you would have become genuinely expert.",
+      "ask": "What did you get eighty percent of the way through and set down?"
+    },
+    "Learner|Leadership": {
+      "recognize": "You keep bringing your team something new, and a group that is always beginning again never gets good at anything.",
+      "ask": "What system have you asked your people to adopt twice in two years?"
+    },
+    "Learner|Mercy": {
+      "recognize": "You want to understand what someone is going through and you will read everything about it, and reading about grief is not the same as sitting in it.",
+      "ask": "Whose pain have you researched instead of entered?"
+    },
+    "Learner|Miracles": {
+      "recognize": "You are quick to explore what God might do and much slower to simply ask, because asking gives you nothing to work on.",
+      "ask": "What have you been reading about instead of praying about?"
+    },
+    "Learner|Pastor/Shepherd": {
+      "recognize": "You are always improving how you care for people, and each new method costs your group another round of getting used to you.",
+      "ask": "Who has had to adjust to a new version of you this year?"
+    },
+    "Learner|Prophecy": {
+      "recognize": "You see clearly what is off because you keep measuring this against everything else you have seen, and a group doing fine can hear that as never being enough.",
+      "ask": "Who feels they can never satisfy you?"
+    },
+    "Learner|Service": {
+      "recognize": "You will take on almost any job because any job teaches you something, and the ordinary work that never changes is what you quietly stop doing.",
+      "ask": "What did you volunteer for once and never again?"
+    },
+    "Learner|Teaching": {
+      "recognize": "You are excellent at passing along what you just picked up, with all the enthusiasm of it, and less reliable on things you have known for twenty years.",
+      "ask": "What do you cover with less care now than you did at first?"
+    },
+    "Learner|Tongues": {
+      "recognize": "You approach prayer as something to get better at, and there is a point where getting better at it is the thing standing in the way.",
+      "ask": "When did you last pray without trying to improve at it?"
+    },
+    "Learner|Wisdom": {
+      "recognize": "People come to you because you know a bit about everything, and breadth answers a lot of questions and not the hard one they came in with.",
+      "ask": "Who came to you with something serious and got a general answer?"
+    },
+    "Arranger|Administration": {
+      "recognize": "You can rearrange people, budget and schedule into a better shape than anyone originally drew up, and the people inside your arrangement may not have been told they were moving.",
+      "ask": "Who found out about a change to their role after the decision was already made?"
+    },
+    "Arranger|Apostleship": {
+      "recognize": "You are often the reason a new work gets off the ground, because you can assemble what it needs out of whatever happens to be lying around.",
+      "ask": "What did you pull together last year that nobody thanked you for?"
+    },
+    "Arranger|Discernment": {
+      "recognize": "You can tell which people work well together and which pairing will quietly go wrong, and you act on that read before anyone else has seen a problem.",
+      "ask": "Who did you keep apart without ever telling either of them why?"
+    },
+    "Arranger|Evangelism": {
+      "recognize": "You are good at putting the right person in front of the right friend at the right moment, and you can end up managing a conversation you were meant to be inside.",
+      "ask": "When did you last talk about God yourself rather than set up someone else to?"
+    },
+    "Arranger|Exhortation": {
+      "recognize": "You lift people by finding them a better place to stand, and sometimes a person needs to be told they are doing well right where they already are.",
+      "ask": "Who did you try to move when they needed to hear they were doing fine?"
+    },
+    "Arranger|Faith": {
+      "recognize": "You trust God and you also keep a great many pieces moving, and it can be genuinely hard to say where the trusting ends and the moving begins.",
+      "ask": "What would you have to stop managing to find out whether God would handle it?"
+    },
+    "Arranger|Giving": {
+      "recognize": "You are unusually good at matching a need to whoever can meet it, and you can spend so long brokering that you never give anything yourself.",
+      "ask": "When did you last meet a need out of your own pocket rather than finding someone else to?"
+    },
+    "Arranger|Healing": {
+      "recognize": "You put the right people around someone who is hurting, and that person may have wanted you specifically and received a team.",
+      "ask": "Who did you refer to somebody else when they were asking for you?"
+    },
+    "Arranger|Interpretation": {
+      "recognize": "You can lay a confusing situation out so the pieces make sense to everyone in it, and you are the one who decides where each piece goes.",
+      "ask": "Whose part of the story did you place for them last month?"
+    },
+    "Arranger|Knowledge": {
+      "recognize": "You know who knows what, which is its own kind of expertise, and it can quietly substitute for ever going all the way down on anything yourself.",
+      "ask": "What have you always relied on someone else to know for you?"
+    },
+    "Arranger|Leadership": {
+      "recognize": "You move people into the roles where they will do best, and being repositioned by you can feel to them like being handled.",
+      "ask": "Who has been moved by you more than twice in two years?"
+    },
+    "Arranger|Mercy": {
+      "recognize": "You respond to someone's hard season by solving the logistics of it, meals and rides and cover at work, and nobody ends up simply sitting with them.",
+      "ask": "Who got their week sorted out by you and never got asked how they were?"
+    },
+    "Arranger|Miracles": {
+      "recognize": "You pray for God to move and then line up three ways it could happen, and you may never find out which one he would have chosen.",
+      "ask": "What did you make happen that you had asked God to do?"
+    },
+    "Arranger|Pastor/Shepherd": {
+      "recognize": "You care for people by getting their circumstances into better shape, and someone whose circumstances cannot be improved is the hardest person for you to be with.",
+      "ask": "Who in your care has a problem you cannot solve?"
+    },
+    "Arranger|Prophecy": {
+      "recognize": "You would rather restructure a situation than name what is wrong inside it, and some things do not get better by being rearranged.",
+      "ask": "What have you tried to work around instead of saying out loud?"
+    },
+    "Arranger|Service": {
+      "recognize": "You find the most useful way for everyone to help, including yourself, and you can turn a simple act of helping into a project.",
+      "ask": "What did you turn into a plan when someone just needed help for an hour?"
+    },
+    "Arranger|Teaching": {
+      "recognize": "You are good at putting people into the groups and pairs where they will actually learn, and your own material can get less attention than the seating did.",
+      "ask": "When did you last spend more time on the format than on the content?"
+    },
+    "Arranger|Tongues": {
+      "recognize": "You are comfortable praying while six things are in motion, and stopping to pray with nothing in motion is unfamiliar territory for you.",
+      "ask": "When did you last pray with your hands empty?"
+    },
+    "Arranger|Wisdom": {
+      "recognize": "People bring you situations and you start reordering them, and occasionally the person wanted to be told what was right rather than what would work.",
+      "ask": "Who asked you what they should do and got a plan instead of an answer?"
+    },
+    "Discipline|Administration": {
+      "recognize": "You keep everything running on a rhythm nobody else has to think about, and a change to that rhythm costs you more than it costs any of them.",
+      "ask": "What small change to your week threw you off more than it should have?"
+    },
+    "Discipline|Apostleship": {
+      "recognize": "You can build the scaffolding a new work needs to survive its first year, and the mess of the first six months genuinely hurts you.",
+      "ask": "What early-stage chaos made you want to walk away?"
+    },
+    "Discipline|Discernment": {
+      "recognize": "You notice when a person's patterns change, which is often the first sign that anything is wrong, and you can read a broken habit as a character problem.",
+      "ask": "Who did you judge for being disorganized when something else was going on?"
+    },
+    "Discipline|Evangelism": {
+      "recognize": "You show up in the same places at the same times, so people know exactly where to find you, and a conversation that starts outside your schedule is one you defer.",
+      "ask": "Who tried to talk to you at the wrong moment and never tried again?"
+    },
+    "Discipline|Exhortation": {
+      "recognize": "You help people by giving them a structure they can stand on, and someone whose life is in pieces cannot follow a plan yet.",
+      "ask": "Who did you give a schedule to when they needed a hand up?"
+    },
+    "Discipline|Faith": {
+      "recognize": "Your walk with God is steady because it is built into your day, and that steadiness can carry you long after the meeting itself stopped.",
+      "ask": "When did you last feel anything during your regular time with God?"
+    },
+    "Discipline|Giving": {
+      "recognize": "You give on a set schedule, faithfully, for years, and a need that turns up outside the plan can be genuinely hard for you to meet.",
+      "ask": "What urgent need did you turn down because it was not in the budget?"
+    },
+    "Discipline|Healing": {
+      "recognize": "You give people the daily structure that getting better actually requires, and you can lose patience with someone whose progress does not run on schedule.",
+      "ask": "Who did you write off as unwilling when they were only slow?"
+    },
+    "Discipline|Interpretation": {
+      "recognize": "You break a confusing thing into stages, which is what makes it usable, and the parts that do not fit your sequence tend to get quietly dropped.",
+      "ask": "What did you leave out of your last explanation because it did not fit the steps?"
+    },
+    "Discipline|Knowledge": {
+      "recognize": "You learn methodically and you keep what you learn, and a field that will not sit still long enough to be laid out properly can put you off entirely.",
+      "ask": "What have you avoided learning because it was too messy?"
+    },
+    "Discipline|Leadership": {
+      "recognize": "Your people always know what is expected and when, which is a real gift, and a season that requires improvising can leave you visibly rattled in front of them.",
+      "ask": "When did your team last see you without a plan?"
+    },
+    "Discipline|Mercy": {
+      "recognize": "You care for people practically and reliably, the same way every time, and grief does not keep hours.",
+      "ask": "Who needed you at a time that did not suit you?"
+    },
+    "Discipline|Miracles": {
+      "recognize": "You believe God acts, and you would prefer that he act in a way which does not disturb the rest of the week.",
+      "ask": "What are you unwilling to have interrupted?"
+    },
+    "Discipline|Pastor/Shepherd": {
+      "recognize": "You check on your people on a reliable cycle so that nobody falls through, and someone in crisis needs more than their turn in the rotation.",
+      "ask": "Who is in trouble right now and still on your normal schedule?"
+    },
+    "Discipline|Prophecy": {
+      "recognize": "You say what is wrong plainly and on time, and your correction can arrive with the flatness of an item being worked through.",
+      "ask": "Who did you correct in a way that felt to them like paperwork?"
+    },
+    "Discipline|Service": {
+      "recognize": "You do the same unglamorous work week after week and it is always done, and you can quietly resent the people who only help when they feel like it.",
+      "ask": "Who have you been keeping score on?"
+    },
+    "Discipline|Teaching": {
+      "recognize": "Your sessions start on time, follow the outline and end when they said they would, and the best question of the night sometimes arrives at the wrong point in it.",
+      "ask": "What good question did you cut short to stay on schedule?"
+    },
+    "Discipline|Tongues": {
+      "recognize": "You pray at the same time every day, which has carried you through seasons that feeling alone would not have, and a prompting at an odd hour is easy to postpone.",
+      "ask": "What did you put off praying about until your usual time?"
+    },
+    "Discipline|Wisdom": {
+      "recognize": "Your advice comes with a plan attached and people can act on it the same afternoon, and not every situation is ready to be turned into steps.",
+      "ask": "Who needed you to say wait and got a checklist?"
+    },
+    "Focus|Administration": {
+      "recognize": "You keep a system pointed at the one thing it exists to do, and useful work that sits outside that purpose gets cut without much discussion.",
+      "ask": "What did you eliminate that somebody was quietly relying on?"
+    },
+    "Focus|Apostleship": {
+      "recognize": "You can carry a new work all the way to standing because you refuse to be pulled off it, and the openings you walk past are real ones.",
+      "ask": "What good thing did you say no to this year?"
+    },
+    "Focus|Discernment": {
+      "recognize": "You can tell instantly whether something is relevant to where you are going, and a person who is not relevant to that can become invisible to you.",
+      "ask": "Who have you stopped noticing because they are not part of the goal?"
+    },
+    "Focus|Evangelism": {
+      "recognize": "You will pursue one person patiently for years, and the crowd standing around that person may never get a word from you.",
+      "ask": "Who are you not seeing because you are so committed to someone else?"
+    },
+    "Focus|Exhortation": {
+      "recognize": "You keep people aimed at what matters when they start to wobble, and someone who needs to fall apart for a week first will not get that week from you.",
+      "ask": "Who did you redirect when they needed to be allowed to struggle?"
+    },
+    "Focus|Faith": {
+      "recognize": "You hold on to what God said long past the point where most people let go, and you can stop asking whether he has said anything since.",
+      "ask": "What are you still pursuing that God may have let you put down?"
+    },
+    "Focus|Giving": {
+      "recognize": "You give to one or two things deeply rather than many things thinly, and the needs outside your two barely register at all.",
+      "ask": "What have you declined this year without really considering it?"
+    },
+    "Focus|Healing": {
+      "recognize": "You stay with one person's long recovery all the way to the end of it, and the others waiting can go months without hearing from you.",
+      "ask": "Who have you not checked on since you took this one on?"
+    },
+    "Focus|Interpretation": {
+      "recognize": "You cut a complicated situation down to the one thing that actually decides it, and the pieces you set aside sometimes mattered to the people you set them aside for.",
+      "ask": "Whose concern did you rule irrelevant last month?"
+    },
+    "Focus|Knowledge": {
+      "recognize": "You go all the way down on the few things that serve your aim, and you can be surprisingly uninformed about everything else.",
+      "ask": "What should you know by now that you have never made time for?"
+    },
+    "Focus|Leadership": {
+      "recognize": "Your team always knows the destination, and anyone whose work does not point straight at it starts to feel like they are in the way.",
+      "ask": "Who on your team is doing something valuable that you treat as a distraction?"
+    },
+    "Focus|Mercy": {
+      "recognize": "You will give someone your whole attention while they are in front of you, and once you return to what you were doing they are gone from your mind entirely.",
+      "ask": "Who did you fully intend to follow up with and never did?"
+    },
+    "Focus|Miracles": {
+      "recognize": "You pray for one thing with a persistence most people cannot sustain, and you may have stopped noticing what God is doing off to the side.",
+      "ask": "What has God done for you lately that you were not asking for?"
+    },
+    "Focus|Pastor/Shepherd": {
+      "recognize": "You guard where your group is going fiercely, and a person whose needs would pull it sideways can end up handled rather than cared for.",
+      "ask": "Who in your group is being managed instead of loved?"
+    },
+    "Focus|Prophecy": {
+      "recognize": "You say the one thing that has to be said and nothing else, which is powerful, and the person on the other end of it got no context at all.",
+      "ask": "Who heard your hardest sentence with nothing around it?"
+    },
+    "Focus|Service": {
+      "recognize": "You finish what you start and you never wander off mid-task, and you will decline a request that arrives while you are working even when it would take two minutes.",
+      "ask": "What two-minute favor did you refuse last week?"
+    },
+    "Focus|Teaching": {
+      "recognize": "You stay on one idea until it lands, and the tangents people need in order to connect it to their own lives get shut down.",
+      "ask": "What question did you rule off topic that was really the point for someone?"
+    },
+    "Focus|Tongues": {
+      "recognize": "You pray with a clear aim and real persistence, and prayer with no outcome attached to it can feel to you like wasted time.",
+      "ask": "What have you stopped praying about because it was not getting anywhere?"
+    },
+    "Focus|Wisdom": {
+      "recognize": "You cut through to what someone should actually do, fast, and the person who needed to talk their way there got your conclusion before they could use it.",
+      "ask": "Who got your answer before they had finished telling you the story?"
+    },
+    "Belief|Administration": {
+      "recognize": "You will not run a system in a way that cuts against what you hold, which is why people trust yours, and a rule you set on conviction is nearly impossible to revisit later.",
+      "ask": "What policy of yours has never been reexamined because you feel strongly about it?"
+    },
+    "Belief|Apostleship": {
+      "recognize": "You will go to hard new ground for something you hold to and stay when the money runs out, and you can assume anyone who leaves simply lacked conviction.",
+      "ask": "Who left a work you were part of that you quietly judged for going?"
+    },
+    "Belief|Discernment": {
+      "recognize": "You read people quickly against what you hold to be true, and someone who reached a different conclusion honestly can register to you as compromised.",
+      "ask": "Who do you think less of over a disagreement that was not actually about sin?"
+    },
+    "Belief|Evangelism": {
+      "recognize": "People can tell you mean every word, which is most of why they listen, and someone who is not ready yet can feel handed a whole life to adopt at once.",
+      "ask": "Who did you ask for everything when they were only asking a question?"
+    },
+    "Belief|Exhortation": {
+      "recognize": "You call people up to what they themselves said they cared about, which is bracing and useful, and it can land as a reminder that they have already failed.",
+      "ask": "Who did you hold to their own standard during a week they were barely standing?"
+    },
+    "Belief|Faith": {
+      "recognize": "What you hold does not move when circumstances do, which steadies everyone around you, and a real doubt can feel like something to put down rather than look at.",
+      "ask": "What question about God have you refused to actually sit with?"
+    },
+    "Belief|Giving": {
+      "recognize": "You give sacrificially to what matters and you never need to be asked twice, and a cause that does not line up with your convictions gets nothing, even when the need is real.",
+      "ask": "What genuine need have you refused on principle?"
+    },
+    "Belief|Healing": {
+      "recognize": "You stay with people because leaving would be wrong, not because it is going well, and you can require someone to get better in a way you would approve of.",
+      "ask": "Whose recovery have you been quietly grading?"
+    },
+    "Belief|Interpretation": {
+      "recognize": "You tell people what a situation amounts to in light of what is true, which cuts through a lot of noise, and you may be reading yourself into their circumstances.",
+      "ask": "What did you tell someone God was doing that you could not actually know?"
+    },
+    "Belief|Knowledge": {
+      "recognize": "You learn in service of what you already hold, which makes you formidable in a narrow place, and material that would unsettle your position rarely gets read.",
+      "ask": "What have you never read because of who wrote it?"
+    },
+    "Belief|Leadership": {
+      "recognize": "People follow you because it is obvious you will not sell out, and a team member who is in it for a paycheck can start to feel like a problem instead of a person.",
+      "ask": "Who on your team have you written off as not committed enough?"
+    },
+    "Belief|Mercy": {
+      "recognize": "Your care for people is rooted in something that does not run out, so you outlast nearly everyone, and you can struggle to sit with someone whose choices you disapprove of.",
+      "ask": "Who have you helped while making sure they knew you disagreed?"
+    },
+    "Belief|Miracles": {
+      "recognize": "You pray from conviction rather than technique, and you can decide in advance what God would and would not be willing to do.",
+      "ask": "What have you decided God would never ask of you?"
+    },
+    "Belief|Pastor/Shepherd": {
+      "recognize": "Your people know exactly what you stand for and that it will not change on them, and someone quietly working something out is unlikely to bring it to you.",
+      "ask": "What would somebody in your care be afraid to tell you?"
+    },
+    "Belief|Prophecy": {
+      "recognize": "You say what is right without weighing the cost to yourself, which is rare and needed, and conviction can carry a sentence a good deal further than the situation warranted.",
+      "ask": "What did you say that was right and far heavier than it needed to be?"
+    },
+    "Belief|Service": {
+      "recognize": "You will do the humblest work for years because the work matters and not because anyone notices, and you can look down on people who help for the recognition.",
+      "ask": "Who have you privately dismissed as doing it for the wrong reasons?"
+    },
+    "Belief|Teaching": {
+      "recognize": "You pass on what you would die for, and that is exactly why it lands, and a subject you do not feel strongly about gets a fraction of the preparation.",
+      "ask": "What did you last prepare badly because it did not stir you?"
+    },
+    "Belief|Tongues": {
+      "recognize": "You pray from conviction, unshowy and real, and a prompting that cuts against what you already hold is one you may quietly decline to follow.",
+      "ask": "When did God last ask you to do something you did not agree with?"
+    },
+    "Belief|Wisdom": {
+      "recognize": "People bring you decisions because they know your answer will not bend to who is asking, and the right thing and the right moment are not always the same thing.",
+      "ask": "Who got a right word from you at a moment they could not receive it?"
+    },
+    "Consistency|Administration": {
+      "recognize": "You build the same rules for everyone and you apply them to yourself first, and a person whose situation genuinely differs still gets the standard answer.",
+      "ask": "Who needed an exception from you and did not get one?"
+    },
+    "Consistency|Apostleship": {
+      "recognize": "You want a new work open to anyone on identical terms from day one, and a founding season usually needs a few people given unusual room.",
+      "ask": "Who did you hold to the normal process when the thing was two months old?"
+    },
+    "Consistency|Discernment": {
+      "recognize": "You notice immediately when someone is getting different treatment, which protects a lot of people, and you can read ordinary warmth toward a friend as corruption.",
+      "ask": "Who did you accuse in your head of playing favorites?"
+    },
+    "Consistency|Evangelism": {
+      "recognize": "You offer the same welcome to everybody regardless of what they bring, which is exactly right, and the person who needs unusual patience gets the ordinary amount.",
+      "ask": "Who needed more from you than the standard welcome?"
+    },
+    "Consistency|Exhortation": {
+      "recognize": "You hold everyone to the same line, so nobody feels singled out, and the person already at their limit hears the identical words as the person coasting.",
+      "ask": "Who got the same push from you as somebody in a completely different position?"
+    },
+    "Consistency|Faith": {
+      "recognize": "You believe God deals honestly with everyone, which keeps you steady when life is not even, and you can be shaken when he blesses someone who did nothing to earn it.",
+      "ask": "Whose blessing has been hardest for you to be glad about?"
+    },
+    "Consistency|Giving": {
+      "recognize": "You give evenly and without playing favorites, and the person in genuine crisis gets the same as the person with an ordinary need.",
+      "ask": "Who was in real trouble and got your usual amount?"
+    },
+    "Consistency|Healing": {
+      "recognize": "You give everyone the same access to you, which means nobody is left out, and a person who needs three times as much may only ever get their share.",
+      "ask": "Who needed far more of your time than you thought was reasonable to give?"
+    },
+    "Consistency|Interpretation": {
+      "recognize": "You put things the same way to everyone, so nobody gets a private version, and the person who needed it said differently walks away no clearer.",
+      "ask": "Who did you lose because you would not adjust how you said it?"
+    },
+    "Consistency|Knowledge": {
+      "recognize": "You want everyone working from the same information, which stops a great deal of politics, and you can spend real effort making sure nobody knows more than anyone else.",
+      "ask": "What did you hold back from one person to keep things even?"
+    },
+    "Consistency|Leadership": {
+      "recognize": "Nobody on your team wonders whether the rules apply to them, which builds unusual trust, and your strongest people can feel there is no reward for being strong.",
+      "ask": "Who on your team has outgrown what you are willing to give them?"
+    },
+    "Consistency|Mercy": {
+      "recognize": "You extend the same kindness to everyone, including the people nobody else bothers with, and mercy is uneven by nature and that can sit badly with you.",
+      "ask": "Who did you refuse to treat as a special case?"
+    },
+    "Consistency|Miracles": {
+      "recognize": "You believe God can act for anyone, which keeps you praying for the unlikeliest people, and you can be troubled when he moves for one and not another.",
+      "ask": "Whose unanswered prayer are you still holding against God?"
+    },
+    "Consistency|Pastor/Shepherd": {
+      "recognize": "You will not give anyone in your care more of you than the others get, which means nobody is overlooked, and the one falling apart is capped at an equal share.",
+      "ask": "Who did you refuse to give extra to on principle?"
+    },
+    "Consistency|Prophecy": {
+      "recognize": "You will say the same hard thing to the senior person that you would say to anyone, and you can correct a struggling person as sharply as you correct a proud one.",
+      "ask": "Who did you rebuke this year who was already broken?"
+    },
+    "Consistency|Service": {
+      "recognize": "You never skip anyone and you never do more for the people you like, and you can be worn down doing identical work for someone who appreciated none of it.",
+      "ask": "Who takes and takes while you keep giving them their share?"
+    },
+    "Consistency|Teaching": {
+      "recognize": "Everyone in the room gets the same material and the same access to you, which is why nobody drops out quietly, and the person far ahead is never stretched.",
+      "ask": "Who is bored in your group and too polite to say?"
+    },
+    "Consistency|Tongues": {
+      "recognize": "You are wary of anything in prayer that makes one person appear more spiritual than another, which is healthy, and it can make you suspicious of a real gift.",
+      "ask": "Whose spiritual experience have you quietly discounted?"
+    },
+    "Consistency|Wisdom": {
+      "recognize": "Your judgment is uncorrupted by who is asking, which is why people bring you the hardest cases, and two people in the same situation are not always owed the same thing.",
+      "ask": "Who did you treat identically when their circumstances were not identical?"
+    },
+    "Responsibility|Administration": {
+      "recognize": "If your name is on it, it will be done and done correctly, and you take on so much personally that the system quietly becomes you.",
+      "ask": "What would fail next month if you were unreachable?"
+    },
+    "Responsibility|Apostleship": {
+      "recognize": "You will commit to a new work and stay committed long after the excitement has gone, and you can find yourself holding up a thing that should have been let go.",
+      "ask": "What are you still propping up that nobody would miss?"
+    },
+    "Responsibility|Discernment": {
+      "recognize": "You sense when somebody is not going to follow through, usually correctly, and you take their task on before they have had the chance to prove you wrong.",
+      "ask": "Who did you take something back from before they had failed at it?"
+    },
+    "Responsibility|Evangelism": {
+      "recognize": "You feel personally accountable for the people you have talked to about God, and their choices become a weight you were never meant to be carrying.",
+      "ask": "Whose decision are you treating as your own failure?"
+    },
+    "Responsibility|Exhortation": {
+      "recognize": "You keep after someone long after everyone else has moved on, because you said you would, and your persistence can become a debt they feel they owe you.",
+      "ask": "Who feels indebted to you and has never said so?"
+    },
+    "Responsibility|Faith": {
+      "recognize": "You keep every promise you have made to God, exactly, and you can end up serving the promises rather than him.",
+      "ask": "What are you still doing only because you once said you would?"
+    },
+    "Responsibility|Giving": {
+      "recognize": "You give what you pledged even when it hurts, and the pledge itself can matter more to you than whether the money is still going somewhere worth it.",
+      "ask": "What are you still funding that you no longer believe in?"
+    },
+    "Responsibility|Healing": {
+      "recognize": "You will see someone's long recovery through to the end because you took it on, and you can start treating whether they get well as your result.",
+      "ask": "Whose choices have you been holding yourself accountable for?"
+    },
+    "Responsibility|Interpretation": {
+      "recognize": "You say only what you can stand behind, which is why people trust your account of things, and you can go quiet in the moment rather than risk being wrong.",
+      "ask": "What did you not say last month because you were not certain enough?"
+    },
+    "Responsibility|Knowledge": {
+      "recognize": "You will not speak on something until you have earned the right to, which makes you reliable, and you can spend years preparing to say what people needed years ago.",
+      "ask": "What are you still not ready to talk about?"
+    },
+    "Responsibility|Leadership": {
+      "recognize": "You absorb your team's failures publicly and never push them back down, which is why they follow you, and they may never learn to carry their own.",
+      "ask": "Who on your team has never faced a consequence you could have let reach them?"
+    },
+    "Responsibility|Mercy": {
+      "recognize": "You keep showing up for people long past the point of obligation, and you can confuse being reliable to someone with being close to them.",
+      "ask": "Who do you take care of and not actually know?"
+    },
+    "Responsibility|Miracles": {
+      "recognize": "You pray for God to act and then quietly make yourself accountable for the outcome anyway, and there is not much room left in that for him to answer.",
+      "ask": "What have you taken back from God this month?"
+    },
+    "Responsibility|Pastor/Shepherd": {
+      "recognize": "The people in your care know you will never drop them, and you can be holding more of them at once than any one person was built to hold.",
+      "ask": "When did you last hand one of your people over to someone else?"
+    },
+    "Responsibility|Prophecy": {
+      "recognize": "You say what needs saying because somebody has to and you assume it is you, and you can take on corrections that were somebody else's to give.",
+      "ask": "What did you say that was not actually yours to say?"
+    },
+    "Responsibility|Service": {
+      "recognize": "You finish everything you agreed to, on time, without ever being chased, and you will not say no even when the answer should obviously be no.",
+      "ask": "What did you agree to this month that you had no room for?"
+    },
+    "Responsibility|Teaching": {
+      "recognize": "You prepare thoroughly because people are trusting you to get it right, and you take somebody's failure to grasp it as your own.",
+      "ask": "Whose lack of progress have you been blaming yourself for?"
+    },
+    "Responsibility|Tongues": {
+      "recognize": "You pray faithfully for everyone who asked you to and you keep a list, and the list can become an obligation you carry rather than a conversation.",
+      "ask": "How many people are on your prayer list who do not know they are on it?"
+    },
+    "Responsibility|Wisdom": {
+      "recognize": "People trust your advice because you never walk away from what you told them to do, and you can take on the result of a decision that was always theirs.",
+      "ask": "Whose decision have you been carrying the weight of?"
+    },
+    "Deliberative|Administration": {
+      "recognize": "You build in safeguards nobody appreciates until the day one of them saves you, and a decision that should take an hour can take a month.",
+      "ask": "What has been sitting unresolved with you that your team needed last quarter?"
+    },
+    "Deliberative|Apostleship": {
+      "recognize": "You will go to new ground, but only after you have counted what it could cost, and the window sometimes closes while you are still counting.",
+      "ask": "What opportunity passed while you were still deciding?"
+    },
+    "Deliberative|Discernment": {
+      "recognize": "You hold back your read on a person until you are certain, which keeps you from ever slandering anyone, and the harm you saw coming often arrives before you speak.",
+      "ask": "What did you see clearly and say far too late?"
+    },
+    "Deliberative|Evangelism": {
+      "recognize": "You never push and people trust you for it, and you can wait so long for the right opening that the conversation simply never happens.",
+      "ask": "Who have you been meaning to talk to about God for over a year?"
+    },
+    "Deliberative|Exhortation": {
+      "recognize": "You choose your words so they will not do damage, and someone who needed a bold word from you received a careful one instead.",
+      "ask": "Who needed you to say it plainly and got it softened?"
+    },
+    "Deliberative|Faith": {
+      "recognize": "You count the cost before you commit, which is why what you commit to holds, and God sometimes asks for a yes before the accounting is finished.",
+      "ask": "What is God asking you for that you have not finished thinking about?"
+    },
+    "Deliberative|Giving": {
+      "recognize": "You examine where your money goes and it goes where it should, and a real need can wait weeks while you check the thing out properly.",
+      "ask": "Who was waiting on you while you did your homework?"
+    },
+    "Deliberative|Healing": {
+      "recognize": "You never promise people more than you can give, which is why nobody leaves you disappointed, and someone in the dark needed more hope than your accuracy allowed.",
+      "ask": "Who needed you to say it will be alright and got the honest version?"
+    },
+    "Deliberative|Interpretation": {
+      "recognize": "You say what a thing amounts to and no more, so you are rarely wrong, and the qualifications can bury the point for the person listening.",
+      "ask": "What did you hedge so thoroughly that nobody knew what you meant?"
+    },
+    "Deliberative|Knowledge": {
+      "recognize": "You check before you speak and you are almost always right, and you can sit on something useful for months while you verify it.",
+      "ask": "What do you know right now that nobody has heard yet?"
+    },
+    "Deliberative|Leadership": {
+      "recognize": "Your decisions hold up because you saw what could go wrong first, and a team waiting on you can read your care as reluctance.",
+      "ask": "What is your team unable to start until you decide?"
+    },
+    "Deliberative|Mercy": {
+      "recognize": "You are careful with people who are hurting and you never say the clumsy thing, and sometimes a clumsy person who is present beats a careful one who is not.",
+      "ask": "Who did you not reach out to because you did not know what to say?"
+    },
+    "Deliberative|Miracles": {
+      "recognize": "You pray honestly about what God might do without ever overstating it, and you can quietly limit your asking to what would not embarrass you if nothing happened.",
+      "ask": "What have you not asked God for because you are unsure he would?"
+    },
+    "Deliberative|Pastor/Shepherd": {
+      "recognize": "You never let people take on more than they can carry, and you can hold somebody back from the stretch that would have made them.",
+      "ask": "Who did you talk out of something they were actually ready for?"
+    },
+    "Deliberative|Prophecy": {
+      "recognize": "You will not say a hard thing until you are sure it is true and that it is yours to say, and a room can go a long time without hearing what it needed.",
+      "ask": "What have you been certain of for months and still not said?"
+    },
+    "Deliberative|Service": {
+      "recognize": "You think through what could go wrong before you help, so your help rarely creates a second problem, and the person needed somebody there an hour ago.",
+      "ask": "What did you plan so thoroughly that the moment for it passed?"
+    },
+    "Deliberative|Teaching": {
+      "recognize": "You never overstate, so what people take from you is solid, and a room can mistake your precision for a lack of conviction.",
+      "ask": "Who left your session unsure whether you believed what you were saying?"
+    },
+    "Deliberative|Tongues": {
+      "recognize": "Your prayer is private and unhurried, and you can be slow to act on a prompting because you want to be sure of where it came from.",
+      "ask": "What prompting are you still testing?"
+    },
+    "Deliberative|Wisdom": {
+      "recognize": "People bring you decisions because you will not tell them what they want to hear, and a person in urgent trouble may not have until next week.",
+      "ask": "Who needed an answer today and was told you would think about it?"
+    },
+    "Restorative|Administration": {
+      "recognize": "You find the broken part of a system and will not rest until it works, and a process that is merely adequate can get taken apart because you spotted a flaw in it.",
+      "ask": "What working thing did you rebuild because it bothered you?"
+    },
+    "Restorative|Apostleship": {
+      "recognize": "You are drawn to places that have failed and need starting over, and a healthy new work with nothing wrong in it holds much less for you.",
+      "ask": "What have you lost interest in since it started going well?"
+    },
+    "Restorative|Discernment": {
+      "recognize": "You notice what is wrong in a person before you notice anything else about them, and people can feel scanned rather than seen.",
+      "ask": "When did you last tell someone what was right about them?"
+    },
+    "Restorative|Evangelism": {
+      "recognize": "You are unafraid of people whose lives are a wreck, and you can present God mainly as the answer to a problem they never agreed they had.",
+      "ask": "Who did you diagnose before you had earned the right to?"
+    },
+    "Restorative|Exhortation": {
+      "recognize": "You believe nobody is past saving and you say so, which has kept people alive, and the person you are working on may not have asked to be a project.",
+      "ask": "Who are you determined to turn around who never asked for your help?"
+    },
+    "Restorative|Faith": {
+      "recognize": "You trust God most visibly in wreckage, which is where you are steadiest, and an ordinary untroubled season can leave you oddly restless.",
+      "ask": "What crisis do you half miss?"
+    },
+    "Restorative|Giving": {
+      "recognize": "You give where things have gone wrong and you give fast, and the healthy work that only needs steady support goes unnoticed by you.",
+      "ask": "What is quietly working that you have never given a thing to?"
+    },
+    "Restorative|Healing": {
+      "recognize": "You go straight at what is damaged in someone and you do not flinch, and some hurts want tending rather than solving.",
+      "ask": "Who did you work on when they only wanted to be sat with?"
+    },
+    "Restorative|Interpretation": {
+      "recognize": "You make sense of a situation by locating what went wrong in it, which is clarifying, and a good thing can end up described entirely by its faults.",
+      "ask": "What did you lay out in a way that left everyone discouraged?"
+    },
+    "Restorative|Knowledge": {
+      "recognize": "You learn fastest by taking failures apart, so you understand why things break better than almost anyone, and you can be much less sure why anything works.",
+      "ask": "What succeeded around you recently that you never looked into?"
+    },
+    "Restorative|Leadership": {
+      "recognize": "You run toward whatever is failing, which is why your people are not afraid to bring you bad news, and the parts of your team doing fine rarely hear from you.",
+      "ask": "Who on your team is doing well and has not heard from you?"
+    },
+    "Restorative|Mercy": {
+      "recognize": "You move toward people at their lowest, which most people cannot do, and you can be more at ease with them there than with them recovered.",
+      "ask": "Who have you struggled to relate to since they got better?"
+    },
+    "Restorative|Miracles": {
+      "recognize": "You look for God to act where things are worst, and you may only really look for him at the bottom.",
+      "ask": "Where have you stopped looking for God because nothing there is wrong?"
+    },
+    "Restorative|Pastor/Shepherd": {
+      "recognize": "You go after the one in trouble without hesitating, and the ninety-nine who are fine can become background to you.",
+      "ask": "Who in your care is steady and therefore invisible to you?"
+    },
+    "Restorative|Prophecy": {
+      "recognize": "You name what is wrong precisely and you are usually right, and a person who only ever hears from you when something has broken stops hearing you at all.",
+      "ask": "Who has never received anything from you but correction?"
+    },
+    "Restorative|Service": {
+      "recognize": "You are the one who quietly puts right what nobody else noticed had gone wrong, and you can end up known only for cleaning up after other people.",
+      "ask": "What have you been quietly redoing for someone for months?"
+    },
+    "Restorative|Teaching": {
+      "recognize": "You are excellent at showing people where their thinking went wrong, and being corrected well is still being corrected.",
+      "ask": "Who stopped asking you questions because of how you answer them?"
+    },
+    "Restorative|Tongues": {
+      "recognize": "You pray hardest when something is falling apart, and a settled season can quietly thin out your prayer life.",
+      "ask": "How much have you prayed in the last month with nothing going wrong?"
+    },
+    "Restorative|Wisdom": {
+      "recognize": "People bring you what is broken because you will get into it with them, and occasionally a situation needs to be endured rather than mended.",
+      "ask": "What have you kept trying to solve that you were meant to just live with?"
     }
   },
   "retired_tensions": {

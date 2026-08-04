@@ -140,8 +140,8 @@ function loginView() {
     <button class="btn" id="go">${busy ? "Signing in…" : "Sign in"}</button>
     <div class="err">${esc(loginErr)}</div>
     <div class="hint">This tool is for facilitators. Participants should use
-      the main app.<br><br>Forgot your password? Contact an admin — password
-      reset is coming shortly.</div>`;
+      the main app.<br><br><a href="/reset.html" style="color:#d4a520">Forgot your
+      password?</a></div>`;
 }
 
 function picker(kind, label) {

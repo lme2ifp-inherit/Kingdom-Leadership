@@ -21,7 +21,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const FLOOR = 323;
+const FLOOR = 646;
 
 const PATH = path.join(__dirname, "..", "lib", "library-strengths-gifts.json");
 let fail = 0, warn = 0;
