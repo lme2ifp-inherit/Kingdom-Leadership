@@ -19,6 +19,27 @@
 // ===========================================================================
 
 const LIBRARY = require("../lib/library-strengths-gifts.json");
+const LIBRARY2 = require("../lib/library-personality-gifts.json");
+
+// TWO LIBRARIES, ONE RESPONSE. August 5, 2026.
+//
+// Library two (Personality x Gifts, 1,368 cells) ships in the same
+// authenticated payload as library one rather than behind a second endpoint.
+// One sign-in, one round trip, one place where the auth gates live. A second
+// endpoint would mean a second copy of every gate below, and the copy that
+// drifts is the one that leaks.
+//
+// The shape is ADDITIVE on purpose. `items` and `blends` still mean exactly
+// what they meant before -- library one and nothing else -- so anything
+// already reading this endpoint keeps working. Library two arrives alongside
+// as `items2` / `blends2`. Renaming the originals would have been tidier and
+// would have silently broken every existing caller, including the auth
+// harness.
+//
+// Size: roughly 530KB of JSON before compression, served gzipped, once per
+// sign-in and never stored. Well inside Vercel's response limit. If a third
+// library is ever added, revisit this -- at that point paying for a second
+// round trip is probably cheaper than the payload.
 
 const AUTH_FAIL = "Email or password not recognized.";
 
@@ -154,10 +175,13 @@ module.exports = async (req, res) => {
   json(res, 200, {
     ok: true,
     version: LIBRARY.version,
+    version2: LIBRARY2.version,
     role: person.role,
     campusId: person.campus_id,
     displayName: person.display_name || person.email,
     items: LIBRARY.items,
     blends: LIBRARY.blends,
+    items2: LIBRARY2.items,
+    blends2: LIBRARY2.blends,
   });
 };
