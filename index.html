@@ -118,7 +118,12 @@ const MATRICES=[
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 // ── VERSION 3 ────────────────────────────────────────────────────────────────
-// Admin password verified server-side via ADMIN_PASSWORD environment variable
+// ADMIN PANEL MOVED, August 8, 2026: allowlist and generation-queue controls
+// now live in facilitator.html, gated on the same Supabase facilitator
+// login (role === "admin") that the teaching library already uses, instead
+// of the shared ADMIN_PASSWORD this page used to check. This page no longer
+// carries any admin state, UI, or privileged action calls -- see
+// facilitator.html for buildAdmin/buildAdminWrapper/buildQueuePanel.
 // Soft freshness tracker. Must match REGEN_MONTHS in api/ai.js — the server
 // reports profile age against its own value, so a mismatch here shows the
 // participant a different number than the one actually being enforced.
@@ -129,7 +134,6 @@ const REGISTER_URL = "https://go2.lc/leadership_id";
 let state = {
   view: "landing",
   userEmail: null,
-  isAdmin: false,
   participants: [],
   currentIdx: null,
   activeMatrix: "m1",
@@ -142,9 +146,6 @@ let state = {
   shareMsg: "",
   emailInput: "",
   loginError: "",
-  showAdminPwd: false,
-  adminPwdInput: "",
-  adminMsg: "",
   savedProfile: null,
   profileAge: null,
   diagVisible: false,
@@ -154,10 +155,6 @@ let state = {
   job: null,          // { id, status, total, done, ahead, error }
   jobPolling: false,
   jobError: "",
-  // Admin queue monitor
-  queueAdmin: null,   // { control, jobs }
-  adminAuth: null,    // verified admin password, memory only
-  queueMsg: "",
 };
 
 const aiCache = {};
@@ -488,33 +485,9 @@ function regenWindowOpen() {
   return today >= from && today <= to;
 }
 
-async function handleAdminPwdSubmit() {
-  const pwd = state.adminPwdInput || "";
-  if (!pwd) { state.loginError="Please enter admin password"; render(); return; }
-  const res = await fnCall({ action: "verifyAdmin", password: pwd });
-  if (res && res.valid) {
-    state.isAdmin=true; state.userEmail="admin@kingdom"; state.view="admin";
-    // Retained in memory only, for actions the server password-gates (queue
-    // pause/resume). Cleared on sign-out and never written to storage — a
-    // refresh deliberately requires re-entering it.
-    state.adminAuth = pwd;
-    state.loginError=""; state.showAdminPwd=false; state.adminPwdInput=""; render();
-  } else {
-    state.loginError="Incorrect password"; render();
-  }
-}
-
 async function handleEmailLogin() {
   const email = state.emailInput.trim().toLowerCase();
   if (!email) { state.loginError="Please enter your email"; render(); return; }
-
-  // Admin shortcut — show password field
-  if (email === "admin") {
-    state.showAdminPwd = true;
-    state.loginError = "";
-    render();
-    return;
-  }
 
   if (!email.includes("@")) { state.loginError="Please enter a valid email"; render(); return; }
   const approved = await isEmailApproved(email);
@@ -541,16 +514,6 @@ async function handleEmailLogin() {
     state.view="profile";
   } else { state.view="entry"; }
   render();
-}
-
-async function handleAdminLogin() {
-  const pwd = state.adminPassword || "";
-  if (!pwd) { state.loginError="Please enter admin password"; render(); return; }
-  const res = await fnCall({ action: "verifyAdmin", password: pwd });
-  if (res && res.valid) {
-    state.isAdmin=true; state.userEmail="admin@kingdom"; state.view="admin";
-    state.loginError=""; render();
-  } else { state.loginError="Incorrect password"; render(); }
 }
 
 function restoreProfileToState(profile) {
@@ -925,7 +888,6 @@ function buildApp() {
     <div style="color:#94a3b8;font-size:14px">Welcome back &mdash; finding your profile&hellip;</div>
   </div>`;
   if (state.view === "waiting") return buildWaiting();
-  if (state.view === "admin") return buildAdminWrapper();
 
   const p = state.currentIdx !== null ? state.participants[state.currentIdx] : null;
   return `
@@ -935,9 +897,8 @@ function buildApp() {
       <div style="font-size:15px;font-weight:600;color:#f1f5f9">Unified Profile System</div>
     </div>
     <div style="display:flex;gap:5px;align-items:center">
-      ${state.userEmail && state.userEmail!=="admin@kingdom"?`<span style="font-size:11px;color:#4a5568;font-family:monospace;">${state.userEmail}</span>`:""}
+      ${state.userEmail?`<span style="font-size:11px;color:#4a5568;font-family:monospace;">${state.userEmail}</span>`:""}
       ${state.participants.length>0?`<span style="font-size:11px;color:#4a5568">${state.participants.length} participant${state.participants.length!==1?"s":""}</span>`:""}
-      ${state.isAdmin?`<button class="btn" id="btnGoAdmin" style="font-size:12px;">⚙ Admin</button>`:""}
       <button class="btn btn-primary" id="btnNew">+ New Participant</button>
       <button class="btn" id="btnHeaderLogout" style="font-size:12px;">Sign Out</button>
     </div>
@@ -996,21 +957,11 @@ function buildLogin() {
         <div style="font-size:13px;color:#d4a520;margin-top:6px;letter-spacing:0.06em;">Enter your registered email to continue</div>
       </div>
       <div style="background:rgba(10,14,24,0.82);backdrop-filter:blur(16px);border:1px solid rgba(184,134,11,0.25);border-radius:14px;padding:28px;">
-        ${state.showAdminPwd ? `
-        <div style="font-size:13px;color:#d4a520;margin-bottom:12px;text-align:center;">Admin Access</div>
-        <label style="font-size:11px;font-weight:600;color:#94a3b8;display:block;margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;">Password</label>
-        <input id="adminPwdInput" type="password" placeholder="Enter admin password"
-          style="width:100%;padding:10px 14px;font-size:14px;background:#0f1620;border:1px solid #2d3748;border-radius:8px;color:#e2e8f0;outline:none;margin-bottom:${state.loginError?'6px':'16px'}"/>
-        ${state.loginError ? `<div style="font-size:12px;color:#fc8181;margin-bottom:12px;">${state.loginError}</div>` : ''}
-        <button id="btnAdminPwd" style="width:100%;background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Enter ✦</button>
-        <button id="btnCancelAdmin" style="width:100%;background:transparent;border:none;color:#4a5568;font-size:12px;cursor:pointer;">← Back to email</button>
-        ` : `
         <label style="font-size:11px;font-weight:600;color:#94a3b8;display:block;margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;">Email Address</label>
         <input id="emailInput" type="email" value="${state.emailInput}" placeholder="your@email.com"
           style="width:100%;padding:10px 14px;font-size:14px;background:#0f1620;border:1px solid #2d3748;border-radius:8px;color:#e2e8f0;outline:none;margin-bottom:${state.loginError?'6px':'16px'}"/>
         ${state.loginError ? `<div style="font-size:12px;color:#fc8181;margin-bottom:12px;">${state.loginError}</div>` : ''}
         <button id="btnLogin" style="width:100%;background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">Sign In ✦</button>
-        `}
         <div style="border-top:1px solid #1e293b;padding-top:14px;margin-top:2px;">
           <div style="font-size:11px;color:#4a5568;text-align:center;margin-bottom:8px;">Not registered yet?</div>
           <a href="${REGISTER_URL}" target="_blank" style="display:block;text-align:center;font-size:13px;color:#d4a520;text-decoration:none;letter-spacing:0.04em;">Register for Leadership ID →</a>
@@ -1090,212 +1041,6 @@ function buildWaiting() {
 
     <div style="margin-top:24px;font-size:12px;color:#475569">
       Signed in as ${state.userEmail || ""}
-    </div>
-  </div>`;
-}
-
-// ── ADMIN: GENERATION QUEUE MONITOR ───────────────────────────────────────────
-// The pause button is the point of this panel. If something goes wrong with a
-// room full of people generating, this is the difference between stopping it
-// and watching it happen. Everything else here is context for that decision.
-function buildQueuePanel() {
-  const q = state.queueAdmin;
-  const esc = (s) => String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  if (!q) {
-    return `<div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:#7C9EC2;margin-bottom:4px;">&#10022; Generation Queue</div>
-      <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Server-side card generation. Profiles build here, not in the participant's browser.</div>
-      <button id="btnQueueRefresh" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">Load Queue Status</button>
-      ${state.queueMsg ? `<div style="font-size:12px;color:#fca5a5;margin-top:10px;">${esc(state.queueMsg)}</div>` : ""}
-    </div>`;
-  }
-
-  const c = q.control || {};
-  const paused = !!c.paused;
-  const bad = c.consecutive_bad_runs || 0;
-  const jobs = q.jobs || [];
-  const active = jobs.filter((j) => j.status === "pending" || j.status === "processing");
-  const failed = jobs.filter((j) => j.status === "failed");
-
-  // A paused queue is the single most important fact on this page — if it is
-  // paused during a conference, nothing is being generated for anyone.
-  const banner = paused
-    ? `<div style="background:#7f1d1d33;border:1px solid #7f1d1d;border-radius:8px;padding:12px;margin-bottom:14px;">
-         <div style="font-size:13px;color:#fca5a5;font-weight:600;margin-bottom:4px;">&#9888; Queue is PAUSED &mdash; nothing is generating</div>
-         <div style="font-size:12px;color:#94a3b8;">${esc(c.paused_reason || "No reason recorded")}</div>
-         ${c.paused_at ? `<div style="font-size:11px;color:#64748b;margin-top:4px;">Since ${esc(new Date(c.paused_at).toLocaleString())}${c.paused_by ? " &middot; " + esc(c.paused_by) : ""}</div>` : ""}
-       </div>`
-    : `<div style="background:#14532d33;border:1px solid #14532d;border-radius:8px;padding:12px;margin-bottom:14px;">
-         <div style="font-size:13px;color:#68d391;font-weight:600;">&#10003; Queue is running</div>
-         <div style="font-size:11px;color:#64748b;margin-top:4px;">
-           Drains every minute${bad > 0 ? ` &middot; <span style="color:#fbbf24">${bad} consecutive failed run${bad === 1 ? "" : "s"} (auto-pauses at 3)</span>` : ""}
-         </div>
-       </div>`;
-
-  const jobRow = (j) => {
-    const pct = j.total_items > 0 ? Math.round((j.done_items / j.total_items) * 100) : 0;
-    const colour = j.status === "complete" ? "#68d391"
-                 : j.status === "failed" ? "#fca5a5"
-                 : j.status === "processing" ? "#7C9EC2" : "#94a3b8";
-    return `<div style="border-bottom:1px solid #2d3748;padding:9px 0;">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
-        <span style="font-size:12px;color:#e2e8f0;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">${esc(j.email)}</span>
-        <span style="font-size:11px;color:${colour};text-transform:uppercase;letter-spacing:.05em">${esc(j.status)}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:5px;">
-        <div style="flex:1;background:#0f1117;border-radius:999px;height:5px;overflow:hidden;">
-          <div style="background:${colour};height:100%;width:${pct}%"></div>
-        </div>
-        <span style="font-size:11px;color:#64748b;white-space:nowrap">${j.done_items || 0}/${j.total_items || 0}</span>
-      </div>
-      ${j.last_error ? `<div style="font-size:11px;color:#fca5a5;margin-top:4px;font-family:monospace;">${esc(String(j.last_error).slice(0, 160))}</div>` : ""}
-    </div>`;
-  };
-
-  return `<div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
-    <div style="font-size:13px;font-weight:600;color:#7C9EC2;margin-bottom:4px;">&#10022; Generation Queue</div>
-    <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Server-side card generation. Profiles build here, not in the participant's browser.</div>
-
-    ${banner}
-
-    <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
-      <div><div style="font-size:20px;color:#f1f5f9;font-weight:600;">${active.length}</div><div style="font-size:11px;color:#4a5568;">in queue</div></div>
-      <div><div style="font-size:20px;color:#68d391;font-weight:600;">${jobs.filter((j) => j.status === "complete").length}</div><div style="font-size:11px;color:#4a5568;">complete</div></div>
-      <div><div style="font-size:20px;color:${failed.length ? "#fca5a5" : "#f1f5f9"};font-weight:600;">${failed.length}</div><div style="font-size:11px;color:#4a5568;">failed</div></div>
-    </div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-      <button id="btnQueueRefresh" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">&#8635; Refresh</button>
-      ${paused
-        ? `<button id="btnQueueResume" style="background:#14532d;color:#fff;border:1px solid #68d391;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">&#9654; Resume Queue</button>`
-        : `<button id="btnQueuePause" style="background:#7f1d1d;color:#fff;border:1px solid #fca5a5;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">&#10073;&#10073; Pause Queue</button>`}
-      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;cursor:pointer;">
-        <input type="checkbox" id="chkQueueAuto" ${queueAutoTimer ? "checked" : ""}/> Auto-refresh
-      </label>
-    </div>
-
-    ${c.last_run_at ? `<div style="font-size:11px;color:#4a5568;margin-bottom:10px;font-family:monospace;">
-      Last drain ${esc(new Date(c.last_run_at).toLocaleTimeString())} &middot; ${esc(String(c.last_run_summary || "").slice(0, 140))}
-    </div>` : ""}
-
-    <div style="max-height:280px;overflow-y:auto;">
-      ${jobs.length ? jobs.map(jobRow).join("") : `<div style="font-size:12px;color:#4a5568;padding:8px 0;">No jobs yet.</div>`}
-    </div>
-
-    ${state.queueMsg ? `<div style="font-size:12px;color:#68d391;margin-top:10px;">${esc(state.queueMsg)}</div>` : ""}
-  </div>`;
-}
-
-let queueAutoTimer = null;
-
-async function loadQueueStatus(action) {
-  const r = await fnCall({ action: action || "queueStatus", password: state.adminAuth });
-  if (!r) {
-    state.queueMsg = fnErrorText("could not read the queue.");
-    state.queueAdmin = state.queueAdmin || null;
-    render();
-    return;
-  }
-  state.queueAdmin = { control: r.control, jobs: r.jobs || [] };
-  render();
-}
-
-function stopQueueAuto() {
-  if (queueAutoTimer) { clearInterval(queueAutoTimer); queueAutoTimer = null; }
-}
-
-function buildAdminWrapper() {
-  return `<div style="display:flex;flex-direction:column;height:100vh;">
-    <div style="padding:10px 16px;border-bottom:1px solid #1e293b;background:#111827;display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <div style="font-size:9px;color:#4a5568;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1px">Kingdom Leadership Discovery</div>
-        <div style="font-size:15px;font-weight:600;color:#f1f5f9;">Admin Panel</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="btnAdminToEntry" class="btn" style="font-size:12px;">+ Enter Participant</button>
-        <button id="btnAdminLogout" class="btn" style="font-size:12px;">Sign Out</button>
-      </div>
-    </div>
-    ${buildAdmin()}
-  </div>`;
-}
-
-function buildAdmin() {
-  return `<div style="flex:1;overflow-y:auto;background:#0f1117;padding:24px;">
-    <div style="max-width:700px;margin:0 auto;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <div>
-          <div style="font-size:11px;color:#4a5568;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;">Admin Panel</div>
-          <div style="font-size:22px;font-weight:600;color:#f1f5f9;">Kingdom Leadership Discovery</div>
-        </div>
-        <button id="btnAdminLogout" style="background:transparent;border:1px solid #2d3748;color:#94a3b8;border-radius:6px;padding:7px 16px;font-size:12px;cursor:pointer;">Sign Out</button>
-      </div>
-
-      <!-- Add Emails -->
-      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:#d4a520;margin-bottom:4px;">✦ Approved Participants</div>
-        <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Paste email addresses below — one per line, or comma separated</div>
-        <textarea id="adminEmailInput" rows="5" placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"
-          style="width:100%;padding:10px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px;"></textarea>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <button id="btnAddEmails" style="background:#d4a520;color:#0a0f1a;border:none;border-radius:6px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;">Add to Approved List</button>
-          <button id="btnLoadEmails" style="background:transparent;border:1px solid #2d3748;color:#94a3b8;border-radius:6px;padding:9px 16px;font-size:12px;cursor:pointer;">View Current List</button>
-          ${state.adminMsg ? `<span style="font-size:12px;color:#68d391;">${state.adminMsg}</span>` : ''}
-        </div>
-      </div>
-
-      <!-- Approved email list display -->
-      <div id="emailListContainer"></div>
-
-      <!-- Enter profile for participant -->
-      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:#B8860B;margin-bottom:4px;">✦ Enter Profile for Participant</div>
-        <div style="font-size:12px;color:#4a5568;margin-bottom:14px;">Enter a participant's email to create or update their profile</div>
-        <div style="display:flex;gap:10px;">
-          <input id="adminParticipantEmail" type="email" placeholder="participant@email.com"
-            style="flex:1;padding:9px 12px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:13px;outline:none;"/>
-          <button id="btnEnterForParticipant" style="background:#B8860B;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">Enter Data</button>
-        </div>
-      </div>
-
-      <!-- Cache Management -->
-      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:#4A7C5E;margin-bottom:12px;">✦ Card Cache</div>
-        <div style="font-size:12px;color:#4a5568;margin-bottom:12px;">Persistent cache for M1/M2/M3 combination cards. Cached cards load instantly with no API call.</div>
-        <div id="cacheStats" style="font-size:12px;color:#68d391;margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-          <button id="btnLoadCacheStats" style="background:#2d3748;color:#e2e8f0;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">📊 View Stats</button>
-          <button id="btnClearAllCache" style="background:#7f1d1d;color:#fff;border:1px solid #fca5a5;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">🗑 Clear All Cache</button>
-        </div>
-        <div style="font-size:11px;color:#4a5568;margin-bottom:8px;">Delete a cached card (forces regeneration next time that combination is generated):</div>
-        <div style="display:flex;gap:8px;">
-          <select id="cacheMatrixSelect" style="background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:7px 10px;font-size:12px;">
-            <option value="cache_m1|">M1 — Clifton Strengths × 16 Personalities</option>
-            <option value="cache_m2|">M2 — Clifton Strengths × Spiritual Gifts</option>
-            <option value="cache_m3|">M3 — 16 Personalities × Spiritual Gifts</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <input id="cacheKeyInput" type="text" placeholder="e.g. Achiever|ENTJ-A"
-            style="flex:1;padding:7px 10px;background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:12px;outline:none;"/>
-          <button id="btnDeleteCacheEntry" style="background:#7f1d1d;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;">Delete Entry</button>
-        </div>
-        <div id="cacheMsg" style="font-size:12px;margin-top:8px;"></div>
-      </div>
-
-      ${buildQueuePanel()}
-
-      <!-- Stats -->
-      <div style="background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;">
-        <div style="font-size:13px;font-weight:600;color:#6B5B8A;margin-bottom:12px;">✦ System Info</div>
-        <div style="font-size:12px;color:#4a5568;line-height:2;">
-          Admin access active · Profiles save automatically after generation · 
-          ${REGEN_MONTHS}-month regeneration limit per participant · 
-          All data stored in Supabase
-        </div>
-      </div>
     </div>
   </div>`;
 }
@@ -1596,193 +1341,18 @@ function attachHandlers() {
   }
   document.getElementById("btnLogin")?.addEventListener("click", handleEmailLogin);
 
-  const adminPwdInp = document.getElementById("adminPwdInput");
-  if (adminPwdInp) {
-    adminPwdInp.addEventListener("input", e => { state.adminPwdInput = e.target.value; });
-    adminPwdInp.addEventListener("keydown", e => { if (e.key==="Enter") handleAdminPwdSubmit(); });
-    adminPwdInp.focus();
-  }
-  document.getElementById("btnAdminPwd")?.addEventListener("click", handleAdminPwdSubmit);
-  document.getElementById("btnCancelAdmin")?.addEventListener("click", () => {
-    state.showAdminPwd=false; state.adminPwdInput=""; state.loginError=""; render();
-  });
-
-  // Admin panel
-  document.getElementById("btnAdminLogout")?.addEventListener("click", () => {
-    stopJobPolling(); stopQueueAuto(); clearSession();
-    state.isAdmin=false; state.adminAuth=null; state.userEmail=null; state.job=null;
-    state.queueAdmin=null; state.view="landing"; render();
-  });
-  document.getElementById("btnGoAdmin")?.addEventListener("click", () => { state.view="admin"; render(); });
-  // ── Generation queue controls ──────────────────────────────────────────────
-  document.getElementById("btnQueueRefresh")?.addEventListener("click", async () => {
-    state.queueMsg = "";
-    await loadQueueStatus("queueStatus");
-  });
-
-  document.getElementById("btnQueuePause")?.addEventListener("click", async () => {
-    // Pausing stops generation for EVERYONE, including people already waiting.
-    // That is sometimes exactly right, but never something to do by mis-tap.
-    const waiting = (state.queueAdmin?.jobs || []).filter(
-      (j) => j.status === "pending" || j.status === "processing"
-    ).length;
-    const warning = waiting > 0
-      ? `\n\n${waiting} participant${waiting === 1 ? " is" : "s are"} currently waiting. Their profile${waiting === 1 ? "" : "s"} will stop until you resume.`
-      : "";
-    if (!confirm("Pause the generation queue?" + warning + "\n\nWork already finished is kept. Nothing is lost — jobs resume where they stopped.")) return;
-    state.queueMsg = "";
-    await loadQueueStatus("queuePause");
-    state.queueMsg = "Queue paused.";
-    render();
-  });
-
-  document.getElementById("btnQueueResume")?.addEventListener("click", async () => {
-    state.queueMsg = "";
-    await loadQueueStatus("queueResume");
-    state.queueMsg = "Queue resumed — the failed-run counter has been reset.";
-    render();
-  });
-
-  document.getElementById("chkQueueAuto")?.addEventListener("change", (e) => {
-    stopQueueAuto();
-    if (e.target.checked) {
-      // Only refreshes while the admin panel is actually open, so it cannot
-      // keep polling in the background after navigating away.
-      queueAutoTimer = setInterval(() => {
-        if (state.view !== "admin") { stopQueueAuto(); return; }
-        loadQueueStatus("queueStatus");
-      }, 5000);
-    }
-  });
-
-  document.getElementById("btnAdminToEntry")?.addEventListener("click", () => {
-    state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; render();
-  });
-  document.getElementById("btnAddEmails")?.addEventListener("click", async () => {
-    const ta = document.getElementById("adminEmailInput");
-    if (!ta || !ta.value.trim()) return;
-    state.adminMsg="Saving…"; render();
-    const result = await addApprovedEmails(ta.value);
-    state.adminMsg = "✓ Added "+result.added+" emails ("+result.total+" total)";
-    state.adminEmailInput = "";
-    render();
-    setTimeout(() => { state.adminMsg=""; render(); }, 4000);
-  });
-  document.getElementById("btnLoadEmails")?.addEventListener("click", async () => {
-    const emails = await getApprovedEmails();
-    const container = document.getElementById("emailListContainer");
-    if (container) {
-      container.innerHTML = "<div style='background:#1a2035;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px;'>"
-        + "<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:12px;'>Approved List ("+emails.length+")</div>"
-        + (emails.length===0 ? "<div style='font-size:12px;color:#4a5568;'>No emails added yet.</div>"
-          : emails.map(e=>"<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #0f1117;'>"
-            +"<span style='font-size:12px;color:#94a3b8;font-family:monospace;'>"+e+"</span>"
-            +"<button class='btnRemoveEmail' data-email='"+e+"' style='background:transparent;border:none;color:#fc8181;font-size:11px;cursor:pointer;'>Remove</button>"
-            +"</div>").join(""))
-        + "</div>";
-      container.querySelectorAll(".btnRemoveEmail").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          await removeEmail(btn.dataset.email);
-          btn.closest("div").remove();
-        });
-      });
-    }
-  });
-  document.getElementById("btnEnterForParticipant")?.addEventListener("click", async () => {
-    const el = document.getElementById("adminParticipantEmail");
-    if (el && el.value.includes("@")) {
-      const email = el.value.trim().toLowerCase();
-      state.userEmail = email;
-      state.errors = {};
-      // Try to load existing profile to pre-populate fields for editing
-      const existing = await loadProfile(email);
-      if (existing && existing.name) {
-        state.name = existing.name || "";
-        state.personality = existing.personality || "";
-        state.strengths = existing.strengths ? [...existing.strengths] : ["","","","",""];
-        state.gifts = existing.gifts ? [...existing.gifts] : ["","",""];
-        state.savedProfile = existing;
-        state.profileAge = profileAgeMonths(existing.savedAt);
-      } else {
-        state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.savedProfile=null; state.profileAge=null;
-      }
-      state.view="entry"; render();
-    }
-  });
   document.getElementById("btnRefreshProfile")?.addEventListener("click", () => {
     state.view="entry"; state.name=""; state.personality=""; state.strengths=["","","","",""]; state.gifts=["","",""]; state.errors={}; state.savedProfile=null; state.profileAge=null; render();
   });
   document.getElementById("btnHeaderLogout")?.addEventListener("click", () => {
-    stopJobPolling(); stopQueueAuto(); clearSession();
-    state.userEmail=null; state.isAdmin=false; state.adminAuth=null; state.view="landing"; state.job=null;
-    state.queueAdmin=null;
+    stopJobPolling(); clearSession();
+    state.userEmail=null; state.view="landing"; state.job=null;
     state.participants=[]; state.currentIdx=null; state.savedProfile=null; state.profileAge=null;
     state.m1Data={}; state.m2Data={}; state.m3Data={}; state.m4Data=null;
     state.m4Cards={}; state.m1Summary=null; state.m2Summary=null; state.m3Summary=null; state.m4Bonus=null;
     render();
   });
   document.getElementById("btnNotApprovedBack")?.addEventListener("click", () => { state.view="login"; state.loginError=""; render(); });
-
-  // ── CACHE MANAGEMENT HANDLERS ──────────────────────────────────────────────
-  document.getElementById("btnLoadCacheStats")?.addEventListener("click", async () => {
-    const statsEl = document.getElementById("cacheStats");
-    const msgEl = document.getElementById("cacheMsg");
-    if (statsEl) statsEl.textContent = "Loading...";
-    try {
-      const r = await fnCall({ action: "listCachedCards" });
-      if (r && r.counts) {
-        if (statsEl) statsEl.textContent = `✓ Cached: ${r.counts.m1} M1 cards · ${r.counts.m2} M2 cards · ${r.counts.m3} M3 cards · ${r.counts.total} total`;
-      } else {
-        if (statsEl) statsEl.textContent = "No cached cards yet.";
-      }
-    } catch(e) {
-      if (statsEl) statsEl.textContent = "Error loading stats.";
-    }
-  });
-
-  document.getElementById("btnClearAllCache")?.addEventListener("click", async () => {
-    const msgEl = document.getElementById("cacheMsg");
-    const statsEl = document.getElementById("cacheStats");
-    if (!confirm("Delete EVERY cached M1/M2/M3 card?\n\nParticipant profiles are NOT affected. Cards will regenerate on next use at current model quality.\n\nThis cannot be undone.")) return;
-    if (msgEl) { msgEl.style.color="#a0aec0"; msgEl.textContent = "Clearing all cached cards — this may take a moment..."; }
-    try {
-      const r = await fnCall({ action: "clearAllCache" });
-      if (r && typeof r.deleted === "number") {
-        if (msgEl) {
-          msgEl.style.color = r.failed ? "#f6ad55" : "#68d391";
-          msgEl.textContent = `✓ Cleared ${r.deleted} of ${r.found} cached cards` + (r.failed ? ` · ${r.failed} failed` : "");
-        }
-        if (statsEl) statsEl.textContent = "Cache cleared — click View Stats to confirm.";
-        for (const k in aiCache) delete aiCache[k];
-      } else {
-        if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Clear failed — no response from server"; }
-      }
-    } catch(e) {
-      if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Error clearing cache"; }
-    }
-  });
-
-  document.getElementById("btnDeleteCacheEntry")?.addEventListener("click", async () => {
-    const prefix = document.getElementById("cacheMatrixSelect")?.value || "";
-    const key = document.getElementById("cacheKeyInput")?.value.trim() || "";
-    const msgEl = document.getElementById("cacheMsg");
-    if (!key) { if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Enter a key to delete (e.g. Achiever|ENTJ-A)"; } return; }
-    const fullKey = prefix + key;
-    if (msgEl) { msgEl.style.color="#a0aec0"; msgEl.textContent = "Deleting..."; }
-    try {
-      const r = await fnCall({ action: "deleteCachedCard", cacheKey: fullKey });
-      if (r && r.success) {
-        if (msgEl) { msgEl.style.color="#68d391"; msgEl.textContent = `✓ Deleted: ${fullKey}`; }
-        // Also clear from session cache
-        const sessionKey = fullKey.replace("cache_", "");
-        delete aiCache[sessionKey];
-      } else {
-        if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Delete failed — check key format"; }
-      }
-    } catch(e) {
-      if (msgEl) { msgEl.style.color="#fc8181"; msgEl.textContent = "Error deleting entry"; }
-    }
-  });
 
   // ── ORIGINAL HANDLERS ─────────────────────────────────────────────────────
   document.getElementById("btnNew")?.addEventListener("click", () => {

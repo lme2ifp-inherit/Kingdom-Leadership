@@ -64,6 +64,28 @@ button{font-family:inherit;cursor:pointer}
 .signout{background:none;border:none;padding:0 0 0 4px;color:#d4a520;font-size:12px;
      text-decoration:underline;flex:0 0 auto;white-space:nowrap}
 .hint{font-size:13px;color:#8898a8;margin-top:26px;padding-top:16px;border-top:1px solid #1a2436}
+/* ── Admin panel ────────────────────────────────────────────────────── */
+textarea{width:100%;background:#111a28;border:1px solid #24344a;border-radius:8px;
+      padding:13px 14px;color:#e8eef5;font-size:15px;font-family:monospace;resize:vertical}
+textarea:focus{outline:none;border-color:#d4a520}
+.panel{background:#111a28;border:1px solid #24344a;border-radius:10px;padding:18px;margin-bottom:16px}
+.panel h2{margin:0 0 4px;font-size:14px;font-weight:600;color:#d4a520}
+.panel .desc{font-size:12px;color:#8898a8;margin-bottom:14px}
+.btn2{background:transparent;border:1px solid #24344a;color:#c8d2de;border-radius:8px;
+      padding:9px 16px;font-size:13px;font-weight:600}
+.btn2:hover{border-color:#d4a520}
+.btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.danger{background:#7f1d1d;border:1px solid #e07a5f;color:#fff}
+.ok{color:#68d391;font-size:13px}
+.warn{color:#f6ad55;font-size:13px}
+.bad{color:#e07a5f;font-size:13px}
+.elist{border-top:1px solid #1a2436;margin-top:12px}
+.erow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+      border-bottom:1px solid #1a2436;font-size:13px}
+.erow span{font-family:monospace;color:#c8d2de}
+.erow button{background:none;border:none;color:#e07a5f;font-size:12px;text-decoration:underline}
+.jobrow{font-size:12px;color:#8898a8;padding:5px 0;border-bottom:1px solid #1a2436}
+.jobrow b{color:#c8d2de}
 </style>
 </head>
 <body>
@@ -92,6 +114,25 @@ let email = "", pwd = "", loginErr = "", busy = false;
 // promote itself to admin by editing a variable, because every privileged
 // action is re-checked server-side against the facilitators table.
 let ME = { role: null, campusId: null, displayName: "" };
+// Supabase access_token from login, held in memory only -- never
+// localStorage, same discipline as the password itself. Sent as
+// sessionToken on every admin action so api/ai.js can re-verify who is
+// asking without the page ever holding the password past the login request.
+// Cleared on sign-out, gone on refresh, same as everything else here.
+let sessionToken = null;
+
+// ── ADMIN PANEL STATE ────────────────────────────────────────────────────
+// Only reachable when ME.role === "admin", and every action below is
+// re-checked server-side regardless -- this state controls what renders,
+// not what is allowed. Moved here from index.html on August 8, 2026, and
+// re-gated on the facilitator login instead of a shared ADMIN_PASSWORD.
+let adminEmails = null;      // approved-participant list, loaded on demand
+let adminMsg = "";           // allowlist add/remove feedback
+let queueData = null;        // { control, jobs }
+let queueMsg = "";
+let queueAutoTimer = null;
+let cacheStats = null;       // { m1, m2, m3, total }
+let cacheMsg = "";
 // Gifts are shared across both tabs deliberately. The 19 gifts are the same
 // 19 in both libraries -- verified by scripts/verify_personality_library.js,
 // which fails if the two files ever disagree -- so making the facilitator
@@ -174,7 +215,7 @@ function options(kind) {
 
 function render() {
   document.getElementById("app").innerHTML =
-    view === "login" ? loginView() : toolView();
+    view === "login" ? loginView() : view === "admin" ? adminView() : toolView();
   wire();
 }
 
@@ -345,8 +386,10 @@ function toolView() {
     <div class="sub">Leadership ID</div>
     <div class="count signrow" style="margin-top:-14px"><span>Signed in as ${esc(ME.displayName)}
       &middot; ${ME.role === "admin" ? "Admin &middot; all campuses"
-        : "Facilitator" + (ME.campusId ? " &middot; " + esc(ME.campusId) : "")}</span><button
-      class="signout" id="signout" type="button">Sign out</button></div>
+        : "Facilitator" + (ME.campusId ? " &middot; " + esc(ME.campusId) : "")}</span><span>${
+      ME.role === "admin" ? `<button class="signout" id="goAdmin" type="button"
+        style="margin-right:14px">Admin panel</button>` : ""
+      }<button class="signout" id="signout" type="button">Sign out</button></span></div>
     <div class="count" style="margin-top:-6px">Library: ${libraryWritten()} of ${libraryTotal()} cells written</div>
     <div class="tabs">
       <div class="tab ${tab === "sg" ? "on" : ""}" data-tab="sg">Strengths &times; Gifts</div>
@@ -368,6 +411,100 @@ function toolView() {
       other lines are there for when someone gets stuck.</div>`;
 }
 
+// ── ADMIN PANEL ───────────────────────────────────────────────────────────
+// Moved here from index.html on August 8, 2026, and re-gated on the same
+// facilitator login (role === "admin") the rest of this page already uses,
+// instead of the shared ADMIN_PASSWORD it used to check. Every action below
+// still re-verifies server-side via adminCall() -- this view controls what
+// renders, not what is allowed.
+function adminView() {
+  return `
+    <h1>Admin Panel</h1>
+    <div class="sub">Leadership ID</div>
+    <div class="count signrow" style="margin-top:-14px"><span>Signed in as ${esc(ME.displayName)}
+      &middot; Admin &middot; all campuses</span><span>
+      <button class="signout" id="backToTool" type="button" style="margin-right:14px">Back to tool</button>
+      <button class="signout" id="signout" type="button">Sign out</button></span></div>
+
+    <div class="panel">
+      <h2>Approved participants</h2>
+      <div class="desc">Paste email addresses below — one per line, or comma separated.</div>
+      <textarea id="adminEmailInput" rows="4" placeholder="email1@example.com&#10;email2@example.com"></textarea>
+      <div class="btnrow">
+        <button class="btn2" id="btnAddEmails" type="button" style="margin-top:10px">Add to approved list</button>
+        <button class="btn2" id="btnLoadEmails" type="button" style="margin-top:10px">View current list</button>
+        ${adminMsg ? `<span class="ok" style="margin-top:10px">${esc(adminMsg)}</span>` : ""}
+      </div>
+      ${adminEmails ? `
+      <div class="elist">
+        <div class="desc" style="margin:10px 0 0">Approved list (${adminEmails.length})</div>
+        ${adminEmails.length === 0
+          ? `<div class="desc">No emails added yet.</div>`
+          : adminEmails.map(e => `<div class="erow"><span>${esc(e)}</span>
+              <button data-remove-email="${esc(e)}" type="button">Remove</button></div>`).join("")}
+      </div>` : ""}
+    </div>
+
+    <div class="panel">
+      <h2>Generation queue</h2>
+      <div class="desc">Server-side card generation. Profiles build here, not in the participant's browser.
+        Pausing stops generation for everyone, including people already waiting.</div>
+      ${queueData ? `
+        <div class="desc" style="color:#c8d2de">
+          Status: <b>${queueData.control && queueData.control.paused ? "Paused" : "Running"}</b>
+          ${queueData.control && queueData.control.paused && queueData.control.paused_reason
+            ? " &middot; " + esc(queueData.control.paused_reason) : ""}
+        </div>
+        <div style="max-height:220px;overflow-y:auto;margin-top:8px">
+          ${(queueData.jobs || []).length === 0
+            ? `<div class="desc">No recent jobs.</div>`
+            : queueData.jobs.map(j => `<div class="jobrow"><b>${esc(j.email)}</b>
+                &middot; ${esc(j.status)} &middot; ${j.done_items}/${j.total_items}
+                ${j.last_error ? `<br><span class="bad">${esc(j.last_error)}</span>` : ""}</div>`).join("")}
+        </div>` : `<div class="desc">Click Refresh to load queue status.</div>`}
+      <div class="btnrow" style="margin-top:12px">
+        <button class="btn2" id="btnQueueRefresh" type="button">Refresh</button>
+        <button class="btn2" id="btnQueuePause" type="button">Pause queue</button>
+        <button class="btn2" id="btnQueueResume" type="button">Resume queue</button>
+        <label style="font-size:12px;color:#8898a8;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="chkQueueAuto" style="width:auto" ${queueAutoTimer ? "checked" : ""}/> Auto-refresh
+        </label>
+      </div>
+      ${queueMsg ? `<div class="ok" style="margin-top:10px">${esc(queueMsg)}</div>` : ""}
+    </div>
+
+    <div class="panel">
+      <h2>Card cache</h2>
+      <div class="desc">Persistent cache for M1/M2/M3 combination cards. Cached cards load instantly with no API call.</div>
+      ${cacheStats ? `<div class="desc" style="color:#c8d2de">${cacheStats.m1} M1 &middot; ${cacheStats.m2} M2 &middot; ${cacheStats.m3} M3 &middot; ${cacheStats.total} total</div>` : ""}
+      <div class="btnrow">
+        <button class="btn2" id="btnLoadCacheStats" type="button">View stats</button>
+        <button class="btn2 danger" id="btnClearAllCache" type="button">Clear all cache</button>
+      </div>
+      <div class="desc" style="margin-top:14px">Delete a single cached card (forces regeneration next time):</div>
+      <select id="cacheMatrixSelect" style="margin-top:6px">
+        <option value="cache_m1|">M1 — Clifton Strengths × 16 Personalities</option>
+        <option value="cache_m2|">M2 — Clifton Strengths × Spiritual Gifts</option>
+        <option value="cache_m3|">M3 — 16 Personalities × Spiritual Gifts</option>
+      </select>
+      <input id="cacheKeyInput" type="text" placeholder="e.g. Achiever|ENTJ-A" style="margin-top:8px">
+      <button class="btn2" id="btnDeleteCacheEntry" type="button" style="margin-top:10px">Delete entry</button>
+      ${cacheMsg ? `<div style="margin-top:10px" class="${cacheMsg.startsWith("✓") ? "ok" : "bad"}">${esc(cacheMsg)}</div>` : ""}
+    </div>`;
+}
+
+function stopQueueAuto() {
+  if (queueAutoTimer) { clearInterval(queueAutoTimer); queueAutoTimer = null; }
+}
+
+async function loadQueueStatus(action) {
+  const r = await adminCall({ action: action || "queueStatus" });
+  if (!r) return; // adminCall already handled the session-expired case
+  if (r.error) { queueMsg = r.error; render(); return; }
+  queueData = { control: r.control, jobs: r.jobs || [] };
+  render();
+}
+
 function wire() {
   const pwdEl = document.getElementById("pwd");
   if (pwdEl) {
@@ -381,6 +518,10 @@ function wire() {
   }
   const so = document.getElementById("signout");
   if (so) so.onclick = signOut;
+  const goAdmin = document.getElementById("goAdmin");
+  if (goAdmin) goAdmin.onclick = () => { view = "admin"; render(); };
+  const backToTool = document.getElementById("backToTool");
+  if (backToTool) backToTool.onclick = () => { view = "tool"; render(); };
   document.querySelectorAll("[data-tab]").forEach(el => {
     el.onclick = () => {
       if (el.dataset.tab === tab) return;
@@ -412,6 +553,129 @@ function wire() {
       render();
     };
   });
+
+  // ── ADMIN PANEL WIRING ─────────────────────────────────────────────────
+  // Only present when view === "admin", so every lookup below is guarded --
+  // the elements simply do not exist otherwise.
+  const btnAddEmails = document.getElementById("btnAddEmails");
+  if (btnAddEmails) {
+    btnAddEmails.onclick = async () => {
+      const ta = document.getElementById("adminEmailInput");
+      if (!ta || !ta.value.trim()) return;
+      adminMsg = "Saving…"; render();
+      const r = await adminCall({ action: "addEmails", emails: ta.value });
+      if (!r) return;
+      adminMsg = r.error ? r.error : `✓ Added ${r.added} emails (${r.total} total)`;
+      render();
+      setTimeout(() => { adminMsg = ""; render(); }, 4000);
+    };
+  }
+  const btnLoadEmails = document.getElementById("btnLoadEmails");
+  if (btnLoadEmails) {
+    btnLoadEmails.onclick = async () => {
+      const r = await adminCall({ action: "getEmails" });
+      if (!r) return;
+      adminEmails = r.emails || [];
+      render();
+    };
+  }
+  document.querySelectorAll("[data-remove-email]").forEach(el => {
+    el.onclick = async () => {
+      const r = await adminCall({ action: "removeEmail", email: el.dataset.removeEmail });
+      if (!r) return;
+      if (r.emails) adminEmails = r.emails;
+      render();
+    };
+  });
+
+  const btnQueueRefresh = document.getElementById("btnQueueRefresh");
+  if (btnQueueRefresh) btnQueueRefresh.onclick = () => { queueMsg = ""; loadQueueStatus("queueStatus"); };
+
+  const btnQueuePause = document.getElementById("btnQueuePause");
+  if (btnQueuePause) {
+    btnQueuePause.onclick = async () => {
+      // Pausing stops generation for EVERYONE, including people already
+      // waiting. That is sometimes exactly right, but never something to do
+      // by mis-tap.
+      const waiting = (queueData?.jobs || []).filter(
+        j => j.status === "pending" || j.status === "processing"
+      ).length;
+      const warning = waiting > 0
+        ? `\n\n${waiting} participant${waiting === 1 ? " is" : "s are"} currently waiting. Their profile${waiting === 1 ? "" : "s"} will stop until you resume.`
+        : "";
+      if (!confirm("Pause the generation queue?" + warning + "\n\nWork already finished is kept. Nothing is lost — jobs resume where they stopped.")) return;
+      queueMsg = "";
+      await loadQueueStatus("queuePause");
+      queueMsg = "Queue paused.";
+      render();
+    };
+  }
+  const btnQueueResume = document.getElementById("btnQueueResume");
+  if (btnQueueResume) {
+    btnQueueResume.onclick = async () => {
+      queueMsg = "";
+      await loadQueueStatus("queueResume");
+      queueMsg = "Queue resumed — the failed-run counter has been reset.";
+      render();
+    };
+  }
+  const chkQueueAuto = document.getElementById("chkQueueAuto");
+  if (chkQueueAuto) {
+    chkQueueAuto.onchange = e => {
+      stopQueueAuto();
+      if (e.target.checked) {
+        // Only refreshes while the admin panel is actually open, so it
+        // cannot keep polling in the background after navigating away.
+        queueAutoTimer = setInterval(() => {
+          if (view !== "admin") { stopQueueAuto(); return; }
+          loadQueueStatus("queueStatus");
+        }, 5000);
+      }
+    };
+  }
+
+  const btnLoadCacheStats = document.getElementById("btnLoadCacheStats");
+  if (btnLoadCacheStats) {
+    btnLoadCacheStats.onclick = async () => {
+      cacheMsg = "Loading…"; render();
+      const r = await adminCall({ action: "listCachedCards" });
+      if (!r) return;
+      if (r.error) { cacheMsg = r.error; render(); return; }
+      cacheStats = r.counts || null;
+      cacheMsg = "";
+      render();
+    };
+  }
+  const btnClearAllCache = document.getElementById("btnClearAllCache");
+  if (btnClearAllCache) {
+    btnClearAllCache.onclick = async () => {
+      if (!confirm("Delete EVERY cached M1/M2/M3 card?\n\nParticipant profiles are NOT affected. Cards will regenerate on next use at current model quality.\n\nThis cannot be undone.")) return;
+      cacheMsg = "Clearing all cached cards — this may take a moment…"; render();
+      const r = await adminCall({ action: "clearAllCache" });
+      if (!r) return;
+      if (r.error || typeof r.deleted !== "number") {
+        cacheMsg = r.error || "Clear failed — no response from server";
+      } else {
+        cacheMsg = `✓ Cleared ${r.deleted} of ${r.found} cached cards` + (r.failed ? ` · ${r.failed} failed` : "");
+        cacheStats = null;
+      }
+      render();
+    };
+  }
+  const btnDeleteCacheEntry = document.getElementById("btnDeleteCacheEntry");
+  if (btnDeleteCacheEntry) {
+    btnDeleteCacheEntry.onclick = async () => {
+      const prefix = document.getElementById("cacheMatrixSelect")?.value || "";
+      const key = document.getElementById("cacheKeyInput")?.value.trim() || "";
+      if (!key) { cacheMsg = "Enter a key to delete (e.g. Achiever|ENTJ-A)"; render(); return; }
+      const fullKey = prefix + key;
+      cacheMsg = "Deleting…"; render();
+      const r = await adminCall({ action: "deleteCachedCard", cacheKey: fullKey });
+      if (!r) return;
+      cacheMsg = (r && r.success) ? `✓ Deleted: ${fullKey}` : (r.error || "Delete failed — check key format");
+      render();
+    };
+  }
 }
 
 // Sign out clears everything, not just the view. The library must go, or a
@@ -425,11 +689,42 @@ function signOut() {
   LIB2 = null;
   LIB3 = null;
   ME = { role: null, campusId: null, displayName: "" };
+  sessionToken = null;
   picked = { strengths: [], gifts: [], descriptors: [] };
   tab = "sg";
   email = ""; pwd = ""; loginErr = ""; busy = false;
+  adminEmails = null; adminMsg = "";
+  queueData = null; queueMsg = ""; stopQueueAuto();
+  cacheStats = null; cacheMsg = "";
   view = "login";
   render();
+}
+
+// Shared caller for every admin action. Threads sessionToken automatically
+// so call sites never have to remember to include it, and centralizes the
+// "session expired" recovery: a 401 here always means sign in again, so
+// there is exactly one place that decides what to do about it.
+async function adminCall(body) {
+  try {
+    const r = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({}, body, { sessionToken })),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) {
+      // Session expired or was never valid. Bounce to sign-in rather than
+      // leaving the admin panel showing stale data next to silent errors.
+      signOut();
+      loginErr = "Session expired. Please sign in again.";
+      render();
+      return null;
+    }
+    if (!r.ok) return { error: (d && d.error && d.error.message) || ("HTTP " + r.status) };
+    return d;
+  } catch (e) {
+    return { error: "Network error." };
+  }
 }
 
 async function login() {
@@ -458,6 +753,7 @@ async function login() {
     if (tab === "pg" && !LIB2) tab = "sg";
     if (tab === "sp" && !LIB3) tab = "sg";
     ME = { role: d.role, campusId: d.campusId, displayName: d.displayName || "" };
+    sessionToken = typeof d.sessionToken === "string" ? d.sessionToken : null;
     // The password never stays in memory past the request that used it.
     pwd = ""; busy = false; view = "tool"; render();
   } catch (e) {

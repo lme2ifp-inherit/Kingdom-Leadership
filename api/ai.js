@@ -1,4 +1,5 @@
 const https = require("https");
+const { requireAdmin } = require("../lib/facilitatorAuth.js");
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // KINGDOM LEADERSHIP DISCOVERY — VERCEL FUNCTION
@@ -692,34 +693,103 @@ module.exports = async function handler(req, res) {
 
     const action = body.action || "ai";
 
-    // ── ADMIN VERIFICATION (server-side — password never in client code) ──────
-    if (action === "verifyAdmin") {
-      const adminPassword = process.env.ADMIN_PASSWORD;
-      if (!adminPassword) {
-        return send(500, { error: "Admin not configured" });
+    // ── ADMIN ACTIONS (server-side — gated on Supabase facilitator role) ──────
+    //
+    // Moved off a shared ADMIN_PASSWORD on August 8, 2026, when the admin
+    // panel moved from index.html into facilitator.html. Every action below
+    // requires a sessionToken from a prior /api/library login belonging to a
+    // facilitator whose role is "admin" -- see lib/facilitatorAuth.js.
+    //
+    // getEmails/addEmails/removeEmail previously had NO server-side check at
+    // all; the client only hid the buttons. That gap closes here too, not
+    // just the queue actions that already had ADMIN_PASSWORD.
+    const ADMIN_ACTIONS = [
+      "getEmails", "addEmails", "removeEmail",
+      "queueStatus", "queuePause", "queueResume",
+      // deleteCachedCard/listCachedCards/clearAllCache had NO server-side
+      // check before August 8, 2026 -- only getCachedCard/setCachedCard stay
+      // open, since those are used by every participant's normal generation
+      // flow, not just the admin panel.
+      "deleteCachedCard", "listCachedCards", "clearAllCache",
+    ];
+    if (ADMIN_ACTIONS.includes(action)) {
+      const admin = await requireAdmin(body.sessionToken);
+      if (!admin.ok) return send(admin.status, { error: { message: admin.error } });
+
+      if (action === "getEmails") {
+        const r = await getApprovedEmails();
+        if (!r.ok) return send(500, { emails: [], error: r.error });
+        return send(200, { emails: r.emails });
       }
-      return send(200, { valid: body.password === adminPassword });
+
+      if (action === "addEmails") {
+        const r = await addApprovedEmails(body.emails);
+        if (!r.ok) return send(500, { success: false, added: 0, total: 0, emails: [], error: r.error });
+        return send(200, { success: true, added: r.added, total: r.emails.length, emails: r.emails });
+      }
+
+      if (action === "removeEmail") {
+        const r = await removeApprovedEmail(body.email);
+        if (!r.ok) return send(500, { success: false, emails: [], error: r.error });
+        return send(200, { success: true, emails: r.emails });
+      }
+
+      if (action === "queueStatus" || action === "queuePause" || action === "queueResume") {
+        if (action === "queuePause" || action === "queueResume") {
+          const pausing = action === "queuePause";
+          const patch = pausing
+            ? { paused: true, paused_reason: "Paused from admin panel", paused_at: new Date().toISOString(), paused_by: admin.email || "admin" }
+            : { paused: false, paused_reason: null, paused_at: null, paused_by: null, consecutive_bad_runs: 0 };
+          const r = await supabaseRequest("PATCH", "/rest/v1/generation_control?id=eq.1", { body: patch });
+          if (!r.ok) return send(500, { error: { message: "Could not update queue control", detail: r.error } });
+        }
+
+        const ctl = await supabaseRequest("GET", "/rest/v1/generation_control?id=eq.1&select=*");
+        const jobs = await supabaseRequest(
+          "GET",
+          "/rest/v1/generation_jobs?select=id,email,status,total_items,done_items,created_at,last_error&order=created_at.desc&limit=25"
+        );
+        return send(200, {
+          control: (ctl.ok && Array.isArray(ctl.data) && ctl.data[0]) || null,
+          jobs: (jobs.ok && Array.isArray(jobs.data)) ? jobs.data : []
+        });
+      }
+
+      // ── CARD CACHE (admin-only half) ─────────────────────────────────────
+      // getCachedCard/setCachedCard stay outside this gate -- see below, used
+      // by every participant's normal generation flow. These three are
+      // destructive or enumerate the whole cache, so they moved in here on
+      // August 8, 2026 alongside the admin panel, closing a gap that existed
+      // before this migration: none of the three checked anything before.
+      if (action === "deleteCachedCard") {
+        const parsed = parseCacheKey(body.cacheKey);
+        if (!parsed) return send(400, { error: "Invalid cache key" });
+        const r = await deleteCachedCard(parsed);
+        return send(r.ok ? 200 : 500, { success: r.ok, error: r.error });
+      }
+
+      if (action === "listCachedCards") {
+        const r = await listCachedCards();
+        if (!r.ok) return send(500, { keys: [], counts: r.counts, error: r.error });
+        return send(200, { keys: r.keys, counts: r.counts });
+      }
+
+      // ── MASTER CACHE RESET — wipes every cached M1/M2/M3 card ─────────────
+      // Used after a model upgrade so all cards regenerate at the new
+      // quality. Participant profiles live in a separate table and are
+      // untouched.
+      if (action === "clearAllCache") {
+        const r = await clearAllCache();
+        return send(r.ok ? 200 : 500, {
+          found: r.found,
+          deleted: r.deleted,
+          failed: r.failed,
+          error: r.error
+        });
+      }
     }
 
-    // ── EMAIL ALLOWLIST ───────────────────────────────────────────────────────
-    if (action === "getEmails") {
-      const r = await getApprovedEmails();
-      if (!r.ok) return send(500, { emails: [], error: r.error });
-      return send(200, { emails: r.emails });
-    }
-
-    if (action === "addEmails") {
-      const r = await addApprovedEmails(body.emails);
-      if (!r.ok) return send(500, { success: false, added: 0, total: 0, emails: [], error: r.error });
-      return send(200, { success: true, added: r.added, total: r.emails.length, emails: r.emails });
-    }
-
-    if (action === "removeEmail") {
-      const r = await removeApprovedEmail(body.email);
-      if (!r.ok) return send(500, { success: false, emails: [], error: r.error });
-      return send(200, { success: true, emails: r.emails });
-    }
-
+    // ── EMAIL ALLOWLIST (participant-facing, unauthenticated) ─────────────────
     if (action === "checkEmail") {
       const r = await isEmailApproved(body.email);
       if (!r.ok) return send(500, { approved: false, error: r.error });
@@ -755,7 +825,10 @@ module.exports = async function handler(req, res) {
       return send(200, { profile: r.profile, meta });
     }
 
-    // ── CARD CACHE ────────────────────────────────────────────────────────────
+    // ── CARD CACHE (participant-facing half, unauthenticated) ─────────────────
+    // Used by every participant's normal generation flow to check for and
+    // populate cached M1/M2/M3 cards. Left open deliberately -- see the
+    // admin-gated trio above for the destructive/enumerating actions.
     if (action === "getCachedCard") {
       const parsed = parseCacheKey(body.cacheKey);
       if (!parsed) return send(200, { card: null });
@@ -772,32 +845,6 @@ module.exports = async function handler(req, res) {
       const card = Object.assign({}, body.card, { generatedAt: Date.now() });
       const r = await setCachedCard(parsed, card);
       return send(r.ok ? 200 : 500, { success: r.ok, error: r.error });
-    }
-
-    if (action === "deleteCachedCard") {
-      const parsed = parseCacheKey(body.cacheKey);
-      if (!parsed) return send(400, { error: "Invalid cache key" });
-      const r = await deleteCachedCard(parsed);
-      return send(r.ok ? 200 : 500, { success: r.ok, error: r.error });
-    }
-
-    if (action === "listCachedCards") {
-      const r = await listCachedCards();
-      if (!r.ok) return send(500, { keys: [], counts: r.counts, error: r.error });
-      return send(200, { keys: r.keys, counts: r.counts });
-    }
-
-    // ── MASTER CACHE RESET — wipes every cached M1/M2/M3 card ─────────────────
-    // Used after a model upgrade so all cards regenerate at the new quality.
-    // Participant profiles live in a separate table and are untouched.
-    if (action === "clearAllCache") {
-      const r = await clearAllCache();
-      return send(r.ok ? 200 : 500, {
-        found: r.found,
-        deleted: r.deleted,
-        failed: r.failed,
-        error: r.error
-      });
     }
 
     // ── SERVER-SIDE CARD GENERATION ───────────────────────────────────────────
@@ -932,33 +979,6 @@ module.exports = async function handler(req, res) {
           createdAt: job.created_at,
           finishedAt: job.finished_at
         }
-      });
-    }
-
-    // ── QUEUE: ADMIN CONTROL ──────────────────────────────────────────────────
-    if (action === "queueStatus" || action === "queuePause" || action === "queueResume") {
-      const adminPassword = process.env.ADMIN_PASSWORD;
-      if (!adminPassword || body.password !== adminPassword) {
-        return send(401, { error: { message: "Admin password required" } });
-      }
-
-      if (action === "queuePause" || action === "queueResume") {
-        const pausing = action === "queuePause";
-        const patch = pausing
-          ? { paused: true, paused_reason: "Paused from admin panel", paused_at: new Date().toISOString(), paused_by: "admin" }
-          : { paused: false, paused_reason: null, paused_at: null, paused_by: null, consecutive_bad_runs: 0 };
-        const r = await supabaseRequest("PATCH", "/rest/v1/generation_control?id=eq.1", { body: patch });
-        if (!r.ok) return send(500, { error: { message: "Could not update queue control", detail: r.error } });
-      }
-
-      const ctl = await supabaseRequest("GET", "/rest/v1/generation_control?id=eq.1&select=*");
-      const jobs = await supabaseRequest(
-        "GET",
-        "/rest/v1/generation_jobs?select=id,email,status,total_items,done_items,created_at,last_error&order=created_at.desc&limit=25"
-      );
-      return send(200, {
-        control: (ctl.ok && Array.isArray(ctl.data) && ctl.data[0]) || null,
-        jobs: (jobs.ok && Array.isArray(jobs.data)) ? jobs.data : []
       });
     }
 
