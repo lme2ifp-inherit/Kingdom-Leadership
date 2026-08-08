@@ -74,10 +74,17 @@ button{font-family:inherit;cursor:pointer}
 // a refresh drops it and sign-in is required again. That is deliberate.
 let LIB = null;   // Strengths x Gifts
 let LIB2 = null;  // Personality x Gifts
+let LIB3 = null;  // Strengths x Personality
 let view = "login";
-// Which library is on screen. The third pairing does not exist yet and its
-// tab stays inert -- an enabled tab that renders nothing is worse than a
-// visibly unfinished one.
+// Which library is on screen: "sg", "pg", or "sp". Each tab stays inert until
+// its library actually arrives -- an enabled tab that renders nothing is worse
+// than a visibly unfinished one.
+//
+// "sp" is the odd one out and the reason several functions below branch three
+// ways instead of two. Libraries one and two both pair their row against
+// GIFTS, so they share the second picker. Library three pairs strengths
+// against descriptors and has no gift axis at all, so its second picker is a
+// different item set entirely.
 let tab = "sg";
 let email = "", pwd = "", loginErr = "", busy = false;
 
@@ -104,8 +111,23 @@ const esc = (s) => String(s).replace(/[&<>"]/g, c =>
 // ever ships without library one the gift words would vanish, so it falls
 // through rather than throwing.
 function bag(kind) {
-  if (kind === "strengths")   return (LIB  && LIB.items.strengths)   || {};
-  if (kind === "descriptors") return (LIB2 && LIB2.items.descriptors) || {};
+  // TAB-AWARE ON PURPOSE. The seed words printed on a card must come from the
+  // SAME library as the blend text underneath them. Five strength rows --
+  // Empathy, Harmony, Individualization, Positivity, Relator -- carry
+  // different words in library three than in library one, because library
+  // three's recognize lines were written to avoid reusing its own printed
+  // words and some of library one's choices collided with unavoidable
+  // vocabulary. Falling through to library one here would print "closeness"
+  // above a card whose text was written against "depth". It looks fine and it
+  // is incoherent.
+  if (tab === "sp" && LIB3) {
+    if (kind === "strengths")   return LIB3.items.strengths   || {};
+    if (kind === "descriptors") return LIB3.items.descriptors || {};
+  }
+  if (kind === "strengths")
+    return (LIB  && LIB.items.strengths)  || (LIB3 && LIB3.items.strengths)   || {};
+  if (kind === "descriptors")
+    return (LIB2 && LIB2.items.descriptors) || (LIB3 && LIB3.items.descriptors) || {};
   return (LIB && LIB.items.gifts) || (LIB2 && LIB2.items.gifts) || {};
 }
 function names(kind) { return Object.keys(bag(kind)); }
@@ -246,31 +268,77 @@ function cell2(d, g) {
     </div>`;
 }
 
+// Library three's card. Same five lines in the same order as the other two.
+// The accent is the row strength's domain colour, matching library one --
+// both have a strength on the row, so colouring them differently would imply
+// a distinction that is not there.
+function cell3(s, d) {
+  const S = item("strengths", s), D = item("descriptors", d);
+  const b = LIB3.blends[s + "|" + d] || null;
+  const seeds = esc(S.essence) + " + " + esc(D.essence);
+  return `
+    <div class="card" style="border-left-color:${DOMAIN_COLORS[S.domain] || "#d4a520"}">
+      <h3>${esc(s)} &times; ${esc(d)}</h3>
+      <div class="pair">Strengths &times; Personality</div>
+      <div class="row"><div class="k">Blend seeds</div>
+        <div class="v">${seeds}</div></div>
+      ${b ? `
+      <div class="row"><div class="k">Looks like</div>
+        <div class="v lead">${esc(b.recognize)}</div></div>
+      <div class="row"><div class="k">Ask them</div>
+        <div class="v ask">${esc(b.ask)}</div></div>`
+      : `
+      <div class="row"><div class="k">Looks like</div>
+        <div class="v todo">Start with the two seed words above and let them
+          find their own name for it.</div></div>`}
+      <div class="row"><div class="k">In action</div>
+        <div class="v">${esc(S.action)} + ${esc(D.action)}</div></div>
+      <div class="row"><div class="k">Watch for</div>
+        <div class="v">${esc(S.shadow)} + ${esc(D.shadow)}</div></div>
+    </div>`;
+}
+
 // The deployed library, counted in the page from the data the server actually
 // sent. This is the only number in the whole project that is read off the live
 // deployment rather than off a copy of a file, which makes it the check to
 // trust when a count is in doubt. If content is ever silently dropped, this
 // number falls and you can see it without running anything.
+function activeLib() {
+  if (tab === "pg") return LIB2;
+  if (tab === "sp") return LIB3;
+  return LIB;
+}
 function libraryWritten() {
-  const L = tab === "pg" ? LIB2 : LIB;
+  const L = activeLib();
   return L && L.blends ? Object.keys(L.blends).length : 0;
 }
 function libraryTotal() {
-  const L = tab === "pg" ? LIB2 : LIB;
+  const L = activeLib();
   if (!L || !L.items) return 0;
+  // Rows and columns differ per library. Library three has no gift axis, so
+  // reading L.items.gifts here would silently produce 0 and report the whole
+  // library as unwritten.
   const rows = tab === "pg" ? L.items.descriptors : L.items.strengths;
-  return Object.keys(rows).length * Object.keys(L.items.gifts).length;
+  const cols = tab === "sp" ? L.items.descriptors : L.items.gifts;
+  if (!rows || !cols) return 0;
+  return Object.keys(rows).length * Object.keys(cols).length;
 }
 
 function toolView() {
-  const pg = tab === "pg";
+  const pg = tab === "pg", sp = tab === "sp";
+  // Row and column item sets per tab. Only library three uses descriptors as
+  // the COLUMN; in library two they are the row. Getting these two confused
+  // produces a card grid that looks right and is transposed.
   const rowKind = pg ? "descriptors" : "strengths";
-  const R = picked[rowKind], G = picked.gifts;
-  const store = pg ? LIB2.blends : LIB.blends;
+  const colKind = sp ? "descriptors" : "gifts";
+  const R = picked[rowKind], C = picked[colKind];
+  const L = activeLib();
+  const store = (L && L.blends) || {};
   const cells = [];
-  for (const r of R) for (const g of G) cells.push(pg ? cell2(r, g) : cell(r, g));
+  for (const r of R) for (const c of C)
+    cells.push(sp ? cell3(r, c) : pg ? cell2(r, c) : cell(r, c));
   const written = R.reduce((n, r) =>
-    n + G.filter(g => store[r + "|" + g]).length, 0);
+    n + C.filter(c => store[r + "|" + c]).length, 0);
 
   return `
     <h1>Facilitator Tool</h1>
@@ -281,18 +349,21 @@ function toolView() {
       class="signout" id="signout" type="button">Sign out</button></div>
     <div class="count" style="margin-top:-6px">Library: ${libraryWritten()} of ${libraryTotal()} cells written</div>
     <div class="tabs">
-      <div class="tab ${pg ? "" : "on"}" data-tab="sg">Strengths &times; Gifts</div>
+      <div class="tab ${tab === "sg" ? "on" : ""}" data-tab="sg">Strengths &times; Gifts</div>
       <div class="tab ${pg ? "on" : ""} ${LIB2 ? "" : "off"}"
         ${LIB2 ? 'data-tab="pg"' : ""}>Personality &times; Gifts</div>
-      <div class="tab off">Strengths &times; Personality</div>
+      <div class="tab ${sp ? "on" : ""} ${LIB3 ? "" : "off"}"
+        ${LIB3 ? 'data-tab="sp"' : ""}>Strengths &times; Personality</div>
     </div>
     ${pg ? picker("descriptors", "Personality descriptors")
          : picker("strengths", "Strengths")}
-    ${picker("gifts", "Gifts")}
+    ${sp ? picker("descriptors", "Personality descriptors")
+         : picker("gifts", "Gifts")}
     ${cells.length ? `<div class="count">${cells.length} pairing${
         cells.length === 1 ? "" : "s"} &middot; ${written} written</div>${cells.join("")}`
       : `<div class="hint">Enter their ${pg ? "descriptors" : "strengths"} and
-          gifts above to see the pairings.</div>`}
+          ${sp ? "personality descriptors" : "gifts"} above to see the
+          pairings.</div>`}
     <div class="hint">Never read a card aloud. Lead with the two seed words. The
       other lines are there for when someone gets stuck.</div>`;
 }
@@ -352,6 +423,7 @@ function wire() {
 function signOut() {
   LIB = null;
   LIB2 = null;
+  LIB3 = null;
   ME = { role: null, campusId: null, displayName: "" };
   picked = { strengths: [], gifts: [], descriptors: [] };
   tab = "sg";
@@ -379,7 +451,12 @@ async function login() {
     // api/library.js is live, the second tab simply stays unavailable rather
     // than the whole page failing to render.
     LIB2 = (d.items2 && d.blends2) ? { items: d.items2, blends: d.blends2 } : null;
-    if (!LIB2) tab = "sg";
+    LIB3 = (d.items3 && d.blends3) ? { items: d.items3, blends: d.blends3 } : null;
+    // Same defensive fallback as library two: an older api/library.js that
+    // does not send items3 leaves the third tab off rather than breaking the
+    // page. Never land on a tab whose library did not arrive.
+    if (tab === "pg" && !LIB2) tab = "sg";
+    if (tab === "sp" && !LIB3) tab = "sg";
     ME = { role: d.role, campusId: d.campusId, displayName: d.displayName || "" };
     // The password never stays in memory past the request that used it.
     pwd = ""; busy = false; view = "tool"; render();

@@ -20,6 +20,7 @@
 
 const LIBRARY = require("../lib/library-strengths-gifts.json");
 const LIBRARY2 = require("../lib/library-personality-gifts.json");
+const LIBRARY3 = require("../lib/library-strengths-personality.json");
 
 // TWO LIBRARIES, ONE RESPONSE. August 5, 2026.
 //
@@ -36,10 +37,30 @@ const LIBRARY2 = require("../lib/library-personality-gifts.json");
 // would have silently broken every existing caller, including the auth
 // harness.
 //
-// Size: roughly 530KB of JSON before compression, served gzipped, once per
-// sign-in and never stored. Well inside Vercel's response limit. If a third
-// library is ever added, revisit this -- at that point paying for a second
-// round trip is probably cheaper than the payload.
+// THREE LIBRARIES NOW. August 7, 2026.
+//
+// Library three (Strengths x Personality, 2,448 cells) joins the same payload
+// as `items3` / `blends3`. Same reasoning as library two: one sign-in, one
+// round trip, one copy of the gates. The note below said to revisit the size
+// question when a third library arrived, so it was revisited rather than
+// assumed.
+//
+// MEASURED, not estimated:
+//   library one    172 KB raw    43 KB gzipped
+//   library two    437 KB raw   113 KB gzipped
+//   library three  948 KB raw   238 KB gzipped
+//   all three    ~1,490 KB raw  ~392 KB gzipped
+//
+// Vercel's hard limit on a function response body is 4.5 MB, returning
+// 413 FUNCTION_PAYLOAD_TOO_LARGE above it. The limit applies to the RAW body,
+// not the gzipped one, so 1.49 MB is the number that matters and the headroom
+// is roughly 3x. That is comfortable but no longer enormous.
+//
+// A FOURTH LIBRARY MUST NOT BE ADDED HERE WITHOUT SPLITTING THE ENDPOINT.
+// A fourth of library three's size would land near 2.5 MB raw and the margin
+// stops being safe. At that point move to per-library endpoints behind a
+// shared gate helper, so the gates below exist once and are imported, not
+// copied. The copy that drifts is the one that leaks.
 
 const AUTH_FAIL = "Email or password not recognized.";
 
@@ -176,6 +197,7 @@ module.exports = async (req, res) => {
     ok: true,
     version: LIBRARY.version,
     version2: LIBRARY2.version,
+    version3: LIBRARY3.version,
     role: person.role,
     campusId: person.campus_id,
     displayName: person.display_name || person.email,
@@ -183,5 +205,7 @@ module.exports = async (req, res) => {
     blends: LIBRARY.blends,
     items2: LIBRARY2.items,
     blends2: LIBRARY2.blends,
+    items3: LIBRARY3.items,
+    blends3: LIBRARY3.blends,
   });
 };
