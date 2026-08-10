@@ -1,6 +1,14 @@
 // Boundary tests for api/library.js Stage 2 auth.
 // Run: node verify_library_auth.js
-// Every failure path must return no library content. That is the point.
+//
+// Every path must return no library content -- failure or success. That
+// used to only be true of failure paths: a successful login carried the
+// library so facilitator.html could render cards. As of August 9, 2026 that
+// card tool moved to the public helpful-hints.html / api/hints.js, so this
+// endpoint is sign-in only now and NOTHING it returns should ever match
+// leaks() -- success included. The three tests below that used to assert
+// `library: true` on success now assert `library: false`, same as every
+// other case in this file.
 
 const handler = require("../api/library.js");
 
@@ -194,7 +202,7 @@ const okAuth = async (url) => {
     body: { email: "t@example.com", password: "right" },
     fetchImpl: okAuth,
   }, {
-    status: 200, library: true,
+    status: 200, library: false,
     check: (p) => p.role === "facilitator" && p.campusId === "shawnee"
       ? null : "role or campus missing from success response",
   });
@@ -206,7 +214,7 @@ const okAuth = async (url) => {
       : { ok: true, json: async () => ([{ role: "admin", campus_id: null,
           status: "active", display_name: "Seth", email: "lme2ifp@gmail.com" }]) },
   }, {
-    status: 200, library: true,
+    status: 200, library: false,
     check: (p) => p.role === "admin" && p.campusId === null
       ? null : "admin response wrong",
   });
@@ -224,7 +232,7 @@ const okAuth = async (url) => {
       return { ok: true, json: async () => ([{ role: "facilitator", campus_id: "shawnee",
         status: "active", display_name: "T", email: "t@example.com" }]) };
     },
-  }, { status: 200, library: true });
+  }, { status: 200, library: false });
 
   console.log(results.join("\n"));
   console.log("\n" + pass + " passed, " + fail + " failed");
