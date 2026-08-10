@@ -4,15 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Facilitator Tool — Leadership ID</title>
+<title>Facilitator Admin — Leadership ID</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:#0a0f1a;color:#e8eef5;
      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
      font-size:16px;line-height:1.6;padding-bottom:60px}
 .wrap{max-width:640px;margin:0 auto;padding:24px 18px}
-.gold{color:#d4a520}
-.muted{color:#8898a8}
 h1{font-size:22px;font-weight:700;color:#f5e6c0;margin:0 0 4px}
 .sub{font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#d4a520;margin-bottom:22px}
 input{width:100%;background:#111a28;border:1px solid #24344a;border-radius:8px;
@@ -31,36 +29,6 @@ button{font-family:inherit;cursor:pointer}
 .btn{background:#d4a520;color:#0a0f1a;border:none;border-radius:8px;
      padding:13px 28px;font-size:16px;font-weight:700;width:100%;margin-top:12px}
 .err{color:#e07a5f;font-size:14px;margin-top:10px;min-height:20px}
-.tabs{display:flex;gap:8px;margin-bottom:20px}
-.tab{flex:1;padding:11px 6px;border-radius:8px;font-size:13px;text-align:center;
-     border:1px solid #24344a;background:#111a28;color:#8898a8;cursor:pointer}
-.tab.on{border-color:#d4a520;color:#f5e6c0;background:#1a2436}
-.tab.off{opacity:0.4;cursor:default}
-.lbl{font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#8898a8;
-     margin:20px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
-.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
-.chip{background:#1a2436;border:1px solid #2e4058;border-radius:20px;
-      padding:7px 12px;font-size:14px;display:flex;align-items:center;gap:8px}
-.chip b{font-weight:500}
-.x{color:#8898a8;font-size:17px;line-height:1;padding:0 2px}
-.sug{border:1px solid #24344a;border-top:none;border-radius:0 0 8px 8px;
-     background:#111a28;max-height:230px;overflow-y:auto}
-.sug div{padding:12px 14px;border-bottom:1px solid #1a2436;font-size:15px}
-.sug div:last-child{border-bottom:none}
-.sug .dom{font-size:11px;color:#8898a8;margin-left:8px}
-.card{background:#111a28;border:1px solid #24344a;border-left-width:3px;
-      border-radius:0 10px 10px 0;padding:16px;margin-bottom:14px}
-.card h3{margin:0 0 3px;font-size:17px;font-weight:600;color:#f5e6c0}
-.pair{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8898a8;margin-bottom:13px}
-.row{display:flex;gap:10px;margin-bottom:7px;font-size:15px}
-.k{flex:0 0 92px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;
-   color:#8898a8;padding-top:3px}
-.v{flex:1}
-.bank{color:#e8dcc0;line-height:1.7}
-.bank .sep{color:#6b7c8e;padding:0 5px}
-.lead{color:#f0e4cc;font-size:15.5px;line-height:1.6}
-.ask{color:#d9c89a;font-size:15.5px;line-height:1.6;font-style:italic}
-.todo{color:#6b7c8e;font-style:italic;line-height:1.55}
 .count{font-size:12px;color:#8898a8;margin:18px 0 12px}
 .signrow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
 .signout{background:none;border:none;padding:0 0 0 4px;color:#d4a520;font-size:12px;
@@ -94,22 +62,11 @@ textarea:focus{outline:none;border-color:#d4a520}
 <div class="wrap" id="app"></div>
 
 <script>
-// The library lives here and nowhere else. Never written to storage —
-// a refresh drops it and sign-in is required again. That is deliberate.
-let LIB = null;   // Strengths x Gifts
-let LIB2 = null;  // Personality x Gifts
-let LIB3 = null;  // Strengths x Personality
+// LIBRARY DATA IS NO LONGER LOADED HERE. August 9, 2026.
+// This page used to hold three libraries in memory for its own card tool.
+// That tool moved to the public helpful-hints.html, so this page has nothing
+// left to do with library content -- it is sign-in plus admin actions only.
 let view = "login";
-// Which library is on screen: "sg", "pg", or "sp". Each tab stays inert until
-// its library actually arrives -- an enabled tab that renders nothing is worse
-// than a visibly unfinished one.
-//
-// "sp" is the odd one out and the reason several functions below branch three
-// ways instead of two. Libraries one and two both pair their row against
-// GIFTS, so they share the second picker. Library three pairs strengths
-// against descriptors and has no gift axis at all, so its second picker is a
-// different item set entirely.
-let tab = "sg";
 let email = "", pwd = "", loginErr = "", busy = false;
 
 // Who signed in. Set by the server, never by the page. The page cannot
@@ -124,10 +81,17 @@ let ME = { role: null, campusId: null, displayName: "" };
 let sessionToken = null;
 
 // ── ADMIN PANEL STATE ────────────────────────────────────────────────────
-// Only reachable when ME.role === "admin", and every action below is
-// re-checked server-side regardless -- this state controls what renders,
-// not what is allowed. Moved here from index.html on August 8, 2026, and
-// re-gated on the facilitator login instead of a shared ADMIN_PASSWORD.
+// Every action below is still re-checked server-side against the
+// facilitators table regardless of what renders here -- this state controls
+// what a signed-in account SEES, not what it is ALLOWED to do. Moved here
+// from index.html on August 8, 2026, and re-gated on the facilitator login
+// instead of a shared ADMIN_PASSWORD.
+//
+// As of August 9, 2026, every facilitator who signs in lands on this view,
+// not just admins -- the card tool that used to be the non-admin destination
+// moved to the public helpful-hints.html, so there is nothing else here to
+// send them to. A non-admin account can still open this view; the buttons
+// simply fail server-side, the same as they always would have.
 let adminEmails = null;      // approved-participant list, loaded on demand
 let adminMsg = "";           // allowlist add/remove feedback
 let queueData = null;        // { control, jobs }
@@ -135,115 +99,19 @@ let queueMsg = "";
 let queueAutoTimer = null;
 let cacheStats = null;       // { m1, m2, m3, total }
 let cacheMsg = "";
-// Gifts are shared across both tabs deliberately. The 19 gifts are the same
-// 19 in both libraries -- verified by scripts/verify_personality_library.js,
-// which fails if the two files ever disagree -- so making the facilitator
-// enter them twice would be asking the same question twice.
-let picked = { strengths: [], gifts: [], descriptors: [] };
-
-const MAX = { strengths: 5, gifts: 3, descriptors: 5 };
-const DOMAIN_COLORS = { Strategic:"#B8860B", Influencing:"#4A7C5E",
-                        Relationship:"#6B5B8A", Executing:"#A0522D" };
-const DOMAIN_LABELS = { Strategic:"Strategic Thinking", Influencing:"Influencing",
-                        Relationship:"Relationship Building", Executing:"Executing" };
 
 const esc = (s) => String(s).replace(/[&<>"]/g, c =>
   ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 
-// One lookup for three item sets. Gifts come off library one; if library two
-// ever ships without library one the gift words would vanish, so it falls
-// through rather than throwing.
-// WORD BANK. August 9, 2026. Replaces the two-word "Blend seeds" row.
-// Each item carries a three-word bank: its original essence word plus two
-// synonyms, so a card prints six words, three from each side. The pastor
-// asked for four to six; three per side is the top of that range.
-//
-// Falls back to [essence] when bank is absent, which is what makes this file
-// and the library files independently deployable -- an older library shows
-// the single word it always showed rather than an empty row.
-//
-// The same two functions exist in helpful-hints.html. Keep them in step.
-function wordsOf(it) {
-  return (Array.isArray(it.bank) && it.bank.length) ? it.bank : [it.essence];
-}
-function bankRow(a, b) {
-  const L = wordsOf(a).map(esc).join(", ");
-  const R = wordsOf(b).map(esc).join(", ");
-  return `<div class="row"><div class="k">Word Bank</div>
-    <div class="v bank">${L}<span class="sep">+</span>${R}</div></div>`;
-}
-
-function bag(kind) {
-  // TAB-AWARE ON PURPOSE. The Word Bank printed on a card must come from the
-  // SAME library as the blend text underneath them. Five strength rows --
-  // Empathy, Harmony, Individualization, Positivity, Relator -- carry
-  // different words in library three than in library one, because library
-  // three's recognize lines were written to avoid reusing its own printed
-  // words and some of library one's choices collided with unavoidable
-  // vocabulary. Falling through to library one here would print "closeness"
-  // above a card whose text was written against "depth". It looks fine and it
-  // is incoherent.
-  if (tab === "sp" && LIB3) {
-    if (kind === "strengths")   return LIB3.items.strengths   || {};
-    if (kind === "descriptors") return LIB3.items.descriptors || {};
-  }
-  if (kind === "strengths")
-    return (LIB  && LIB.items.strengths)  || (LIB3 && LIB3.items.strengths)   || {};
-  if (kind === "descriptors")
-    return (LIB2 && LIB2.items.descriptors) || (LIB3 && LIB3.items.descriptors) || {};
-  return (LIB && LIB.items.gifts) || (LIB2 && LIB2.items.gifts) || {};
-}
-function names(kind) { return Object.keys(bag(kind)); }
-function item(kind, name) { return bag(kind)[name]; }
-
-// Type-ahead: substring match anywhere, not just prefix. Typing "com" should
-// surface both Command and Communication without knowing which comes first.
-// Options for the dropdowns. Strengths are grouped by domain -- a flat wheel
-// of 34 on a phone is a long spin, and the domain is already known. Gifts are
-// only 19, so they stay one alphabetical list. Anything already picked is
-// removed rather than disabled: an option you cannot choose is just clutter.
-function options(kind) {
-  const taken = picked[kind];
-  const all = names(kind).filter(n => !taken.includes(n)).sort();
-  if (kind === "gifts") {
-    return all.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
-  }
-  if (kind === "descriptors") {
-    // 72 in one flat list is a long spin on a phone. Library one solves this
-    // by grouping strengths into their four domains; descriptors have no
-    // domain, so the initial letter is the only grouping available that a
-    // facilitator can predict without being taught it.
-    const groups = [];
-    for (const n of all) {
-      const letter = n[0].toUpperCase();
-      const last = groups[groups.length - 1];
-      if (last && last.letter === letter) last.items.push(n);
-      else groups.push({ letter, items: [n] });
-    }
-    return groups.map(gr =>
-      `<optgroup label="${esc(gr.letter)}">` +
-      gr.items.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") +
-      `</optgroup>`).join("");
-  }
-  const order = ["Strategic", "Influencing", "Relationship", "Executing"];
-  return order.map(d => {
-    const inDomain = all.filter(n => item("strengths", n).domain === d);
-    if (!inDomain.length) return "";
-    return `<optgroup label="${esc(DOMAIN_LABELS[d])}">` +
-      inDomain.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") +
-      `</optgroup>`;
-  }).join("");
-}
-
 function render() {
   document.getElementById("app").innerHTML =
-    view === "login" ? loginView() : view === "admin" ? adminView() : toolView();
+    view === "login" ? loginView() : adminView();
   wire();
 }
 
 function loginView() {
   return `
-    <h1>Facilitator Tool</h1>
+    <h1>Facilitator Admin</h1>
     <div class="sub">Leadership ID</div>
     <input id="email" type="email" placeholder="Email address"
            autocomplete="username" autocapitalize="off" autocorrect="off"
@@ -253,178 +121,11 @@ function loginView() {
            style="margin-top:10px">
     <button class="btn" id="go">${busy ? "Signing in…" : "Sign in"}</button>
     <div class="err">${esc(loginErr)}</div>
-    <div class="hint">This tool is for facilitators. Participants should use
-      the main app.<br><br><a href="/reset.html" style="color:#d4a520">Forgot your
-      password?</a></div>`;
-}
-
-const NOUN = { strengths: "strength", gifts: "gift", descriptors: "descriptor" };
-
-function picker(kind, label) {
-  const sel = picked[kind];
-  const full = sel.length >= MAX[kind];
-  return `
-    <div class="lbl"><span>${label}</span><span>${sel.length} / ${MAX[kind]}</span></div>
-    <select id="q-${kind}" ${full ? "disabled" : ""}>
-      <option value="">${full ? "Remove one to add another"
-                              : "Choose a " + NOUN[kind] + "\u2026"}</option>
-      ${full ? "" : options(kind)}
-    </select>
-    ${sel.length ? `<div class="chips">${sel.map(n =>
-      `<span class="chip"><b>${esc(n)}</b><span class="x" data-del="${kind}"
-        data-name="${esc(n)}">&times;</span></span>`).join("")}</div>` : ""}`;
-}
-
-function cell(s, g) {
-  const S = item("strengths", s), G = item("gifts", g);
-  const b = LIB.blends[s + "|" + g] || null;
-  return `
-    <div class="card" style="border-left-color:${DOMAIN_COLORS[S.domain]}">
-      <h3>${esc(s)} &times; ${esc(g)}</h3>
-      <div class="pair">Strengths &times; Gifts</div>
-      ${bankRow(S, G)}
-      ${b ? `
-      <div class="row"><div class="k">Looks like</div>
-        <div class="v lead">${esc(b.recognize)}</div></div>
-      <div class="row"><div class="k">Ask them</div>
-        <div class="v ask">${esc(b.ask)}</div></div>`
-      : `
-      <div class="row"><div class="k">Looks like</div>
-        <div class="v todo">Start with the words above and let them find
-          their own name for it.</div></div>`}
-      <div class="row"><div class="k">In action</div>
-        <div class="v">${esc(S.action)} + ${esc(G.action)}</div></div>
-      <div class="row"><div class="k">Watch for</div>
-        <div class="v">${esc(S.shadow)} + ${esc(G.shadow)}</div></div>
-    </div>`;
-}
-
-// Library two's card. Same shape as above so a facilitator holding one card
-// next to the other is reading the same five lines in the same order. The
-// only structural difference is the accent colour: descriptors have no
-// domain, so there is nothing to colour-code and the gold is used flat.
-function cell2(d, g) {
-  const D = item("descriptors", d), G = item("gifts", g);
-  const b = LIB2.blends[d + "|" + g] || null;
-  return `
-    <div class="card" style="border-left-color:#d4a520">
-      <h3>${esc(d)} &times; ${esc(g)}</h3>
-      <div class="pair">Personality &times; Gifts</div>
-      ${bankRow(D, G)}
-      ${b ? `
-      <div class="row"><div class="k">Looks like</div>
-        <div class="v lead">${esc(b.recognize)}</div></div>
-      <div class="row"><div class="k">Ask them</div>
-        <div class="v ask">${esc(b.ask)}</div></div>`
-      : `
-      <div class="row"><div class="k">Looks like</div>
-        <div class="v todo">Start with the words above and let them find
-          their own name for it.</div></div>`}
-      <div class="row"><div class="k">In action</div>
-        <div class="v">${esc(D.action)} + ${esc(G.action)}</div></div>
-      <div class="row"><div class="k">Watch for</div>
-        <div class="v">${esc(D.shadow)} + ${esc(G.shadow)}</div></div>
-    </div>`;
-}
-
-// Library three's card. Same five lines in the same order as the other two.
-// The accent is the row strength's domain colour, matching library one --
-// both have a strength on the row, so colouring them differently would imply
-// a distinction that is not there.
-function cell3(s, d) {
-  const S = item("strengths", s), D = item("descriptors", d);
-  const b = LIB3.blends[s + "|" + d] || null;
-  return `
-    <div class="card" style="border-left-color:${DOMAIN_COLORS[S.domain] || "#d4a520"}">
-      <h3>${esc(s)} &times; ${esc(d)}</h3>
-      <div class="pair">Strengths &times; Personality</div>
-      ${bankRow(S, D)}
-      ${b ? `
-      <div class="row"><div class="k">Looks like</div>
-        <div class="v lead">${esc(b.recognize)}</div></div>
-      <div class="row"><div class="k">Ask them</div>
-        <div class="v ask">${esc(b.ask)}</div></div>`
-      : `
-      <div class="row"><div class="k">Looks like</div>
-        <div class="v todo">Start with the words above and let them find
-          their own name for it.</div></div>`}
-      <div class="row"><div class="k">In action</div>
-        <div class="v">${esc(S.action)} + ${esc(D.action)}</div></div>
-      <div class="row"><div class="k">Watch for</div>
-        <div class="v">${esc(S.shadow)} + ${esc(D.shadow)}</div></div>
-    </div>`;
-}
-
-// The deployed library, counted in the page from the data the server actually
-// sent. This is the only number in the whole project that is read off the live
-// deployment rather than off a copy of a file, which makes it the check to
-// trust when a count is in doubt. If content is ever silently dropped, this
-// number falls and you can see it without running anything.
-function activeLib() {
-  if (tab === "pg") return LIB2;
-  if (tab === "sp") return LIB3;
-  return LIB;
-}
-function libraryWritten() {
-  const L = activeLib();
-  return L && L.blends ? Object.keys(L.blends).length : 0;
-}
-function libraryTotal() {
-  const L = activeLib();
-  if (!L || !L.items) return 0;
-  // Rows and columns differ per library. Library three has no gift axis, so
-  // reading L.items.gifts here would silently produce 0 and report the whole
-  // library as unwritten.
-  const rows = tab === "pg" ? L.items.descriptors : L.items.strengths;
-  const cols = tab === "sp" ? L.items.descriptors : L.items.gifts;
-  if (!rows || !cols) return 0;
-  return Object.keys(rows).length * Object.keys(cols).length;
-}
-
-function toolView() {
-  const pg = tab === "pg", sp = tab === "sp";
-  // Row and column item sets per tab. Only library three uses descriptors as
-  // the COLUMN; in library two they are the row. Getting these two confused
-  // produces a card grid that looks right and is transposed.
-  const rowKind = pg ? "descriptors" : "strengths";
-  const colKind = sp ? "descriptors" : "gifts";
-  const R = picked[rowKind], C = picked[colKind];
-  const L = activeLib();
-  const store = (L && L.blends) || {};
-  const cells = [];
-  for (const r of R) for (const c of C)
-    cells.push(sp ? cell3(r, c) : pg ? cell2(r, c) : cell(r, c));
-  const written = R.reduce((n, r) =>
-    n + C.filter(c => store[r + "|" + c]).length, 0);
-
-  return `
-    <h1>Facilitator Tool</h1>
-    <div class="sub">Leadership ID</div>
-    <div class="count signrow" style="margin-top:-14px"><span>Signed in as ${esc(ME.displayName)}
-      &middot; ${ME.role === "admin" ? "Admin &middot; all campuses"
-        : "Facilitator" + (ME.campusId ? " &middot; " + esc(ME.campusId) : "")}</span><span>${
-      ME.role === "admin" ? `<button class="signout" id="goAdmin" type="button"
-        style="margin-right:14px">Admin panel</button>` : ""
-      }<button class="signout" id="signout" type="button">Sign out</button></span></div>
-    <div class="count" style="margin-top:-6px">Library: ${libraryWritten()} of ${libraryTotal()} cells written</div>
-    <div class="tabs">
-      <div class="tab ${tab === "sg" ? "on" : ""}" data-tab="sg">Strengths &times; Gifts</div>
-      <div class="tab ${pg ? "on" : ""} ${LIB2 ? "" : "off"}"
-        ${LIB2 ? 'data-tab="pg"' : ""}>Personality &times; Gifts</div>
-      <div class="tab ${sp ? "on" : ""} ${LIB3 ? "" : "off"}"
-        ${LIB3 ? 'data-tab="sp"' : ""}>Strengths &times; Personality</div>
-    </div>
-    ${pg ? picker("descriptors", "Personality descriptors")
-         : picker("strengths", "Strengths")}
-    ${sp ? picker("descriptors", "Personality descriptors")
-         : picker("gifts", "Gifts")}
-    ${cells.length ? `<div class="count">${cells.length} pairing${
-        cells.length === 1 ? "" : "s"} &middot; ${written} written</div>${cells.join("")}`
-      : `<div class="hint">Enter their ${pg ? "descriptors" : "strengths"} and
-          ${sp ? "personality descriptors" : "gifts"} above to see the
-          pairings.</div>`}
-    <div class="hint">Never read a card aloud. Lead with the Word Bank. The other
-      lines are there for when someone gets stuck.</div>`;
+    <div class="hint">This sign-in is for facilitator and admin accounts. For the
+      strengths, gifts, and personality card library, visit
+      <a href="/helpful-hints.html" style="color:#d4a520">Helpful Hints</a> --
+      no sign-in needed there.<br><br><a href="/reset.html"
+      style="color:#d4a520">Forgot your password?</a></div>`;
 }
 
 // ── ADMIN PANEL ───────────────────────────────────────────────────────────
@@ -439,7 +140,6 @@ function adminView() {
     <div class="sub">Leadership ID</div>
     <div class="count signrow" style="margin-top:-14px"><span>Signed in as ${esc(ME.displayName)}
       &middot; Admin &middot; all campuses</span><span>
-      <button class="signout" id="backToTool" type="button" style="margin-right:14px">Back to tool</button>
       <button class="signout" id="signout" type="button">Sign out</button></span></div>
 
     <div class="panel">
@@ -534,41 +234,6 @@ function wire() {
   }
   const so = document.getElementById("signout");
   if (so) so.onclick = signOut;
-  const goAdmin = document.getElementById("goAdmin");
-  if (goAdmin) goAdmin.onclick = () => { view = "admin"; render(); };
-  const backToTool = document.getElementById("backToTool");
-  if (backToTool) backToTool.onclick = () => { view = "tool"; render(); };
-  document.querySelectorAll("[data-tab]").forEach(el => {
-    el.onclick = () => {
-      if (el.dataset.tab === tab) return;
-      // Selections survive the switch. Gifts are shared, and coming back to a
-      // tab to find the strengths gone would punish a facilitator for looking
-      // at the other card mid-conversation.
-      tab = el.dataset.tab;
-      render();
-    };
-  });
-  for (const kind of ["strengths", "gifts", "descriptors"]) {
-    const q = document.getElementById("q-" + kind);
-    if (!q) continue;
-    q.onchange = e => {
-      const name = e.target.value;
-      if (!name) return;
-      // Guard the cap here as well as in the markup. The select is disabled at
-      // the limit, but a disabled control is a UI state, not a rule.
-      if (picked[kind].length < MAX[kind] && !picked[kind].includes(name)) {
-        picked[kind].push(name);
-      }
-      render();
-    };
-  }
-  document.querySelectorAll("[data-del]").forEach(el => {
-    el.onclick = () => {
-      const k = el.dataset.del;
-      picked[k] = picked[k].filter(n => n !== el.dataset.name);
-      render();
-    };
-  });
 
   // ── ADMIN PANEL WIRING ─────────────────────────────────────────────────
   // Only present when view === "admin", so every lookup below is guarded --
@@ -701,13 +366,8 @@ function wire() {
 // should not see who was just being coached. Nothing here is stored, so
 // nothing needs deleting anywhere else.
 function signOut() {
-  LIB = null;
-  LIB2 = null;
-  LIB3 = null;
   ME = { role: null, campusId: null, displayName: "" };
   sessionToken = null;
-  picked = { strengths: [], gifts: [], descriptors: [] };
-  tab = "sg";
   email = ""; pwd = ""; loginErr = ""; busy = false;
   adminEmails = null; adminMsg = "";
   queueData = null; queueMsg = ""; stopQueueAuto();
@@ -757,21 +417,19 @@ async function login() {
       loginErr = d.error || ("Failed (" + r.status + ")");
       busy = false; pwd = ""; render(); return;
     }
-    LIB = { items: d.items, blends: d.blends };
-    // Library two is tolerated as absent. If an older deployment of
-    // api/library.js is live, the second tab simply stays unavailable rather
-    // than the whole page failing to render.
-    LIB2 = (d.items2 && d.blends2) ? { items: d.items2, blends: d.blends2 } : null;
-    LIB3 = (d.items3 && d.blends3) ? { items: d.items3, blends: d.blends3 } : null;
-    // Same defensive fallback as library two: an older api/library.js that
-    // does not send items3 leaves the third tab off rather than breaking the
-    // page. Never land on a tab whose library did not arrive.
-    if (tab === "pg" && !LIB2) tab = "sg";
-    if (tab === "sp" && !LIB3) tab = "sg";
+    // LIBRARY DATA IS NO LONGER USED HERE. August 9, 2026.
+    // The card tool moved to the public helpful-hints.html / api/hints.js, so
+    // this page has nothing to do with items or blends anymore. The response
+    // still carries them -- api/library.js is unchanged, and trimming its
+    // payload is a separate, lower-risk change to make later -- they are just
+    // not read into page state. Every facilitator who signs in here now goes
+    // straight to the admin view; only the server-side role check in
+    // api/ai.js decides what any action they attempt is actually allowed to
+    // do, exactly as it already did.
     ME = { role: d.role, campusId: d.campusId, displayName: d.displayName || "" };
     sessionToken = typeof d.sessionToken === "string" ? d.sessionToken : null;
     // The password never stays in memory past the request that used it.
-    pwd = ""; busy = false; view = "tool"; render();
+    pwd = ""; busy = false; view = "admin"; render();
   } catch (e) {
     loginErr = "Network error. Check your connection.";
     busy = false; render();
