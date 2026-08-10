@@ -53,302 +53,567 @@
         "domain": "Strategic",
         "essence": "proof",
         "action": "tests",
-        "shadow": "dissects"
+        "shadow": "dissects",
+        "bank": [
+          "proof",
+          "data",
+          "skepticism"
+        ]
       },
       "Context": {
         "domain": "Strategic",
         "essence": "roots",
         "action": "traces",
-        "shadow": "clings"
+        "shadow": "clings",
+        "bank": [
+          "roots",
+          "backstory",
+          "antecedents"
+        ]
       },
       "Futuristic": {
         "domain": "Strategic",
         "essence": "horizon",
         "action": "envisions",
-        "shadow": "outruns"
+        "shadow": "outruns",
+        "bank": [
+          "horizon",
+          "foresight",
+          "imagination"
+        ]
       },
       "Ideation": {
         "domain": "Strategic",
         "essence": "spark",
         "action": "invents",
-        "shadow": "scatters"
+        "shadow": "scatters",
+        "bank": [
+          "spark",
+          "invention",
+          "connection"
+        ]
       },
       "Input": {
         "domain": "Strategic",
         "essence": "reserves",
         "action": "gathers",
-        "shadow": "stockpiles"
+        "shadow": "stockpiles",
+        "bank": [
+          "reserves",
+          "curiosity",
+          "resourcefulness"
+        ]
       },
       "Intellection": {
         "domain": "Strategic",
         "essence": "reflection",
         "action": "ponders",
-        "shadow": "spirals"
+        "shadow": "spirals",
+        "bank": [
+          "reflection",
+          "interiority",
+          "musing"
+        ]
       },
       "Learner": {
         "domain": "Strategic",
         "essence": "growth",
         "action": "studies",
-        "shadow": "restarts"
+        "shadow": "restarts",
+        "bank": [
+          "growth",
+          "study",
+          "apprenticeship"
+        ]
       },
       "Strategic": {
         "domain": "Strategic",
         "essence": "paths",
         "action": "navigates",
-        "shadow": "reroutes"
+        "shadow": "reroutes",
+        "bank": [
+          "paths",
+          "routes",
+          "anticipation"
+        ]
       },
       "Activator": {
         "domain": "Influencing",
         "essence": "ignition",
         "action": "starts",
-        "shadow": "rushes"
+        "shadow": "rushes",
+        "bank": [
+          "ignition",
+          "initiation",
+          "kickoff"
+        ]
       },
       "Command": {
         "domain": "Influencing",
         "essence": "authority",
         "action": "confronts",
-        "shadow": "steamrolls"
+        "shadow": "steamrolls",
+        "bank": [
+          "authority",
+          "assertion",
+          "boldness"
+        ]
       },
       "Communication": {
         "domain": "Influencing",
         "essence": "voice",
         "action": "articulates",
-        "shadow": "embellishes"
+        "shadow": "embellishes",
+        "bank": [
+          "voice",
+          "storytelling",
+          "narration"
+        ]
       },
       "Competition": {
         "domain": "Influencing",
         "essence": "measure",
         "action": "contends",
-        "shadow": "diminishes"
+        "shadow": "diminishes",
+        "bank": [
+          "measure",
+          "scorekeeping",
+          "podium"
+        ]
       },
       "Maximizer": {
         "domain": "Influencing",
         "essence": "excellence",
         "action": "refines",
-        "shadow": "discards"
+        "shadow": "discards",
+        "bank": [
+          "excellence",
+          "optimization",
+          "sharpening"
+        ]
       },
       "Self-Assurance": {
         "domain": "Influencing",
         "essence": "conviction",
         "action": "decides",
-        "shadow": "dismisses"
+        "shadow": "dismisses",
+        "bank": [
+          "conviction",
+          "certitude",
+          "surefootedness"
+        ]
       },
       "Significance": {
         "domain": "Influencing",
         "essence": "weight",
         "action": "reaches",
-        "shadow": "postures"
+        "shadow": "postures",
+        "bank": [
+          "weight",
+          "stature",
+          "mark"
+        ]
       },
       "Woo": {
         "domain": "Influencing",
         "essence": "charm",
         "action": "draws",
-        "shadow": "skims"
+        "shadow": "skims",
+        "bank": [
+          "charm",
+          "approachability",
+          "introductions"
+        ]
       },
       "Adaptability": {
         "domain": "Relationship",
         "essence": "presence",
         "action": "flexes",
-        "shadow": "drifts"
+        "shadow": "drifts",
+        "bank": [
+          "presence",
+          "nowness",
+          "fluidity"
+        ]
       },
       "Connectedness": {
         "domain": "Relationship",
         "essence": "thread",
         "action": "links",
-        "shadow": "overreads"
+        "shadow": "overreads",
+        "bank": [
+          "thread",
+          "web",
+          "providence"
+        ]
       },
       "Developer": {
         "domain": "Relationship",
         "essence": "potential",
         "action": "cultivates",
-        "shadow": "overinvests"
+        "shadow": "overinvests",
+        "bank": [
+          "potential",
+          "promise",
+          "seedling"
+        ]
       },
       "Empathy": {
         "domain": "Relationship",
         "essence": "feeling",
         "action": "absorbs",
-        "shadow": "drowns"
+        "shadow": "drowns",
+        "bank": [
+          "feeling",
+          "identification",
+          "fellow-feeling"
+        ]
       },
       "Harmony": {
         "domain": "Relationship",
         "essence": "peace",
         "action": "smooths",
-        "shadow": "avoids"
+        "shadow": "avoids",
+        "bank": [
+          "peace",
+          "consensus",
+          "accord"
+        ]
       },
       "Includer": {
         "domain": "Relationship",
         "essence": "welcome",
         "action": "widens",
-        "shadow": "dilutes"
+        "shadow": "dilutes",
+        "bank": [
+          "welcome",
+          "embrace",
+          "wideness"
+        ]
       },
       "Individualization": {
         "domain": "Relationship",
         "essence": "distinction",
         "action": "tailors",
-        "shadow": "favors"
+        "shadow": "favors",
+        "bank": [
+          "distinction",
+          "particularity",
+          "personalization"
+        ]
       },
       "Positivity": {
         "domain": "Relationship",
         "essence": "lift",
         "action": "brightens",
-        "shadow": "glosses"
+        "shadow": "glosses",
+        "bank": [
+          "lift",
+          "gladness",
+          "levity"
+        ]
       },
       "Relator": {
         "domain": "Relationship",
         "essence": "closeness",
         "action": "binds",
-        "shadow": "excludes"
+        "shadow": "excludes",
+        "bank": [
+          "closeness",
+          "loyalty",
+          "kinship"
+        ]
       },
       "Achiever": {
         "domain": "Executing",
         "essence": "output",
         "action": "produces",
-        "shadow": "grinds"
+        "shadow": "grinds",
+        "bank": [
+          "output",
+          "tally",
+          "industry"
+        ]
       },
       "Arranger": {
         "domain": "Executing",
         "essence": "fit",
         "action": "orchestrates",
-        "shadow": "meddles"
+        "shadow": "meddles",
+        "bank": [
+          "fit",
+          "juggling",
+          "choreography"
+        ]
       },
       "Belief": {
         "domain": "Executing",
         "essence": "values",
         "action": "anchors",
-        "shadow": "hardens"
+        "shadow": "hardens",
+        "bank": [
+          "values",
+          "creed",
+          "bedrock"
+        ]
       },
       "Consistency": {
         "domain": "Executing",
         "essence": "fairness",
         "action": "levels",
-        "shadow": "flattens"
+        "shadow": "flattens",
+        "bank": [
+          "fairness",
+          "sameness",
+          "impartiality"
+        ]
       },
       "Deliberative": {
         "domain": "Executing",
         "essence": "caution",
         "action": "weighs",
-        "shadow": "delays"
+        "shadow": "delays",
+        "bank": [
+          "caution",
+          "vigilance",
+          "hesitance"
+        ]
       },
       "Discipline": {
         "domain": "Executing",
         "essence": "routine",
         "action": "systematizes",
-        "shadow": "fixates"
+        "shadow": "fixates",
+        "bank": [
+          "routine",
+          "regimen",
+          "clockwork"
+        ]
       },
       "Focus": {
         "domain": "Executing",
         "essence": "target",
         "action": "narrows",
-        "shadow": "tunnels"
+        "shadow": "tunnels",
+        "bank": [
+          "target",
+          "bearing",
+          "fixity"
+        ]
       },
       "Responsibility": {
         "domain": "Executing",
         "essence": "ownership",
         "action": "delivers",
-        "shadow": "overloads"
+        "shadow": "overloads",
+        "bank": [
+          "ownership",
+          "follow-through",
+          "conscience"
+        ]
       },
       "Restorative": {
         "domain": "Executing",
         "essence": "repair",
         "action": "fixes",
-        "shadow": "dwells"
+        "shadow": "dwells",
+        "bank": [
+          "repair",
+          "troubleshooting",
+          "salvage"
+        ]
       }
     },
     "gifts": {
       "Administration": {
         "essence": "order",
         "action": "organizes",
-        "shadow": "controls"
+        "shadow": "controls",
+        "bank": [
+          "order",
+          "scaffolding",
+          "sequence"
+        ]
       },
       "Apostleship": {
         "essence": "frontier",
         "action": "plants",
-        "shadow": "abandons"
+        "shadow": "abandons",
+        "bank": [
+          "frontier",
+          "outpost",
+          "threshold"
+        ]
       },
       "Discernment": {
         "essence": "sight",
         "action": "perceives",
-        "shadow": "suspects"
+        "shadow": "suspects",
+        "bank": [
+          "sight",
+          "radar",
+          "discrimination"
+        ]
       },
       "Evangelism": {
         "essence": "proclamation",
         "action": "invites",
-        "shadow": "pressures"
+        "shadow": "pressures",
+        "bank": [
+          "proclamation",
+          "announcement",
+          "herald"
+        ]
       },
       "Exhortation": {
         "essence": "courage",
         "action": "urges",
-        "shadow": "shames"
+        "shadow": "shames",
+        "bank": [
+          "courage",
+          "spur",
+          "heart"
+        ]
       },
       "Faith": {
         "essence": "certainty",
         "action": "risks",
-        "shadow": "presumes"
+        "shadow": "presumes",
+        "bank": [
+          "certainty",
+          "reliance",
+          "dependence"
+        ]
       },
       "Giving": {
         "essence": "release",
         "action": "provides",
-        "shadow": "buys"
+        "shadow": "buys",
+        "bank": [
+          "release",
+          "abundance",
+          "bounty"
+        ]
       },
       "Healing": {
         "essence": "wholeness",
         "action": "restores",
-        "shadow": "rescues"
+        "shadow": "rescues",
+        "bank": [
+          "wholeness",
+          "knitting",
+          "convalescence"
+        ]
       },
       "Interpretation": {
         "essence": "meaning",
         "action": "translates",
-        "shadow": "imposes"
+        "shadow": "imposes",
+        "bank": [
+          "meaning",
+          "rendering",
+          "decoding"
+        ]
       },
       "Knowledge": {
         "essence": "depth",
         "action": "uncovers",
-        "shadow": "hoards"
+        "shadow": "hoards",
+        "bank": [
+          "depth",
+          "mastery",
+          "scholarship"
+        ]
       },
       "Leadership": {
         "essence": "direction",
         "action": "mobilizes",
-        "shadow": "drives"
+        "shadow": "drives",
+        "bank": [
+          "direction",
+          "vision",
+          "helm"
+        ]
       },
       "Mercy": {
         "essence": "compassion",
         "action": "comforts",
-        "shadow": "excuses"
+        "shadow": "excuses",
+        "bank": [
+          "compassion",
+          "clemency",
+          "forbearance"
+        ]
       },
       "Miracles": {
         "essence": "power",
         "action": "expects",
-        "shadow": "demands"
+        "shadow": "demands",
+        "bank": [
+          "power",
+          "marvel",
+          "breakthrough"
+        ]
       },
       "Pastor/Shepherd": {
         "essence": "protection",
         "action": "tends",
-        "shadow": "smothers"
+        "shadow": "smothers",
+        "bank": [
+          "protection",
+          "shelter",
+          "nurture"
+        ]
       },
       "Prophecy": {
         "essence": "truth",
         "action": "exposes",
-        "shadow": "wounds"
+        "shadow": "wounds",
+        "bank": [
+          "truth",
+          "revelation",
+          "unmasking"
+        ]
       },
       "Service": {
         "essence": "hands",
         "action": "labors",
-        "shadow": "disappears"
+        "shadow": "disappears",
+        "bank": [
+          "hands",
+          "assistance",
+          "support"
+        ]
       },
       "Teaching": {
         "essence": "clarity",
         "action": "explains",
-        "shadow": "lectures"
+        "shadow": "lectures",
+        "bank": [
+          "clarity",
+          "instruction",
+          "illumination"
+        ]
       },
       "Tongues": {
         "essence": "surrender",
         "action": "yields",
-        "shadow": "performs"
+        "shadow": "performs",
+        "bank": [
+          "surrender",
+          "submission",
+          "utterance"
+        ]
       },
       "Wisdom": {
         "essence": "timing",
         "action": "counsels",
-        "shadow": "withholds"
+        "shadow": "withholds",
+        "bank": [
+          "timing",
+          "discretion",
+          "prudence"
+        ]
       }
     }
   },
@@ -2953,10 +3218,15 @@
     "Command|Mercy": "One of these holds a standard. The other holds a person. You will be asked to do both inside the same conversation.",
     "Command|Miracles": "Both of these expect something to move. Only one of them is expecting God to move it. Be sure you know which one you are standing on.",
     "Command|Pastor/Shepherd": "One of these protects the flock. The other is willing to disturb it. Both of them believe they are keeping people safe.",
-    "Command|Prophecy": "One of these has authority of its own. The other is only carrying someone else's. When you say the hard thing, people cannot tell which is speaking \u2014 and sometimes neither can you.",
+    "Command|Prophecy": "One of these has authority of its own. The other is only carrying someone else's. When you say the hard thing, people cannot tell which is speaking — and sometimes neither can you.",
     "Command|Service": "One of these steps forward. The other steps out of sight. Notice which one you reach for when nobody is watching.",
     "Command|Teaching": "One of these explains until it lands. The other expects it to land the first time. Both of them are certain they are right.",
     "Command|Tongues": "One of these takes control. The other gives it up entirely. There is no version of you doing both at once.",
     "Command|Wisdom": "One of these knows what to say. The other knows when. You have rarely had trouble with the first."
+  },
+  "wordBank": {
+    "added": "2026-08-09",
+    "wordsPerItem": 3,
+    "note": "Each item carries a three-word bank: its original essence word plus two synonyms. A card prints six words, three from each side. essence/action/shadow are unchanged -- bank is additive. Asserted by scripts/verify_word_bank.js."
   }
 }

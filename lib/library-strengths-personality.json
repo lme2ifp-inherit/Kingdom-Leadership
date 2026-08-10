@@ -53,567 +53,1097 @@
         "domain": "Strategic",
         "essence": "proof",
         "action": "tests",
-        "shadow": "dissects"
+        "shadow": "dissects",
+        "bank": [
+          "proof",
+          "data",
+          "skepticism"
+        ]
       },
       "Context": {
         "domain": "Strategic",
         "essence": "roots",
         "action": "traces",
-        "shadow": "clings"
+        "shadow": "clings",
+        "bank": [
+          "roots",
+          "backstory",
+          "antecedents"
+        ]
       },
       "Futuristic": {
         "domain": "Strategic",
         "essence": "horizon",
         "action": "envisions",
-        "shadow": "outruns"
+        "shadow": "outruns",
+        "bank": [
+          "horizon",
+          "foresight",
+          "imagination"
+        ]
       },
       "Ideation": {
         "domain": "Strategic",
         "essence": "spark",
         "action": "invents",
-        "shadow": "scatters"
+        "shadow": "scatters",
+        "bank": [
+          "spark",
+          "invention",
+          "connection"
+        ]
       },
       "Input": {
         "domain": "Strategic",
         "essence": "reserves",
         "action": "gathers",
-        "shadow": "stockpiles"
+        "shadow": "stockpiles",
+        "bank": [
+          "reserves",
+          "curiosity",
+          "resourcefulness"
+        ]
       },
       "Intellection": {
         "domain": "Strategic",
         "essence": "reflection",
         "action": "ponders",
-        "shadow": "spirals"
+        "shadow": "spirals",
+        "bank": [
+          "reflection",
+          "interiority",
+          "musing"
+        ]
       },
       "Learner": {
         "domain": "Strategic",
         "essence": "growth",
         "action": "studies",
-        "shadow": "restarts"
+        "shadow": "restarts",
+        "bank": [
+          "growth",
+          "study",
+          "apprenticeship"
+        ]
       },
       "Strategic": {
         "domain": "Strategic",
         "essence": "paths",
         "action": "navigates",
-        "shadow": "reroutes"
+        "shadow": "reroutes",
+        "bank": [
+          "paths",
+          "routes",
+          "anticipation"
+        ]
       },
       "Achiever": {
         "domain": "Executing",
         "essence": "output",
         "action": "produces",
-        "shadow": "grinds"
+        "shadow": "grinds",
+        "bank": [
+          "output",
+          "tally",
+          "industry"
+        ]
       },
       "Arranger": {
         "domain": "Executing",
         "essence": "fit",
         "action": "orchestrates",
-        "shadow": "meddles"
+        "shadow": "meddles",
+        "bank": [
+          "fit",
+          "juggling",
+          "choreography"
+        ]
       },
       "Belief": {
         "domain": "Executing",
         "essence": "values",
         "action": "anchors",
-        "shadow": "hardens"
+        "shadow": "hardens",
+        "bank": [
+          "values",
+          "creed",
+          "bedrock"
+        ]
       },
       "Consistency": {
         "domain": "Executing",
         "essence": "fairness",
         "action": "levels",
-        "shadow": "flattens"
+        "shadow": "flattens",
+        "bank": [
+          "fairness",
+          "sameness",
+          "impartiality"
+        ]
       },
       "Deliberative": {
         "domain": "Executing",
         "essence": "caution",
         "action": "weighs",
-        "shadow": "delays"
+        "shadow": "delays",
+        "bank": [
+          "caution",
+          "vigilance",
+          "hesitance"
+        ]
       },
       "Discipline": {
         "domain": "Executing",
         "essence": "routine",
         "action": "systematizes",
-        "shadow": "fixates"
+        "shadow": "fixates",
+        "bank": [
+          "routine",
+          "regimen",
+          "clockwork"
+        ]
       },
       "Focus": {
         "domain": "Executing",
         "essence": "target",
         "action": "narrows",
-        "shadow": "tunnels"
+        "shadow": "tunnels",
+        "bank": [
+          "target",
+          "bearing",
+          "fixity"
+        ]
       },
       "Responsibility": {
         "domain": "Executing",
         "essence": "ownership",
         "action": "delivers",
-        "shadow": "overloads"
+        "shadow": "overloads",
+        "bank": [
+          "ownership",
+          "follow-through",
+          "conscience"
+        ]
       },
       "Restorative": {
         "domain": "Executing",
         "essence": "repair",
         "action": "fixes",
-        "shadow": "dwells"
+        "shadow": "dwells",
+        "bank": [
+          "repair",
+          "troubleshooting",
+          "salvage"
+        ]
       },
       "Activator": {
         "domain": "Influencing",
         "essence": "ignition",
         "action": "starts",
-        "shadow": "rushes"
+        "shadow": "rushes",
+        "bank": [
+          "ignition",
+          "initiation",
+          "kickoff"
+        ]
       },
       "Command": {
         "domain": "Influencing",
         "essence": "authority",
         "action": "confronts",
-        "shadow": "steamrolls"
+        "shadow": "steamrolls",
+        "bank": [
+          "authority",
+          "assertion",
+          "boldness"
+        ]
       },
       "Communication": {
         "domain": "Influencing",
         "essence": "voice",
         "action": "articulates",
-        "shadow": "embellishes"
+        "shadow": "embellishes",
+        "bank": [
+          "voice",
+          "storytelling",
+          "narration"
+        ]
       },
       "Competition": {
         "domain": "Influencing",
         "essence": "measure",
         "action": "contends",
-        "shadow": "diminishes"
+        "shadow": "diminishes",
+        "bank": [
+          "measure",
+          "scorekeeping",
+          "podium"
+        ]
       },
       "Maximizer": {
         "domain": "Influencing",
         "essence": "excellence",
         "action": "refines",
-        "shadow": "discards"
+        "shadow": "discards",
+        "bank": [
+          "excellence",
+          "optimization",
+          "sharpening"
+        ]
       },
       "Self-Assurance": {
         "domain": "Influencing",
         "essence": "conviction",
         "action": "decides",
-        "shadow": "dismisses"
+        "shadow": "dismisses",
+        "bank": [
+          "conviction",
+          "certitude",
+          "surefootedness"
+        ]
       },
       "Significance": {
         "domain": "Influencing",
         "essence": "weight",
         "action": "reaches",
-        "shadow": "postures"
+        "shadow": "postures",
+        "bank": [
+          "weight",
+          "stature",
+          "mark"
+        ]
       },
       "Woo": {
         "domain": "Influencing",
         "essence": "charm",
         "action": "draws",
-        "shadow": "skims"
+        "shadow": "skims",
+        "bank": [
+          "charm",
+          "approachability",
+          "introductions"
+        ]
       },
       "Adaptability": {
         "domain": "Relationship",
         "essence": "presence",
         "action": "flexes",
-        "shadow": "drifts"
+        "shadow": "drifts",
+        "bank": [
+          "presence",
+          "nowness",
+          "fluidity"
+        ]
       },
       "Connectedness": {
         "domain": "Relationship",
         "essence": "thread",
         "action": "links",
-        "shadow": "overreads"
+        "shadow": "overreads",
+        "bank": [
+          "thread",
+          "web",
+          "providence"
+        ]
       },
       "Developer": {
         "domain": "Relationship",
         "essence": "potential",
         "action": "cultivates",
-        "shadow": "overinvests"
+        "shadow": "overinvests",
+        "bank": [
+          "potential",
+          "promise",
+          "seedling"
+        ]
       },
       "Empathy": {
         "domain": "Relationship",
         "essence": "resonance",
         "action": "soaks",
-        "shadow": "drowns"
+        "shadow": "drowns",
+        "bank": [
+          "resonance",
+          "identification",
+          "fellow-feeling"
+        ]
       },
       "Harmony": {
         "domain": "Relationship",
         "essence": "peace",
         "action": "mutes",
-        "shadow": "placates"
+        "shadow": "placates",
+        "bank": [
+          "peace",
+          "consensus",
+          "accord"
+        ]
       },
       "Includer": {
         "domain": "Relationship",
         "essence": "welcome",
         "action": "widens",
-        "shadow": "dilutes"
+        "shadow": "dilutes",
+        "bank": [
+          "welcome",
+          "embrace",
+          "wideness"
+        ]
       },
       "Individualization": {
         "domain": "Relationship",
         "essence": "uniqueness",
         "action": "customizes",
-        "shadow": "fragments"
+        "shadow": "fragments",
+        "bank": [
+          "uniqueness",
+          "particularity",
+          "personalization"
+        ]
       },
       "Positivity": {
         "domain": "Relationship",
         "essence": "sunniness",
         "action": "enlivens",
-        "shadow": "glosses"
+        "shadow": "glosses",
+        "bank": [
+          "sunniness",
+          "gladness",
+          "levity"
+        ]
       },
       "Relator": {
         "domain": "Relationship",
         "essence": "depth",
         "action": "binds",
-        "shadow": "excludes"
+        "shadow": "excludes",
+        "bank": [
+          "depth",
+          "loyalty",
+          "kinship"
+        ]
       }
     },
     "descriptors": {
       "Altruistic": {
         "essence": "selflessness",
         "action": "serves",
-        "shadow": "depletes"
+        "shadow": "depletes",
+        "bank": [
+          "selflessness",
+          "unselfishness",
+          "charity"
+        ]
       },
       "Analytical": {
         "essence": "pattern",
         "action": "unpacks",
-        "shadow": "circles"
+        "shadow": "circles",
+        "bank": [
+          "pattern",
+          "dissection",
+          "deduction"
+        ]
       },
       "Bold": {
         "essence": "nerve",
         "action": "dares",
-        "shadow": "barrels"
+        "shadow": "barrels",
+        "bank": [
+          "nerve",
+          "daring",
+          "audacity"
+        ]
       },
       "Calm and Practical": {
         "essence": "evenness",
         "action": "settles",
-        "shadow": "underreacts"
+        "shadow": "underreacts",
+        "bank": [
+          "evenness",
+          "unflappability",
+          "groundedness"
+        ]
       },
       "Charismatic": {
         "essence": "magnetism",
         "action": "attracts",
-        "shadow": "dazzles"
+        "shadow": "dazzles",
+        "bank": [
+          "magnetism",
+          "allure",
+          "luminosity"
+        ]
       },
       "Charming": {
         "essence": "ease",
         "action": "disarms",
-        "shadow": "sidesteps"
+        "shadow": "sidesteps",
+        "bank": [
+          "ease",
+          "affability",
+          "winsomeness"
+        ]
       },
       "Clear Communication": {
         "essence": "plainness",
         "action": "states",
-        "shadow": "oversimplifies"
+        "shadow": "oversimplifies",
+        "bank": [
+          "plainness",
+          "directness",
+          "simplicity"
+        ]
       },
       "Creative": {
         "essence": "expression",
         "action": "shapes",
-        "shadow": "indulges"
+        "shadow": "indulges",
+        "bank": [
+          "expression",
+          "originality",
+          "artistry"
+        ]
       },
       "Curious": {
         "essence": "wonder",
         "action": "probes",
-        "shadow": "wanders"
+        "shadow": "wanders",
+        "bank": [
+          "wonder",
+          "inquisitiveness",
+          "exploration"
+        ]
       },
       "Decisive Action": {
         "essence": "resolve",
         "action": "commits",
-        "shadow": "forecloses"
+        "shadow": "forecloses",
+        "bank": [
+          "resolve",
+          "finality",
+          "conclusion"
+        ]
       },
       "Dedicated": {
         "essence": "devotion",
         "action": "persists",
-        "shadow": "martyrs"
+        "shadow": "martyrs",
+        "bank": [
+          "devotion",
+          "constancy",
+          "fidelity"
+        ]
       },
       "Determined": {
         "essence": "grit",
         "action": "pushes",
-        "shadow": "refuses"
+        "shadow": "refuses",
+        "bank": [
+          "grit",
+          "tenacity",
+          "doggedness"
+        ]
       },
       "Diligent and Observant": {
         "essence": "attentiveness",
         "action": "catches",
-        "shadow": "nitpicks"
+        "shadow": "nitpicks",
+        "bank": [
+          "attentiveness",
+          "thoroughness",
+          "meticulousness"
+        ]
       },
       "Direct": {
         "essence": "bluntness",
         "action": "asserts",
-        "shadow": "stings"
+        "shadow": "stings",
+        "bank": [
+          "bluntness",
+          "forthrightness",
+          "outspokenness"
+        ]
       },
       "Direct and Authentic": {
         "essence": "realness",
         "action": "discloses",
-        "shadow": "jars"
+        "shadow": "jars",
+        "bank": [
+          "realness",
+          "genuineness",
+          "transparency"
+        ]
       },
       "Direct and Honest": {
         "essence": "candor",
         "action": "volunteers",
-        "shadow": "cuts"
+        "shadow": "cuts",
+        "bank": [
+          "candor",
+          "truthfulness",
+          "integrity"
+        ]
       },
       "Disciplined": {
         "essence": "rigor",
         "action": "maintains",
-        "shadow": "stiffens"
+        "shadow": "stiffens",
+        "bank": [
+          "rigor",
+          "strictness",
+          "exactingness"
+        ]
       },
       "Easygoing": {
         "essence": "looseness",
         "action": "relaxes",
-        "shadow": "coasts"
+        "shadow": "coasts",
+        "bank": [
+          "looseness",
+          "mellowness",
+          "informality"
+        ]
       },
       "Efficient Organizer": {
         "essence": "efficiency",
         "action": "streamlines",
-        "shadow": "strips"
+        "shadow": "strips",
+        "bank": [
+          "efficiency",
+          "economy",
+          "leanness"
+        ]
       },
       "Empathetic": {
         "essence": "attunement",
         "action": "senses",
-        "shadow": "merges"
+        "shadow": "merges",
+        "bank": [
+          "attunement",
+          "sympathy",
+          "receptivity"
+        ]
       },
       "Energetic": {
         "essence": "vigor",
         "action": "fuels",
-        "shadow": "exhausts"
+        "shadow": "exhausts",
+        "bank": [
+          "vigor",
+          "dynamism",
+          "liveliness"
+        ]
       },
       "Enjoy Creating Order": {
         "essence": "tidiness",
         "action": "arranges",
-        "shadow": "overstructures"
+        "shadow": "overstructures",
+        "bank": [
+          "tidiness",
+          "categorizing",
+          "orderliness"
+        ]
       },
       "Enthusiastic": {
         "essence": "eagerness",
         "action": "kindles",
-        "shadow": "overwhelms"
+        "shadow": "overwhelms",
+        "bank": [
+          "eagerness",
+          "zeal",
+          "ardor"
+        ]
       },
       "Excellent Brainstormers": {
         "essence": "profusion",
         "action": "generates",
-        "shadow": "floods"
+        "shadow": "floods",
+        "bank": [
+          "profusion",
+          "fertility",
+          "prolificacy"
+        ]
       },
       "Excellent Communicators": {
         "essence": "eloquence",
         "action": "connects",
-        "shadow": "monopolizes"
+        "shadow": "monopolizes",
+        "bank": [
+          "eloquence",
+          "articulacy",
+          "expressiveness"
+        ]
       },
       "Excellent Organizers": {
         "essence": "structure",
         "action": "coordinates",
-        "shadow": "overengineers"
+        "shadow": "overengineers",
+        "bank": [
+          "structure",
+          "orchestration",
+          "systematization"
+        ]
       },
       "Excellent People Skills": {
         "essence": "rapport",
         "action": "engages",
-        "shadow": "flatters"
+        "shadow": "flatters",
+        "bank": [
+          "rapport",
+          "sociability",
+          "tact"
+        ]
       },
       "Future Focused": {
         "essence": "trajectory",
         "action": "anticipates",
-        "shadow": "overshoots"
+        "shadow": "overshoots",
+        "bank": [
+          "trajectory",
+          "outlook",
+          "tomorrow"
+        ]
       },
       "Generous": {
         "essence": "openhandedness",
         "action": "shares",
-        "shadow": "overextends"
+        "shadow": "overextends",
+        "bank": [
+          "openhandedness",
+          "liberality",
+          "largesse"
+        ]
       },
       "Good Practical Skills": {
         "essence": "competence",
         "action": "builds",
-        "shadow": "tinkers"
+        "shadow": "tinkers",
+        "bank": [
+          "competence",
+          "craftsmanship",
+          "handiness"
+        ]
       },
       "Good at Connecting with Others": {
         "essence": "bridge",
         "action": "introduces",
-        "shadow": "collects"
+        "shadow": "collects",
+        "bank": [
+          "bridge",
+          "linkage",
+          "weaving"
+        ]
       },
       "Good-Natured and Positive": {
         "essence": "cheer",
         "action": "lightens",
-        "shadow": "minimizes"
+        "shadow": "minimizes",
+        "bank": [
+          "cheer",
+          "goodwill",
+          "brightness"
+        ]
       },
       "Grounded": {
         "essence": "footing",
         "action": "holds",
-        "shadow": "resists"
+        "shadow": "resists",
+        "bank": [
+          "footing",
+          "rootedness",
+          "solidity"
+        ]
       },
       "Hands-on and Observant": {
         "essence": "immediacy",
         "action": "acts",
-        "shadow": "skips"
+        "shadow": "skips",
+        "bank": [
+          "immediacy",
+          "promptness",
+          "engagement"
+        ]
       },
       "Handy and Resourceful": {
         "essence": "ingenuity",
         "action": "improvises",
-        "shadow": "patches"
+        "shadow": "patches",
+        "bank": [
+          "ingenuity",
+          "versatility",
+          "knack"
+        ]
       },
       "Hardworking": {
         "essence": "effort",
         "action": "toils",
-        "shadow": "overworks"
+        "shadow": "overworks",
+        "bank": [
+          "effort",
+          "industriousness",
+          "sweat"
+        ]
       },
       "Honest": {
         "essence": "frankness",
         "action": "admits",
-        "shadow": "blurts"
+        "shadow": "blurts",
+        "bank": [
+          "frankness",
+          "candidness",
+          "disclosure"
+        ]
       },
       "Honest and Direct": {
         "essence": "straightness",
         "action": "declares",
-        "shadow": "bruises"
+        "shadow": "bruises",
+        "bank": [
+          "straightness",
+          "squareness",
+          "pointedness"
+        ]
       },
       "Idealistic": {
         "essence": "ideal",
         "action": "aspires",
-        "shadow": "disappoints"
+        "shadow": "disappoints",
+        "bank": [
+          "ideal",
+          "aspiration",
+          "principle"
+        ]
       },
       "Imaginative": {
         "essence": "possibility",
         "action": "pictures",
-        "shadow": "escapes"
+        "shadow": "escapes",
+        "bank": [
+          "possibility",
+          "fancy",
+          "visualization"
+        ]
       },
       "Independent": {
         "essence": "autonomy",
         "action": "self-directs",
-        "shadow": "isolates"
+        "shadow": "isolates",
+        "bank": [
+          "autonomy",
+          "self-reliance",
+          "sovereignty"
+        ]
       },
       "Informed": {
         "essence": "awareness",
         "action": "tracks",
-        "shadow": "overreports"
+        "shadow": "overreports",
+        "bank": [
+          "awareness",
+          "currency",
+          "intelligence"
+        ]
       },
       "Insightful": {
         "essence": "penetration",
         "action": "grasps",
-        "shadow": "leaps"
+        "shadow": "leaps",
+        "bank": [
+          "penetration",
+          "perception",
+          "acuity"
+        ]
       },
       "Kind and Encouraging": {
         "essence": "kindness",
         "action": "affirms",
-        "shadow": "shields"
+        "shadow": "shields",
+        "bank": [
+          "kindness",
+          "supportiveness",
+          "solicitude"
+        ]
       },
       "Knowledgeable": {
         "essence": "store",
         "action": "knows",
-        "shadow": "corrects"
+        "shadow": "corrects",
+        "bank": [
+          "store",
+          "erudition",
+          "fluency"
+        ]
       },
       "Loyal, Patient, and Reliable": {
         "essence": "steadfastness",
         "action": "stays",
-        "shadow": "endures"
+        "shadow": "endures",
+        "bank": [
+          "steadfastness",
+          "durability",
+          "perseverance"
+        ]
       },
       "Observant": {
         "essence": "watchfulness",
         "action": "observes",
-        "shadow": "hesitates"
+        "shadow": "hesitates",
+        "bank": [
+          "watchfulness",
+          "alertness",
+          "scanning"
+        ]
       },
       "Open-Minded": {
         "essence": "openness",
         "action": "entertains",
-        "shadow": "wavers"
+        "shadow": "wavers",
+        "bank": [
+          "openness",
+          "latitude",
+          "breadth"
+        ]
       },
       "Organized and Effective": {
         "essence": "method",
         "action": "plans",
-        "shadow": "boxes"
+        "shadow": "boxes",
+        "bank": [
+          "method",
+          "protocol",
+          "regularity"
+        ]
       },
       "Original": {
         "essence": "newness",
         "action": "differs",
-        "shadow": "contradicts"
+        "shadow": "contradicts",
+        "bank": [
+          "newness",
+          "freshness",
+          "distinctiveness"
+        ]
       },
       "Passionate": {
         "essence": "fire",
         "action": "burns",
-        "shadow": "consumes"
+        "shadow": "consumes",
+        "bank": [
+          "fire",
+          "ardency",
+          "zealousness"
+        ]
       },
       "Perceptive": {
         "essence": "antenna",
         "action": "reads",
-        "shadow": "projects"
+        "shadow": "projects",
+        "bank": [
+          "antenna",
+          "sensitivity",
+          "keenness"
+        ]
       },
       "Positive and Enthusiastic": {
         "essence": "buoyancy",
         "action": "uplifts",
-        "shadow": "deflects"
+        "shadow": "deflects",
+        "bank": [
+          "buoyancy",
+          "exuberance",
+          "gusto"
+        ]
       },
       "Principled": {
         "essence": "standard",
         "action": "upholds",
-        "shadow": "condemns"
+        "shadow": "condemns",
+        "bank": [
+          "standard",
+          "uprightness",
+          "rectitude"
+        ]
       },
       "Proactive Initiative": {
         "essence": "readiness",
         "action": "moves",
-        "shadow": "oversteps"
+        "shadow": "oversteps",
+        "bank": [
+          "readiness",
+          "forwardness",
+          "preemption"
+        ]
       },
       "Quick Thinkers": {
         "essence": "speed",
         "action": "responds",
-        "shadow": "outpaces"
+        "shadow": "outpaces",
+        "bank": [
+          "speed",
+          "nimbleness",
+          "agility"
+        ]
       },
       "Rational": {
         "essence": "logic",
         "action": "reasons",
-        "shadow": "discounts"
+        "shadow": "discounts",
+        "bank": [
+          "logic",
+          "coherence",
+          "soundness"
+        ]
       },
       "Rational and Practical": {
         "essence": "usefulness",
         "action": "solves",
-        "shadow": "reduces"
+        "shadow": "reduces",
+        "bank": [
+          "usefulness",
+          "workability",
+          "utility"
+        ]
       },
       "Receptive": {
         "essence": "availability",
         "action": "receives",
-        "shadow": "concedes"
+        "shadow": "concedes",
+        "bank": [
+          "availability",
+          "hospitality",
+          "acceptance"
+        ]
       },
       "Reliable": {
         "essence": "dependability",
         "action": "keeps",
-        "shadow": "strains"
+        "shadow": "strains",
+        "bank": [
+          "dependability",
+          "trustworthiness",
+          "surety"
+        ]
       },
       "Research-Oriented": {
         "essence": "evidence",
         "action": "verifies",
-        "shadow": "stalls"
+        "shadow": "stalls",
+        "bank": [
+          "evidence",
+          "inquiry",
+          "investigation"
+        ]
       },
       "Results Oriented": {
         "essence": "outcome",
         "action": "finishes",
-        "shadow": "sacrifices"
+        "shadow": "sacrifices",
+        "bank": [
+          "outcome",
+          "closure",
+          "harvest"
+        ]
       },
       "Sensitive and Warm": {
         "essence": "warmth",
         "action": "softens",
-        "shadow": "coddles"
+        "shadow": "coddles",
+        "bank": [
+          "warmth",
+          "kindliness",
+          "softness"
+        ]
       },
       "Sensitive to Others": {
         "essence": "consideration",
         "action": "adjusts",
-        "shadow": "shrinks"
+        "shadow": "shrinks",
+        "bank": [
+          "consideration",
+          "thoughtfulness",
+          "deference"
+        ]
       },
       "Sociable": {
         "essence": "company",
         "action": "mingles",
-        "shadow": "thins"
+        "shadow": "thins",
+        "bank": [
+          "company",
+          "gregariousness",
+          "conviviality"
+        ]
       },
       "Spontaneous": {
         "essence": "impulse",
         "action": "seizes",
-        "shadow": "veers"
+        "shadow": "veers",
+        "bank": [
+          "impulse",
+          "improvisation",
+          "caprice"
+        ]
       },
       "Strong Practical Skills": {
         "essence": "capability",
         "action": "handles",
-        "shadow": "carries"
+        "shadow": "carries",
+        "bank": [
+          "capability",
+          "dexterity",
+          "facility"
+        ]
       },
       "Strong Sense of Duty": {
         "essence": "obligation",
         "action": "shoulders",
-        "shadow": "overcommits"
+        "shadow": "overcommits",
+        "bank": [
+          "obligation",
+          "charge",
+          "dutifulness"
+        ]
       },
       "Strong-willed": {
         "essence": "backbone",
         "action": "stands",
-        "shadow": "digs"
+        "shadow": "digs",
+        "bank": [
+          "backbone",
+          "steel",
+          "fortitude"
+        ]
       },
       "Supportive": {
         "essence": "backing",
         "action": "bolsters",
-        "shadow": "enables"
+        "shadow": "enables",
+        "bank": [
+          "backing",
+          "reinforcement",
+          "backup"
+        ]
       },
       "Very Loyal": {
         "essence": "allegiance",
         "action": "sticks",
-        "shadow": "defends"
+        "shadow": "defends",
+        "bank": [
+          "allegiance",
+          "fealty",
+          "staunchness"
+        ]
       },
       "Very Responsible": {
         "essence": "accountability",
         "action": "answers",
-        "shadow": "assumes"
+        "shadow": "assumes",
+        "bank": [
+          "accountability",
+          "reliability",
+          "stewardship"
+        ]
       }
     }
   },
@@ -10410,5 +10940,10 @@
       "recognize": "You take your close relationships as something you are responsible for, so when one is not going well you treat it as yours to fix. The gap is that a relationship has two people in it, and you have been repairing things alone that were never yours alone.",
       "ask": "What have you been repairing by yourself?"
     }
+  },
+  "wordBank": {
+    "added": "2026-08-09",
+    "wordsPerItem": 3,
+    "note": "Each item carries a three-word bank: its original essence word plus two synonyms. A card prints six words, three from each side. essence/action/shadow are unchanged -- bank is additive. Asserted by scripts/verify_word_bank.js."
   }
 }

@@ -56,6 +56,8 @@ button{font-family:inherit;cursor:pointer}
 .k{flex:0 0 92px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;
    color:#8898a8;padding-top:3px}
 .v{flex:1}
+.bank{color:#e8dcc0;line-height:1.7}
+.bank .sep{color:#6b7c8e;padding:0 5px}
 .lead{color:#f0e4cc;font-size:15.5px;line-height:1.6}
 .ask{color:#d9c89a;font-size:15.5px;line-height:1.6;font-style:italic}
 .todo{color:#6b7c8e;font-style:italic;line-height:1.55}
@@ -151,8 +153,28 @@ const esc = (s) => String(s).replace(/[&<>"]/g, c =>
 // One lookup for three item sets. Gifts come off library one; if library two
 // ever ships without library one the gift words would vanish, so it falls
 // through rather than throwing.
+// WORD BANK. August 9, 2026. Replaces the two-word "Blend seeds" row.
+// Each item carries a three-word bank: its original essence word plus two
+// synonyms, so a card prints six words, three from each side. The pastor
+// asked for four to six; three per side is the top of that range.
+//
+// Falls back to [essence] when bank is absent, which is what makes this file
+// and the library files independently deployable -- an older library shows
+// the single word it always showed rather than an empty row.
+//
+// The same two functions exist in helpful-hints.html. Keep them in step.
+function wordsOf(it) {
+  return (Array.isArray(it.bank) && it.bank.length) ? it.bank : [it.essence];
+}
+function bankRow(a, b) {
+  const L = wordsOf(a).map(esc).join(", ");
+  const R = wordsOf(b).map(esc).join(", ");
+  return `<div class="row"><div class="k">Word Bank</div>
+    <div class="v bank">${L}<span class="sep">+</span>${R}</div></div>`;
+}
+
 function bag(kind) {
-  // TAB-AWARE ON PURPOSE. The seed words printed on a card must come from the
+  // TAB-AWARE ON PURPOSE. The Word Bank printed on a card must come from the
   // SAME library as the blend text underneath them. Five strength rows --
   // Empathy, Harmony, Individualization, Positivity, Relator -- carry
   // different words in library three than in library one, because library
@@ -256,13 +278,11 @@ function picker(kind, label) {
 function cell(s, g) {
   const S = item("strengths", s), G = item("gifts", g);
   const b = LIB.blends[s + "|" + g] || null;
-  const seeds = esc(S.essence) + " + " + esc(G.essence);
   return `
     <div class="card" style="border-left-color:${DOMAIN_COLORS[S.domain]}">
       <h3>${esc(s)} &times; ${esc(g)}</h3>
       <div class="pair">Strengths &times; Gifts</div>
-      <div class="row"><div class="k">Blend seeds</div>
-        <div class="v">${seeds}</div></div>
+      ${bankRow(S, G)}
       ${b ? `
       <div class="row"><div class="k">Looks like</div>
         <div class="v lead">${esc(b.recognize)}</div></div>
@@ -270,8 +290,8 @@ function cell(s, g) {
         <div class="v ask">${esc(b.ask)}</div></div>`
       : `
       <div class="row"><div class="k">Looks like</div>
-        <div class="v todo">Start with the two seed words above and let them
-          find their own name for it.</div></div>`}
+        <div class="v todo">Start with the words above and let them find
+          their own name for it.</div></div>`}
       <div class="row"><div class="k">In action</div>
         <div class="v">${esc(S.action)} + ${esc(G.action)}</div></div>
       <div class="row"><div class="k">Watch for</div>
@@ -286,13 +306,11 @@ function cell(s, g) {
 function cell2(d, g) {
   const D = item("descriptors", d), G = item("gifts", g);
   const b = LIB2.blends[d + "|" + g] || null;
-  const seeds = esc(D.essence) + " + " + esc(G.essence);
   return `
     <div class="card" style="border-left-color:#d4a520">
       <h3>${esc(d)} &times; ${esc(g)}</h3>
       <div class="pair">Personality &times; Gifts</div>
-      <div class="row"><div class="k">Blend seeds</div>
-        <div class="v">${seeds}</div></div>
+      ${bankRow(D, G)}
       ${b ? `
       <div class="row"><div class="k">Looks like</div>
         <div class="v lead">${esc(b.recognize)}</div></div>
@@ -300,8 +318,8 @@ function cell2(d, g) {
         <div class="v ask">${esc(b.ask)}</div></div>`
       : `
       <div class="row"><div class="k">Looks like</div>
-        <div class="v todo">Start with the two seed words above and let them
-          find their own name for it.</div></div>`}
+        <div class="v todo">Start with the words above and let them find
+          their own name for it.</div></div>`}
       <div class="row"><div class="k">In action</div>
         <div class="v">${esc(D.action)} + ${esc(G.action)}</div></div>
       <div class="row"><div class="k">Watch for</div>
@@ -316,13 +334,11 @@ function cell2(d, g) {
 function cell3(s, d) {
   const S = item("strengths", s), D = item("descriptors", d);
   const b = LIB3.blends[s + "|" + d] || null;
-  const seeds = esc(S.essence) + " + " + esc(D.essence);
   return `
     <div class="card" style="border-left-color:${DOMAIN_COLORS[S.domain] || "#d4a520"}">
       <h3>${esc(s)} &times; ${esc(d)}</h3>
       <div class="pair">Strengths &times; Personality</div>
-      <div class="row"><div class="k">Blend seeds</div>
-        <div class="v">${seeds}</div></div>
+      ${bankRow(S, D)}
       ${b ? `
       <div class="row"><div class="k">Looks like</div>
         <div class="v lead">${esc(b.recognize)}</div></div>
@@ -330,8 +346,8 @@ function cell3(s, d) {
         <div class="v ask">${esc(b.ask)}</div></div>`
       : `
       <div class="row"><div class="k">Looks like</div>
-        <div class="v todo">Start with the two seed words above and let them
-          find their own name for it.</div></div>`}
+        <div class="v todo">Start with the words above and let them find
+          their own name for it.</div></div>`}
       <div class="row"><div class="k">In action</div>
         <div class="v">${esc(S.action)} + ${esc(D.action)}</div></div>
       <div class="row"><div class="k">Watch for</div>
@@ -407,8 +423,8 @@ function toolView() {
       : `<div class="hint">Enter their ${pg ? "descriptors" : "strengths"} and
           ${sp ? "personality descriptors" : "gifts"} above to see the
           pairings.</div>`}
-    <div class="hint">Never read a card aloud. Lead with the two seed words. The
-      other lines are there for when someone gets stuck.</div>`;
+    <div class="hint">Never read a card aloud. Lead with the Word Bank. The other
+      lines are there for when someone gets stuck.</div>`;
 }
 
 // ── ADMIN PANEL ───────────────────────────────────────────────────────────
