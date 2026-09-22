@@ -178,6 +178,27 @@ function supabaseRequest(method, path, opts) {
   });
 }
 
+// ── DRAIN KICK (stall backstop) ─────────────────────────────────────────────
+// Sept 2026. Fire-and-forget ping to api/drain, used only by jobStatus when
+// it notices a job has gone quiet well past a normal wave. Mirrors the same
+// short-ack pattern drain.js uses for its own self-continuation — we only
+// need to know the request was accepted, not wait for the drain to finish.
+function kickDrain() {
+  const url = process.env.DRAIN_SELF_URL || "https://leadership.inheritance.vision/api/drain";
+  const secret = process.env.DRAIN_SECRET;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(secret ? { "x-drain-secret": secret } : {})
+    },
+    body: "{}",
+    signal: ctrl.signal
+  }).catch(() => {}).finally(() => clearTimeout(timer));
+}
+
 // PostgREST equality filter.
 //
 // ⚠ HARD-WON: an earlier version wrapped values in double quotes as an
@@ -937,6 +958,23 @@ module.exports = async function handler(req, res) {
       if (!Array.isArray(r.data) || r.data.length === 0) return send(200, { job: null });
 
       const job = r.data[0];
+
+      // STALL CHECK — Sept 2026. The drain now self-chains between waves
+      // instead of waiting on a 1-minute cron, so this is the rare backstop:
+      // if a job's heartbeat has gone quiet well past what a normal wave
+      // takes, the continuation ping was probably lost. This only ever runs
+      // while a real participant is actively polling (every 4s from the
+      // browser) — so it's zero-cost on quiet days and near-instant recovery
+      // on the rare day it's actually needed. Fire-and-forget: we don't want
+      // a slow drain to delay the status response the participant is waiting
+      // on, and a duplicate kick is harmless — drain.js's own heartbeat
+      // check prevents two invocations from claiming the same job.
+      const STALL_THRESHOLD_MS = 90000;
+      if (job.status === "pending" || job.status === "processing") {
+        const lastActivity = job.heartbeat_at || job.started_at || job.created_at;
+        const quietFor = Date.now() - new Date(lastActivity).getTime();
+        if (quietFor > STALL_THRESHOLD_MS) kickDrain(); // not awaited on purpose
+      }
 
       // Count progress LIVE from the items table rather than trusting
       // job.done_items. The drain only writes that column when a run ends, so

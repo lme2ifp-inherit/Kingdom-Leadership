@@ -342,6 +342,42 @@ async function finishJob(job) {
   return { ok: true };
 }
 
+// ── SELF-CONTINUATION ────────────────────────────────────────────────────────
+// Sept 2026: replaced the 1-minute pg_cron poll as the primary driver. A
+// database webhook now starts the FIRST wave the instant a job is queued;
+// this is what carries a job through every wave AFTER that, without waiting
+// on the clock. pg_cron still exists, but only as a rare backstop (see the
+// 002 migration) for the case where this ping itself gets lost.
+//
+// We only wait long enough to know the next invocation has been ACCEPTED —
+// not for it to finish draining, which could take minutes. A short abort
+// timeout keeps this from ever meaningfully delaying our own response.
+const CONTINUATION_ACK_TIMEOUT_MS = 3000;
+
+async function triggerContinuation() {
+  const url = process.env.DRAIN_SELF_URL || "https://leadership.inheritance.vision/api/drain";
+  const secret = process.env.DRAIN_SECRET;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), CONTINUATION_ACK_TIMEOUT_MS);
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(secret ? { "x-drain-secret": secret } : {})
+      },
+      body: "{}",
+      signal: ctrl.signal
+    });
+  } catch (e) {
+    // Fire-and-forget by design. If this ping is lost, the job simply waits
+    // for the pg_cron backstop or the jobStatus stall-check instead of
+    // completing immediately — degraded, not broken.
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ── THE DRAIN ────────────────────────────────────────────────────────────────
 
 module.exports = async function handler(req, res) {
@@ -441,7 +477,13 @@ module.exports = async function handler(req, res) {
     });
 
     let finished = null;
-    if (stillPending === 0) finished = await finishJob(job);
+    if (stillPending === 0) {
+      finished = await finishJob(job);
+    } else {
+      // More work exists — start the next wave now instead of waiting for
+      // the next cron tick or someone's browser to notice.
+      await triggerContinuation();
+    }
 
     const summary = `job=${job.id} generated=${generated} cached=${fromCache} failed=${failedCount} waves=${waves} pending=${stillPending}${stoppedForBudget ? " (budget)" : ""}`;
 
