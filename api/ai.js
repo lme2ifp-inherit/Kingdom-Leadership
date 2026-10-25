@@ -235,7 +235,10 @@ async function getApprovedEmails() {
 }
 
 async function addApprovedEmails(list) {
-  const incoming = (Array.isArray(list) ? list : [])
+  // The facilitator panel sends the textarea as one raw string (one address per
+  // line, or comma separated); other callers may send an array. Accept both.
+  const raw = Array.isArray(list) ? list : String(list || "").split(/[\s,;]+/);
+  const incoming = raw
     .map(normalizeEmail)
     .filter((e) => e.includes("@"));
 
